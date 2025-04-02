@@ -15,12 +15,12 @@ class SuperUserSeeder extends Seeder
     public function run(): void
     {
         $user = User::updateOrCreate(
-            ['email' => 'laicportal000@gmail.com'],
+            ['email' => 'sanyalopez@gmail.com'],
             [
-                'name' => 'Super User',
-                'password' => Hash::make('Makarios@2025'), // Default password
-                'roles' => ['User','Admin', 'Finance', 'PNC'],
-                'google_id' => '000000000000000000001',
+                'name' => 'Sanya Lopez',
+                'password' => Hash::make('1234567890'), // Default password
+                'roles' => ['User'],
+                'google_id' => '000000000000000000002',
             ]
         );
 

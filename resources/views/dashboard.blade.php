@@ -2,37 +2,45 @@
     <div class="flex h-full w-full flex-1 flex-col rounded-xl">
         <div class="grid auto-rows-min md:grid-cols-2 gap-4"> <!-- gap-0 removes space -->
             <!-- Bible Verse Card -->
-            <div x-data="{ show: true }" x-show="show"
-                class="dashboard-card flex items-center justify-center relative p-4 rounded-lg shadow-lg">
+            <div>
+                <livewire:feature-verse />
 
-                <!-- Close button -->
-                <button @click="show = false"
-                    class="absolute top-2 right-2 text-orange-400 opacity-50 hover:opacity-100 hover:text-orange-600 dark:hover:text-orange-300 transition-opacity">
-                    &times;
-                </button>
-
-
-                <!-- Centered Content -->
-                <div id="bible-verse"
-                    class="text-center text-transparent bg-gradient-to-r from-sky-500 via-blue-500 to-orange-500 bg-clip-text font-semibold text-xl dark:from-sky-400 dark:via-blue-400 dark:to-orange-400">
-                    <p>Loading verse...<span></span></p>
-                    <flux:icon.loading />
-                </div>
             </div>
-
-
             <!-- Countdown Card -->
             <div x-data="{ show: true, ...countdown() }" x-init="startCountdown()" x-show="show"
-                class="dashboard-card flex items-center justify-center relative p-4 rounded-lg shadow-lg">
+                class="dashboard-card p-4 rounded-lg shadow-md bg-white dark:bg-gray-800">
+
                 <button @click="show = false"
                     class="absolute top-2 right-2 text-orange-400 opacity-50 hover:opacity-100 hover:text-orange-600 dark:hover:text-orange-300 transition-opacity">
                     &times;
                 </button>
-
+                <h2 class="text-md font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    <flux:icon.clock class="w-5 h-5 inline" /> Classes Open
+                </h2>
                 </button>
-                <div class="flex flex-col items-center justify-center text-center">
-                    <h2 class="text-lg font-semibold text-gray-600 dark:text-gray-300">Classes Open</h2>
-                    <p class="text-3xl font-bold text-orange-400 dark:text-orange-600" x-text="formattedTime"></p>
+                <div x-data="countdown()" x-init="startCountdown()" class="flex flex-col items-center space-y-4">
+                    <div class="flex space-x-4">
+                        <template x-for="(value, index) in formattedTime.split(':')" :key="index">
+                            <div class="flex flex-col items-center">
+                                <div class="relative w-16 h-16">
+                                    <svg class="w-full h-full" viewBox="0 0 100 100">
+                                        <circle class="text-gray-300" stroke-width="10" stroke="currentColor"
+                                            fill="transparent" r="40" cx="50" cy="50" />
+                                        <circle :stroke="['#4a90e2', '#50e3c2', '#f5a623', '#d0021b'][index]"
+                                            stroke-width="10" fill="transparent" r="40" cx="50" cy="50"
+                                            stroke-dasharray="251.2"
+                                            :stroke-dashoffset="251.2 - (value / [30, 24, 60, 60][index] * 251.2)"
+                                            stroke-linecap="round" transform="rotate(-90 50 50)" />
+                                    </svg>
+                                    <span
+                                        class="absolute inset-0 flex items-center justify-center text-lg font-semibold"
+                                        x-text="value"></span>
+                                </div>
+                                <span class="text-sm text-gray-600"
+                                    x-text="['Days', 'Hours', 'Minutes', 'Seconds'][index]"></span>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
 
@@ -44,7 +52,7 @@
                     &times;
                 </button>
 
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                <h2 class="text-md font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     <flux:icon.pin class="w-5 h-5 inline" /> Pinned Ripples
                 </h2>
 
@@ -78,8 +86,8 @@
                 </button>
 
                 <!-- Card Title -->
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                    Top 3 Step Champions 🏅
+                <h2 class="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                    <flux:icon name="award" class="h-5 w-5 inline" />Top 3 Step Champions
                 </h2>
 
                 <!-- Leaderboard List -->
@@ -126,21 +134,6 @@
 
 <!-- Scripts -->
 <script>
-    async function fetchBibleVerse() {
-        try {
-            const response = await fetch('https://beta.ourmanna.com/api/v1/get/?format=json');
-            const data = await response.json();
-            document.getElementById('bible-verse').innerHTML = `
-                <p><strong>${data.verse.details.text}</strong></p>
-                <p>— ${data.verse.details.reference}</p>
-            `;
-        } catch (error) {
-            document.getElementById('bible-verse').innerHTML = '<p>Failed to load verse.</p>';
-            console.error('Error fetching verse:', error);
-        }
-    }
-    fetchBibleVerse();
-
     function countdown() {
         return {
             formattedTime: "00:00:00:00",

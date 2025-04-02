@@ -90,7 +90,9 @@ class AttendanceController extends Controller
     public function index()
 {
     $users = User::all();
-    $attendances = Attendance::with('user')->get(); // Ensure user relationship is loaded
+    $attendances = Attendance::with('user')
+    ->orderBy('created_at','desc')
+    ->get(); // Ensure user relationship is loaded
 
     return view('attendance.index', compact('users', 'attendances'));
 }
