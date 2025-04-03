@@ -13,21 +13,27 @@
             class="w-full border-gray-300 dark:border-gray-700 bg-neutral-50 dark:bg-neutral-600 dark:text-white rounded-lg resize-none"
             placeholder="What's rippling?"></textarea>
 
-        <input type="file" wire:model="file" class="mt-2 w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4
+        {{-- Progress Indicator --}}
+        <div x-data="{ uploading: false, progress: 0 }" x-on:livewire-upload-start="uploading = true"
+            x-on:livewire-upload-finish="uploading = false" x-on:livewire-upload-cancel="uploading = false"
+            x-on:livewire-upload-error="uploading = false"
+            x-on:livewire-upload-progress="progress = $event.detail.progress">
+            {{-- File Input --}}
+            <input type="file" wire:model="file" class="mt-2 w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4
             file:rounded-lg file:border-0 file:text-sm file:font-semibold
             file:bg-blue-50 dark:file:bg-gray-700 file:text-blue-700 dark:file:text-blue-400
             hover:file:bg-blue-100 dark:hover:file:bg-gray-600" />
 
-        {{-- <x-button type="submit" class="mt-2">Post Ripple</x-button> --}}
-        <flux:button size="sm" variant="primary" type="submit" class="mt-2">Post Ripple</flux:button>
+            {{-- <x-button type="submit" class="mt-2">Post Ripple</x-button> --}}
+            <flux:button size="sm" variant="primary" type="submit" class="mt-2">Post Ripple</flux:button>
     </form>
 
 
     <!-- Ripple Feed -->
-    <div class="space-y-4">
+    <div class="space-y-4 mt-2">
         @foreach($ripples->sortByDesc('pinned') as $ripple)
             <div class="p-4 rounded-lg shadow flex items-start gap-2 
-                                                                                                                                                                                                                {{ $ripple->pinned ? 'bg-yellow-50 dark:bg-yellow-200' : 'bg-neutral-100 dark:bg-neutral-700' }}"
+                                                                                                                                                                                                                                                        {{ $ripple->pinned ? 'bg-yellow-50 dark:bg-yellow-200' : 'bg-neutral-100 dark:bg-neutral-700' }}"
                 style="{{ $ripple->pinned ? 'box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); border: 1px solid #cbd5e1;' : '' }}">
 
 
@@ -52,9 +58,9 @@
                         <!-- File input -->
                         <input type="file" wire:model="editingFile"
                             class="mt-2 w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4
-                                                                                                                                                                                                                                                                                                                                                                        file:rounded-lg file:border-0 file:text-sm file:font-semibold
-                                                                                                                                                                                                                                                                                                                                                                        file:bg-blue-50 dark:file:bg-gray-700 file:text-blue-700 dark:file:text-blue-400
-                                                                                                                                                                                                                                                                                                                                                                        hover:file:bg-blue-100 dark:hover:file:bg-gray-600" />
+                                                                                                                    file:rounded-lg file:border-0 file:text-sm file:font-semibold
+                                                                                                                    file:bg-blue-50 dark:file:bg-gray-700 file:text-blue-700 dark:file:text-blue-400
+                                                                                                                    hover:file:bg-blue-100 dark:hover:file:bg-gray-600" />
 
                         <!-- Save & Cancel buttons -->
                         <div class="flex gap-2 mt-2">
@@ -73,20 +79,22 @@
 
                         @if($ripple->file_path)
                             <div class="flex items-center gap-2 mt-1">
-                                <a href="{{ Storage::url($ripple->file_path) }}" target="_blank"
+                                {{-- <a href="{{ Storage::url($ripple->file_path) }}" target="_blank"
                                     class="text-blue-500 dark:text-blue-400 hover:underline flex items-center text-sm">
-                                    <flux:icon.paperclip class="w-4 h-4 inline mr-1" />
-                                    <span class="truncate max-w-[150px] md:max-w-[300px]"
-                                        title="{{ basename($ripple->file_path) }}">
-                                        {{ basename($ripple->file_path) }}
-                                    </span>
-                                </a>
-                                @if($ripple->user_id === auth()->id())
-                                    <button wire:click="deleteAttachment({{ $ripple->id }})"
-                                        class="text-red-500 hover:text-red-600 text-sm font-semibold ml-2">
-                                        <flux:icon.circle-x class="w-5 h-5 inline" /> Delete
-                                    </button>
-                                @endif
+                                    <flux:icon.paperclip class="w-4 h-4 inline mr-1" /> --}}
+                                    <a href="{{ route('ripples.download', $ripple) }}" class="text-blue-500">
+                                        <flux:icon.paperclip class="w-4 h-4 inline mr-1" />
+                                        <span class="truncate max-w-[150px] md:max-w-[300px]"
+                                            title="{{ basename($ripple->file_path) }}">
+                                            {{ basename($ripple->file_path) }}
+                                        </span>
+                                    </a>
+                                    @if($ripple->user_id === auth()->id())
+                                        <button wire:click="deleteAttachment({{ $ripple->id }})"
+                                            class="text-red-500 hover:text-red-600 text-sm font-semibold ml-2">
+                                            <flux:icon.circle-x class="w-5 h-5 inline" /> Delete
+                                        </button>
+                                    @endif
                             </div>
                         @endif
                     @endif

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Step;
+use App\Models\Ripple;
 use Livewire\Volt\Volt;
 use App\Livewire\RippleFeed;
 use Illuminate\Support\Facades\Route;
@@ -22,17 +23,7 @@ Route::get('/', function () {
 //     ->middleware(['auth', 'verified'])
 //     ->name('dashboard');
 Route::get('dashboard', function () {
-    $pinnedRipples = \App\Models\Ripple::where('pinned', true)
-        ->latest()
-        ->take(5)
-        ->get();
-    $topUsers = Step::select('user_id', DB::raw('SUM(steps) as total_steps'))
-        ->with('user')
-        ->groupBy('user_id')
-        ->orderByDesc('total_steps')
-        ->limit(3)
-        ->get();
-    return view('dashboard', ['pinnedRipples' => $pinnedRipples, 'topUsers' => $topUsers]);
+    return view('dashboard');
 })
 ->middleware(['auth', 'verified'])
 ->name('dashboard');
@@ -105,6 +96,14 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/ripple', fn() => view('ripple.index'))
     ->name('ripple')
     ->middleware('auth');
+
+Route::get('/ripples/download/{ripple}', function (Ripple $ripple) {
+        if (auth()->id() !== $ripple->user_id) {
+            abort(403);
+        }
+        
+        return Storage::download($ripple->file_path);
+    })->name('ripples.download')->middleware('auth');
 
 
 /**Steps */

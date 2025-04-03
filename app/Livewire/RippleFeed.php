@@ -34,6 +34,7 @@ public function toggleMenu($rippleId)
 {
     return view('livewire.ripple-feed', [
         'ripples' => Ripple::with('user', 'likes')
+            ->where('parent_id', null)
             ->orderByDesc('pinned') // Pinned at the top
             ->latest() // Latest posts after pinned ones
             ->get(),
@@ -48,8 +49,15 @@ public function postRipple()
         'file' => 'nullable|file|max:10240', // 10MB limit
     ]);
 
-    // $filePath = $this->file ? $this->file->store('ripples', 'public') : null;
-    $filePath = $this->file?->store('ripples', 'public');
+    // $filePath = $this->file?->store('ripples', 'local');
+
+    $filePath = optional($this->file)->storeAs(
+        'ripples', 
+        $this->file?->getClientOriginalName(), 
+        'local'
+    );
+    
+
 
     Ripple::create([
         'user_id' => auth()->id(),
@@ -91,15 +99,20 @@ public function editRipple($rippleId)
 
         // Handle content
         $ripple->content = $this->editingContent;
+        
 
-        // Handle file upload if a new one is provided
         if ($this->editingFile) {
-            if ($ripple->file_path) {
-                Storage::disk('public')->delete($ripple->file_path);
+            // Delete the old file if it exists
+            if ($ripple->file_path && Storage::disk('local')->exists($ripple->file_path)) {
+                dd('file exists!!!');
+                Storage::disk('local')->delete($ripple->file_path);
             }
-            $ripple->file_path = $this->editingFile->store('ripples', 'public');
+    
+            // Store new file with the original name
+            $filePath = $this->editingFile->storeAs('ripples', $this->editingFile->getClientOriginalName(), 'local');
+            $ripple->file_path = $filePath;
         }
-        Log::info($ripple->file_path);
+        // Log::info($ripple->file_path);
         $ripple->save();
 
         // Reset editing state
