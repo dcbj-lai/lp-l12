@@ -19,7 +19,8 @@ return new class extends Migration
             $table->string('password');
             $table->unsignedBigInteger('supervisor_id')->nullable();
             $table->unsignedBigInteger('department_id')->nullable();
-            $table->string('rank')->default('Employee');
+            $table->string('position')->nullable();
+            $table->string('rank')->default('employee');
             $table->boolean('payroll_on')->default(false);
             $table->decimal('monthly_rate', 15, 2)->nullable();
             $table->json('roles')->nullable();

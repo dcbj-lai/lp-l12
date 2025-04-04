@@ -30,6 +30,7 @@ class User extends Authenticatable
         'department_id',
         'package',
         'rank',
+        'position',
     ];
 
     /**
@@ -43,7 +44,7 @@ class User extends Authenticatable
     ];
 
     protected $attributes = [
-        'roles' => '["User"]', // Ensure default role is "User"
+        'roles' => '["user"]', // Ensure default role is "User"
     ];
 
     /**
@@ -94,12 +95,12 @@ public function adjustments()
 
 public function isFinance(): bool
 {
-    return in_array('Finance', $this->roles ?? []);
+    return in_array('finance.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
 }
 
 public function isPNCAdmin(): bool
 {
-    return in_array('PNC-Admin', $this->roles ?? []);
+    return in_array('pnc.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
 }
 
 }

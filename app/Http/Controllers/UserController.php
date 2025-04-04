@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -31,52 +33,67 @@ class UserController extends Controller
 
     }
 
-    public function update(Request $request, User $user)
+public function update(Request $request, User $user)
 {
-    // Validate the incoming data
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-        'supervisor_id' => 'nullable|exists:users,id',
-        'department_id' => 'nullable|exists:departments,id',
-        'roles' => 'nullable|string',
-        'payroll_on' => 'nullable|boolean',
-        'rank' => 'required|string|in:Employee,Manager,Admin',
-        'monthly_rate' => 'nullable|string',
-    ]);
+    try {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'supervisor_id' => 'nullable|exists:users,id',
+            'department_id' => 'nullable|exists:departments,id',
+            'roles' => 'nullable|string',
+            'payroll_on' => 'nullable|boolean',
+            'rank' => 'nullable|string|in:employee,manager',
+            'position' => 'nullable|string',
+            'monthly_rate' => 'nullable|string',
+        ]);
 
-    // Decode roles and ensure it's an array
-    $roles = json_decode($validated['roles'], true) ?? [];
+        // Decode roles and ensure it's an array
+        $roles = json_decode($validated['roles'], true) ?? [];
 
-    // Ensure 'User' role is always present
-    if (!in_array('User', $roles)) {
-        $roles[] = 'User';
+        // Ensure 'User' role is always present
+        if (!in_array('user', $roles)) {
+            $roles[] = 'user';
+        }
+
+        // Reassign roles back into the validated data
+        $validated['roles'] = $roles;
+
+        // Clean and format the monthly rate (optional but nice)
+        $validated['monthly_rate'] = $validated['monthly_rate'] 
+            ? str_replace(',', '', $validated['monthly_rate']) 
+            : null;
+
+        // Update the user with validated data
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'supervisor_id' => $validated['supervisor_id'],
+            'department_id' => $validated['department_id'],
+            'roles' => $validated['roles'],
+            'payroll_on' => $validated['payroll_on'] ?? false,
+            'rank' => $validated['rank'],
+            'position' => $validated['position'],
+            'monthly_rate' => $validated['monthly_rate'],
+        ]);
+
+        // Flash success and redirect
+        return redirect()->route('users.index')->with('success', 'User updated successfully!');
+
+    } catch (ValidationException $e) {
+        // Flash error and redirect back with input
+        return redirect()->back()
+            ->withErrors($e->validator)
+            ->withInput()
+            ->with('error', 'Please correct the errors and try again.');
     }
-
-    // Reassign roles back into the validated data
-    $validated['roles'] = $roles;
-
-    // Clean and format the monthly rate (optional but nice)
-    $validated['monthly_rate'] = $validated['monthly_rate'] 
-        ? str_replace(',', '', $validated['monthly_rate']) 
-        : null;
-
-    // Update the user with validated data
-    $user->update([
-        'name' => $validated['name'],
-        'email' => $validated['email'],
-        'supervisor_id' => $validated['supervisor_id'],
-        'department_id' => $validated['department_id'],
-        'roles' => $validated['roles'],
-        'payroll_on' => $validated['payroll_on'] ?? false,
-
-        'rank' => $validated['rank'],
-        'monthly_rate' => $validated['monthly_rate'],
-    ]);
-
-    // Flash success and redirect
-    return redirect()->route('users.index')->with('success', 'User updated successfully!');
 }
+
 
 }
 

@@ -66,9 +66,9 @@
                     <!-- Existing Roles as Dismissible Banners -->
                     <div class="flex flex-wrap gap-2 mb-2">
                         @foreach ($user->roles ?? [] as $role)
-                            <div class="bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-3 py-1 flex items-center gap-2">
+                            <div class="bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 flex items-center gap-2 rounded-md text-xs">
                                 <span>{{ $role }}</span>
-                                @if ($role !== 'User')
+                                @if ($role !== 'user')
                                     <button type="button" onclick="removeRole(this, '{{ $role }}')">
                                         <flux:icon.x class="size-4 stroke-amber-600 hover:stroke-amber-400 inline" />
                                     </button>
@@ -79,11 +79,14 @@
         
                     <!-- Add New Role Dropdown -->
                     <div class="flex gap-2">
-                        <select id="new-role" class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white">
+                        <select id="new-role" class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white text-md w-full">
                             <option value="" disabled selected>Add role...</option>
                             <option value="PNC">PNC</option>
-                            <option value="Finance">Finance</option>
-                            <option value="Admin">Admin</option>
+                            <option value="finance.staff">Finance Staff</option>
+                            <option value="finance.admin">Finance Admin</option>
+                            <option value="pnc.staff">P&C Staff</option>
+                            <option value="pnc.admin">P&C Admin</option>
+                            <option value="sys.admin">System Admin</option>
                         </select>
                         <flux:button type="button" size="sm" variant="primary" onclick="addRole()">Add Role</flux:button>
                     </div>
@@ -92,44 +95,55 @@
                     <input type="hidden" name="roles" id="roles" value="{{ json_encode($user->roles ?? []) }}" />
                 </div>
         
-                <!-- Payroll On Checkbox -->
+                <!-- Title -->
                 <div>
-                    <label for="payroll_on" class="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        <input type="checkbox" id="payroll_on" name="payroll_on" value="1"
-                            {{ old('payroll_on', $user->payroll_on) ? 'checked' : '' }}
-                            class="rounded border-zinc-300 dark:bg-zinc-700 dark:text-white" />
-                        Include in Payroll
-                    </label>
+                    <label for="position" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Position</label>
+                    <input type="text" id="position" name="position" value="{{ old('position', $user->position) }}"
+                        class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
                 </div>
-                
         
                 <!-- Rank Input -->
                 <div>
                     <label for="rank" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Rank</label>
                     <select id="rank" name="rank" required
                         class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full">
-                        <option value="Employee" {{ old('rank', $user->rank) === 'Employee' ? 'selected' : '' }}>Employee</option>
-                        <option value="Manager" {{ old('rank', $user->rank) === 'Manager' ? 'selected' : '' }}>Manager</option>
-                        <option value="Admin" {{ old('rank', $user->rank) === 'Admin' ? 'selected' : '' }}>Admin</option>
+                        <option value="employee" {{ old('rank', $user->rank) === 'employee' ? 'selected' : '' }}>Employee</option>
+                        <option value="manager" {{ old('rank', $user->rank) === 'manager' ? 'selected' : '' }}>Manager</option>
                     </select>
                 </div>
                 
         
-                <!-- Conditional Monthly Rate (Only for Finance Users) -->
-                @if(auth()->user()->isFinance())
-                    <div>
-                        <label for="monthly_rate" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Monthly Rate</label>
-                        <input type="text" id="monthly_rate" name="monthly_rate"
-                            value="{{ number_format($user->monthly_rate, 2) ?? '' }}"
-                            class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-sm"
-                            placeholder="₱0.00" />
+                <div class="flex flex-col md:flex-row gap-4">
+                    <!-- Conditional Monthly Rate (Only for Finance Users) -->
+                    @if(auth()->user()->isFinance())
+                        <div class="flex-1">
+                            <label for="monthly_rate" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                Monthly Rate
+                            </label>
+                            <input type="text" id="monthly_rate" name="monthly_rate"
+                                value="{{ number_format($user->monthly_rate, 2) ?? '' }}"
+                                class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-sm"
+                                placeholder="₱0.00" />
+                        </div>
+                    
+                
+                    <!-- Payroll On Checkbox -->
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="payroll_on" name="payroll_on" value="1"
+                            {{ old('payroll_on', $user->payroll_on) ? 'checked' : '' }}
+                            class="rounded border-zinc-300 dark:bg-zinc-700 dark:text-white" />
+                        <label for="payroll_on" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Include in Payroll
+                        </label>
                     </div>
-                @endif
+                    @endif
+                </div>
+                
             </div>
         
             <!-- Full Width Submit Button -->
             <div class="col-span-1 md:col-span-2 flex justify-end">
-                <flux:button type="submit" variant="primary">Save Changes</flux:button>
+                <flux:button type="submit" variant="primary" size="sm">Save Changes</flux:button>
             </div>
         </form>
         
@@ -282,7 +296,7 @@
                 roles.push(newRole);
 
                 const roleContainer = document.createElement('div');
-                roleContainer.className = "bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-3 py-1 rounded-full flex items-center gap-2";
+                roleContainer.className = "bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 rounded-full flex items-center gap-2 text-xs";
                 roleContainer.innerHTML = `<span>${newRole}</span>
                     <button type="button" onclick="removeRole(this, '${newRole}')"><flux:icon.x class="size-4 stroke-amber-600 hover:stroke-amber-400 inline" /></button>`;
                 document.querySelector('form div.flex.flex-wrap').appendChild(roleContainer);

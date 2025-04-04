@@ -11,6 +11,7 @@
         $user = Auth::user();
         $isPNC = in_array('PNC', $user->roles ?? []);
         $isFinance = in_array('Finance', $user->roles ?? []);
+        $isSuperAdmin = in_array('super.admin', $user->roles ?? []);
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -32,7 +33,7 @@
                     <flux:navlist.item href="{{route('steps.index')}}" icon="trophy">Leaderboard</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist.group>
-            @if ($isPNC)
+            @if ($isPNC || $isSuperAdmin)
                 <flux:navlist.group heading="P&C" expandable :expanded="false">
                     <flux:navlist.item href="{{route('users.index')}}" icon="users">Users</flux:navlist.item>
                     <flux:navlist.item href="{{ route('attendance.index') }}" icon="user-check">Attendance
@@ -40,7 +41,7 @@
                     <flux:navlist.item href="#" icon="file-chart-column-increasing">Reports</flux:navlist.item>
                 </flux:navlist.group>
             @endif
-            @if ($isFinance)
+            @if ($isFinance || $isSuperAdmin)
                 <flux:navlist.group heading="Finance" expandable :expanded="false">
                     <flux:navlist.item href="{{route('payouts.index')}}" icon="hand-coins">Payroll
                     </flux:navlist.item>
