@@ -1,6 +1,7 @@
 <div x-data="{ show: true, menuOpen: false }" x-show="show" {{--
     class="dashboard-card p-4 rounded-lg shadow-md bg-white dark:bg-gray-800"> --}}
-    class="dashboard-card p-4 rounded-lg shadow-md bg-white dark:bg-gray-800 flex flex-col justify-center">
+    class="dashboard-card p-4 rounded-lg shadow-md bg-white dark:bg-gray-800 flex flex-col justify-center
+    aspect-square">
     @can('is-admin')
         <!-- Ellipsis Dropdown Button -->
         <div class="absolute top-2 right-2">

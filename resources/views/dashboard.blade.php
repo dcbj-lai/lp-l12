@@ -1,17 +1,10 @@
 <x-layouts.app title="Dashboard">
     <div class="flex h-full w-full flex-1 flex-col rounded-xl">
-        <div class="grid auto-rows-min md:grid-cols-2 gap-4">
+        <div class="grid auto-rows-min md:grid-cols-4 gap-4">
             <!-- Bible Verse Card -->
-
             <livewire:feature-verse />
-
-
             <!-- Countdown Card -->
             <livewire:countdown-card />
-
-
-
-
         </div>
     </div>
 </x-layouts.app>
