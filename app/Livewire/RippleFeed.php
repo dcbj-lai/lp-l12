@@ -161,7 +161,7 @@ public function togglePin($rippleId)
 {
     $ripple = Ripple::findOrFail($rippleId);
     
-    if (auth()->user()->hasAnyRole(['Admin', 'PNC'])) {
+    if (auth()->user()->hasAnyRole(['pnc.admin','pnc.staff'])) {
         // dd('You are authorized to pin/unpin ripples');
         $ripple->pinned = !$ripple->pinned;
         $ripple->save();
@@ -185,7 +185,7 @@ public function deleteAttachment($rippleId)
     $ripple = Ripple::findOrFail($rippleId);
 
     if ($ripple->file_path && $ripple->user_id === auth()->id()) {
-        Storage::disk('public')->delete($ripple->file_path);
+        Storage::disk('local')->delete($ripple->file_path);
 
         $ripple->update(['file_path' => null]);
 

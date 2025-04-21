@@ -9,8 +9,8 @@
 <body class="min-h-screen bg-white dark:bg-zinc-800">
     @php
         $user = Auth::user();
-        $isPNC = in_array('PNC', $user->roles ?? []);
-        $isFinance = in_array('Finance', $user->roles ?? []);
+        $isPNC = in_array('pnc.staff', $user->roles ?? []);
+        $isFinance = in_array('finance.admin', $user->roles ?? []);
         $isSuperAdmin = in_array('super.admin', $user->roles ?? []);
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">

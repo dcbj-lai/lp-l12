@@ -1,7 +1,10 @@
 <div class="space-y-4 p-4 max-w-md mx-auto sm:max-w-2xl md:max-w-4xl">
     @php
         $user = Auth::user();
-        $isPNC = in_array('PNC', $user->roles ?? []);
+        $isPNC = in_array('super.admin', $user->roles ?? []) ||
+            collect($user->roles ?? [])->contains(function ($role) {
+                return preg_match('/^pnc\./', $role);
+            });
     @endphp
 
     <!-- Notification -->
@@ -33,7 +36,7 @@
     <div class="space-y-4 mt-2">
         @foreach($ripples->sortByDesc('pinned') as $ripple)
             <div class="p-4 rounded-lg shadow flex items-start gap-2 
-                                                                                                                                                                                                                                                        {{ $ripple->pinned ? 'bg-yellow-50 dark:bg-yellow-200' : 'bg-neutral-100 dark:bg-neutral-700' }}"
+                                                                                                                                                                                                                                                                                    {{ $ripple->pinned ? 'bg-yellow-50 dark:bg-yellow-200' : 'bg-neutral-100 dark:bg-neutral-700' }}"
                 style="{{ $ripple->pinned ? 'box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); border: 1px solid #cbd5e1;' : '' }}">
 
 
@@ -58,9 +61,9 @@
                         <!-- File input -->
                         <input type="file" wire:model="editingFile"
                             class="mt-2 w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4
-                                                                                                                    file:rounded-lg file:border-0 file:text-sm file:font-semibold
-                                                                                                                    file:bg-blue-50 dark:file:bg-gray-700 file:text-blue-700 dark:file:text-blue-400
-                                                                                                                    hover:file:bg-blue-100 dark:hover:file:bg-gray-600" />
+                                                                                                                                                                            file:rounded-lg file:border-0 file:text-sm file:font-semibold
+                                                                                                                                                                            file:bg-blue-50 dark:file:bg-gray-700 file:text-blue-700 dark:file:text-blue-400
+                                                                                                                                                                            hover:file:bg-blue-100 dark:hover:file:bg-gray-600" />
 
                         <!-- Save & Cancel buttons -->
                         <div class="flex gap-2 mt-2">

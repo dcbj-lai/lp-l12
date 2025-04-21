@@ -81,7 +81,6 @@
                     <div class="flex gap-2">
                         <select id="new-role" class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white text-md w-full">
                             <option value="" disabled selected>Add role...</option>
-                            <option value="PNC">PNC</option>
                             <option value="finance.staff">Finance Staff</option>
                             <option value="finance.admin">Finance Admin</option>
                             <option value="pnc.staff">P&C Staff</option>
@@ -208,7 +207,7 @@
 
 
                             <!-- Submit Button -->
-                            <flux:button type="submit" variant="primary" class="mt-4">
+                            <flux:button size="sm" type="submit" variant="primary" class="mt-4">
                                 Add Adjustment
                             </flux:button>
                         </form>
@@ -248,7 +247,7 @@
                                     <option value="ClearAll" class="text-red-600">Clear All</option>
                                 </select>
 
-                                <flux:button type="submit" class="mt-2" variant="primary" icon="plus">Apply</flux:button>
+                                <flux:button size="sm" type="submit" class="mt-2" variant="primary" icon="plus">Apply</flux:button>
                             </form>
                         </div>
 

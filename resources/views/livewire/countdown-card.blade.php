@@ -17,9 +17,11 @@
                             <circle class="text-gray-300" stroke-width="6" stroke="currentColor" fill="transparent"
                                 r="40" cx="50" cy="50" />
                             <circle :stroke="['#4a90e2', '#50e3c2', '#f5a623', '#d0021b'][index]" stroke-width="6"
-                                fill="transparent" r="40" cx="50" cy="50" stroke-dasharray="251.2"
-                                :stroke-dashoffset="251.2 - (value / [30, 24, 60, 60][index] * 251.2)"
-                                stroke-linecap="round" transform="rotate(-90 50 50)" />
+                                fill="transparent" r="40" cx="50" cy="50" stroke-dasharray="251.2" :stroke-dashoffset="251.2 - (
+                                    index == 0
+                                        ? progressFromStart * 251.2
+                                        : (value / progressLimits[index]) * 251.2
+                                    )" stroke-linecap="round" transform="rotate(-90 50 50)" />
                         </svg>
                         <span class="absolute inset-0 flex items-center justify-center text-lg font-semibold"
                             x-text="value"></span>
@@ -30,39 +32,56 @@
             </template>
         </div>
     </div>
-</div>
 
-<script>
-    function countdown() {
-        return {
-            formattedTime: "00:00:00:00",
-            startCountdown() {
-                const targetDate = new Date('2025-08-04T00:00:00');
+    <script>
+        function countdown() {
+            return {
+                formattedTime: "00:00:00:00",
+                progressLimits: [1, 24, 60, 60],
+                progressFromStart: 0, // value from 0 to 1
 
-                const updateCountdown = () => {
-                    const now = new Date();
-                    const diffTime = targetDate - now;
+                startCountdown() {
+                    const startDate = new Date('2025-01-01T00:00:00');
+                    const targetDate = new Date('2025-08-04T00:00:00');
 
-                    if (diffTime <= 0) {
-                        this.formattedTime = "00:00:00:00";
-                        return;
-                    }
+                    const totalDuration = targetDate - startDate;
 
-                    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
+                    const updateCountdown = () => {
+                        const now = new Date();
+                        const diffTime = targetDate - now;
 
-                    this.formattedTime = `${String(days).padStart(2, '0')}:` +
-                        `${String(hours).padStart(2, '0')}:` +
-                        `${String(minutes).padStart(2, '0')}:` +
-                        `${String(seconds).padStart(2, '0')}`;
-                };
+                        if (diffTime <= 0) {
+                            this.formattedTime = "00:00:00:00";
+                            this.progressFromStart = 1;
+                            return;
+                        }
 
-                updateCountdown();
-                setInterval(updateCountdown, 1000);
-            }
-        };
-    }
-</script>
+                        const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
+
+                        // Calculate how far we've come since Jan 1
+                        const elapsed = now - startDate;
+                        this.progressFromStart = Math.min(Math.max(elapsed / totalDuration, 0), 1); // clamp 0 to 1
+
+                        // Update the days limit with actual total days left
+                        this.progressLimits[0] = days;
+
+                        this.formattedTime =
+                            `${String(days).padStart(2, '0')}:` +
+                            `${String(hours).padStart(2, '0')}:` +
+                            `${String(minutes).padStart(2, '0')}:` +
+                            `${String(seconds).padStart(2, '0')}`;
+                    };
+
+                    updateCountdown();
+                    setInterval(updateCountdown, 1000);
+                }
+            };
+        }
+    </script>
+
+
+
 </div>
