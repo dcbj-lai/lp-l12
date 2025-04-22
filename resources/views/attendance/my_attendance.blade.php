@@ -82,7 +82,7 @@
                             </tr>
                         </thead>
                         <tbody class="text-gray-800 dark:text-gray-300">
-                            @foreach ($attendances as $attendance)
+                            @forelse ($attendances as $attendance)
                                                         @php
                                                             $remarkColor = match ($attendance->remarks) {
                                                                 'Early check-in' => 'text-blue-500 dark:text-blue-400 font-semibold',
@@ -129,7 +129,13 @@
                                                                 {{ $attendance->updated_at->timezone('Asia/Manila')->format('Y-m-d h:i A') }}
                                                             </td>
                                                         </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center px-4 py-6 text-gray-500 dark:text-gray-400">
+                                        No attendance records found.
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
 

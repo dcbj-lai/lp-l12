@@ -84,6 +84,14 @@
                                 <td class="border px-4 py-2" x-text="attendance.hours_worked"></td>
                             </tr>
                         </template>
+                        <template x-if="filteredAttendances().length === 0">
+                            <tr>
+                                <td colspan="7" class="text-center text-gray-500 py-4 italic">
+                                    No attendance records found.
+                                </td>
+                            </tr>
+                        </template>
+                        
                     </tbody>
                     
                 </table>
