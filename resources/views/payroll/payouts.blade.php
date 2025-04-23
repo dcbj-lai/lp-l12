@@ -37,9 +37,9 @@
                             <td class="border px-4 py-2 dark:text-gray-300">
                                 <span
                                     class="px-2 py-1 text-xs font-medium rounded
-                                                                    @if($payout->status === 'pending') bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200
-                                                                    @elseif($payout->status === 'dispatched') bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200
-                                                                    @else bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200 @endif">
+                                                                        @if($payout->status === 'pending') bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200
+                                                                        @elseif($payout->status === 'dispatched') bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200
+                                                                        @else bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200 @endif">
                                     {{ ucfirst($payout->status) }}
                                 </span>
                             </td>
@@ -75,7 +75,7 @@
                         <!-- No Payouts Message -->
                         <tr>
                             <td colspan="7" class="text-center py-6 text-gray-500 dark:text-gray-400 italic">
-                                No payouts yet — time to generate your first one!
+                                No payouts records found.
                             </td>
                         </tr>
                     @endforelse
