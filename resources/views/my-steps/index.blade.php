@@ -2,8 +2,8 @@
     <div class="max-w-4xl mx-auto py-10 px-6 space-y-6 text-gray-800 dark:text-gray-200">
 
         {{-- Page Title --}}
-        <h1 class="text-4xl font-bold text-center mb-6 text-gray-700 dark:text-gray-300">
-            <flux:icon name="target" class="w-10 h-10 inline-block stroke-amber-600" /> My Daily Steps Log
+        <h1 class="text-lg font-bold text-center mb-6 text-gray-700 dark:text-gray-300">
+            <flux:icon name="target" class="w-8 h-8 inline-block stroke-amber-600" /> My Daily Steps Log
         </h1>
 
         {{-- Steps Log Form --}}
@@ -60,8 +60,9 @@
 
         {{-- Fun Motivational Quote --}}
         <div class="text-center mt-6">
-            <p class="text-lg italic text-gray-500 dark:text-gray-300">
-                "Every step you take brings you closer to a healthier you!" 🥇
+            <p class="text-lg italic text-gray-500 dark:text-gray-300 text-xs">
+                "I press on toward the goal to win the prize for which God has called me heavenward in Christ Jesus" -
+                Phil 3:14
             </p>
         </div>
 

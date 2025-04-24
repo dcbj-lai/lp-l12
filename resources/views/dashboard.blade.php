@@ -5,6 +5,8 @@
             <livewire:feature-verse />
             <!-- Countdown Card -->
             <livewire:countdown-card />
+            <livewire:steps-leaderboard />
+
         </div>
     </div>
 </x-layouts.app>

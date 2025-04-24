@@ -114,7 +114,7 @@
         
                 <div class="flex flex-col md:flex-row gap-4">
                     <!-- Conditional Monthly Rate (Only for Finance Users) -->
-                    @if(auth()->user()->isFinance())
+                    @if(auth()->user()->isFinanceAdmin())
                         <div class="flex-1">
                             <label for="monthly_rate" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                                 Monthly Rate
@@ -151,7 +151,7 @@
 
 
         {{-- Finance only area for pay adjustments --}}
-        @if(auth()->user()->isFinance())
+        @if(auth()->user()->isFinanceAdmin())
             <!-- Adjustments Section -->
             <div class="mt-8 p-4 border-t border-zinc-300 dark:border-zinc-600">
                 <h2 class="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-2">Pay Scheme</h2>

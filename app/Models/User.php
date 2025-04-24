@@ -93,7 +93,7 @@ public function adjustments()
 }
 
 
-public function isFinance(): bool
+public function isFinanceAdmin(): bool
 {
     return in_array('finance.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
 }
