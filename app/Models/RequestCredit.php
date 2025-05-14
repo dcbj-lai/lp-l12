@@ -5,16 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class RippleLike extends Model
+class RequestCredit extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'ripple_id'];
-
-    public function ripple()
-    {
-        return $this->belongsTo(Ripple::class);
-    }
+    protected $fillable = [
+        'user_id',
+        'pto',
+        'wfh',
+        'offset',
+    ];
 
     public function user()
     {

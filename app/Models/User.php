@@ -103,4 +103,20 @@ public function isPNCAdmin(): bool
     return in_array('pnc.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
 }
 
+public function supervisor()
+{
+    return $this->belongsTo(User::class, 'supervisor_id');
+}
+
+public function requestCredit()
+{
+    return $this->hasOne(RequestCredit::class);
+}
+
+public function isManager()
+{
+    return $this->rank==='manager';
+}
+
+
 }

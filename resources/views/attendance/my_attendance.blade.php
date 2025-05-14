@@ -83,52 +83,52 @@
                         </thead>
                         <tbody class="text-gray-800 dark:text-gray-300">
                             @forelse ($attendances as $attendance)
-                                                        @php
-                                                            $remarkColor = match ($attendance->remarks) {
-                                                                'Early check-in' => 'text-blue-500 dark:text-blue-400 font-semibold',
-                                                                'Late' => 'text-red-500 dark:text-red-400 font-semibold',
-                                                                'On Time' => 'text-green-500 dark:text-green-400 font-semibold',
-                                                                'Absent' => 'text-gray-500 dark:text-gray-400 font-semibold',
-                                                                'Undertime' => 'text-yellow-500 dark:text-yellow-400 font-semibold',
-                                                                default => 'text-black dark:text-white'
-                                                            };
-                                                            $officialTimeIn = new DateTime(config('app.official_time_in'));
-                                                            $checkInTime = new DateTime($attendance->check_in);
-                                                            $remarkCheckin = $attendance->check_in
-                                                                ? ($checkInTime->format('H:i:s') <= $officialTimeIn->format('H:i:s')
-                                                                    ? 'text-green-500 dark:text-green-400 font-semibold'
-                                                                    : 'text-red-500 dark:text-red-400 font-semibold')
-                                                                : 'text-black dark:text-white font-semibold';
-                                                        @endphp
+                                @php
+                                    $remarkColor = match ($attendance->remarks) {
+                                        'Early check-in' => 'text-blue-500 dark:text-blue-400 font-semibold',
+                                        'Late' => 'text-red-500 dark:text-red-400 font-semibold',
+                                        'On Time' => 'text-green-500 dark:text-green-400 font-semibold',
+                                        'Absent' => 'text-gray-500 dark:text-gray-400 font-semibold',
+                                        'Undertime' => 'text-yellow-500 dark:text-yellow-400 font-semibold',
+                                        default => 'text-black dark:text-white'
+                                    };
+                                    $officialTimeIn = new DateTime(config('app.official_time_in'));
+                                    $checkInTime = new DateTime($attendance->check_in);
+                                    $remarkCheckin = $attendance->check_in
+                                        ? ($checkInTime->format('H:i:s') <= $officialTimeIn->format('H:i:s')
+                                            ? 'text-green-500 dark:text-green-400 font-semibold'
+                                            : 'text-red-500 dark:text-red-400 font-semibold')
+                                        : 'text-black dark:text-white font-semibold';
+                                @endphp
 
-                                                        <tr class="border-b">
-                                                            <td class="border  px-4 py-2 whitespace-nowrap">
-                                                                {{ $attendance->date }}
-                                                            </td>
-                                                            <td class="border  px-4 py-2 whitespace-nowrap">
-                                                                <span
-                                                                    class="{{$remarkCheckin}}">{{ $attendance->check_in ? \Carbon\Carbon::parse($attendance->check_in)->timezone('Asia/Manila')->format('h:i A') : '—' }}
-                                                                </span>
-                                                            </td>
-                                                            <td class="border  px-4 py-2 whitespace-nowrap">
-                                                                {{ $attendance->check_out ? \Carbon\Carbon::parse($attendance->check_out)->timezone('Asia/Manila')->format('h:i A') : '—' }}
-                                                            </td>
-                                                            <td class="border  px-4 py-2 whitespace-nowrap">
-                                                                {{ $attendance->status }}
-                                                            </td>
-                                                            <td class="border  px-4 py-2 whitespace-nowrap">
-                                                                {{ $attendance->remarks ?? '—' }}
-                                                            </td>
-                                                            <td class="border  px-4 py-2 whitespace-nowrap">
-                                                                {{ $attendance->hours_worked ? number_format($attendance->hours_worked, 2) . ' hrs' : '—' }}
-                                                            </td>
-                                                            <td class="border  px-4 py-2 whitespace-nowrap">
-                                                                {{ $attendance->created_at->timezone('Asia/Manila')->format('Y-m-d h:i A') }}
-                                                            </td>
-                                                            <td class="border  px-4 py-2 whitespace-nowrap">
-                                                                {{ $attendance->updated_at->timezone('Asia/Manila')->format('Y-m-d h:i A') }}
-                                                            </td>
-                                                        </tr>
+                                <tr class="border-b">
+                                    <td class="border  px-4 py-2 whitespace-nowrap">
+                                        {{ $attendance->date }}
+                                    </td>
+                                    <td class="border  px-4 py-2 whitespace-nowrap">
+                                        <span
+                                            class="{{$remarkCheckin}}">{{ $attendance->check_in ? \Carbon\Carbon::parse($attendance->check_in)->timezone('Asia/Manila')->format('h:i A') : '—' }}
+                                        </span>
+                                    </td>
+                                    <td class="border  px-4 py-2 whitespace-nowrap">
+                                        {{ $attendance->check_out ? \Carbon\Carbon::parse($attendance->check_out)->timezone('Asia/Manila')->format('h:i A') : '—' }}
+                                    </td>
+                                    <td class="border  px-4 py-2 whitespace-nowrap">
+                                        {{ $attendance->status }}
+                                    </td>
+                                    <td class="border  px-4 py-2 whitespace-nowrap">
+                                        {{ $attendance->remarks ?? '—' }}
+                                    </td>
+                                    <td class="border  px-4 py-2 whitespace-nowrap">
+                                        {{ $attendance->hours_worked ? number_format($attendance->hours_worked, 2) . ' hrs' : '—' }}
+                                    </td>
+                                    <td class="border  px-4 py-2 whitespace-nowrap">
+                                        {{ $attendance->created_at->timezone('Asia/Manila')->format('Y-m-d h:i A') }}
+                                    </td>
+                                    <td class="border  px-4 py-2 whitespace-nowrap">
+                                        {{ $attendance->updated_at->timezone('Asia/Manila')->format('Y-m-d h:i A') }}
+                                    </td>
+                                </tr>
                             @empty
                                 <tr>
                                     <td colspan="8" class="text-center px-4 py-6 text-gray-500 dark:text-gray-400">
@@ -151,7 +151,7 @@
 
     <!-- Check-in Confirmation Modal -->
     <x-modal name="checkInModal">
-        <div class="p-6 bg-blue-50 dark:bg-gray-900 dark:text-gray-200 rounded-lg">
+        <div class="p-6 bg-blue-50 dark:bg-neutral-700 dark:text-gray-200 rounded-lg">
             <h2 class="text-lg font-semibold mb-4">Check-in Confirmation</h2>
             <p class="text-gray-600 dark:text-gray-400 mb-6">Please confirm check-in.</p>
 
@@ -173,7 +173,7 @@
 
     <!-- Check-out Confirmation Modal -->
     <x-modal name="checkOutModal">
-        <div class="p-6 bg-blue-50 dark:bg-gray-900 dark:text-gray-200 rounded-lg">
+        <div class="p-6 bg-blue-50 dark:bg-neutral-700 dark:text-gray-200 rounded-lg">
             <h2 class="text-lg font-semibold mb-4">Check-out Confirmation</h2>
             <p class="text-gray-600 dark:text-gray-400 mb-6">Please confirm check-out.</p>
 

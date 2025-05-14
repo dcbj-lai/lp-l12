@@ -12,6 +12,7 @@
         $isPNC = in_array('pnc.staff', $user->roles ?? []);
         $isFinanceAdmin = in_array('finance.admin', $user->roles ?? []);
         $isSuperAdmin = in_array('super.admin', $user->roles ?? []);
+        $isManager = $user->isManager();
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -25,9 +26,9 @@
             <flux:navlist.group heading="My Portal" expandable :expanded="false">
                 <flux:navlist.item href="{{route('attendance.my_attendance')}}" icon="user-check">Attendance
                 </flux:navlist.item>
-                <flux:navlist.item href="#" icon="calendar">Leaves</flux:navlist.item>
+                <flux:navlist.item href="{{route('my-requests')}}" icon="calendar">Requests</flux:navlist.item>
                 <flux:navlist.item href="{{route('payslips.index')}}" icon="banknotes">Payslips</flux:navlist.item>
-                <flux:navlist.item href="{{route('ripple')}}" icon="ripple">Life Ripples</flux:navlist.item>
+                <flux:navlist.item href="#" icon="bot-message-square">Notifications</flux:navlist.item>
                 <flux:navlist.group heading="Life Steps">
                     <flux:navlist.item href="{{route('my-steps.index')}}" icon="footprints">My Steps</flux:navlist.item>
                     <flux:navlist.item href="{{route('steps.index')}}" icon="trophy">Leaderboard</flux:navlist.item>
@@ -38,7 +39,8 @@
                     <flux:navlist.item href="{{route('users.index')}}" icon="users">Users</flux:navlist.item>
                     <flux:navlist.item href="{{ route('attendance.index') }}" icon="user-check">Attendance
                     </flux:navlist.item>
-                    <flux:navlist.item href="#" icon="file-chart-column-increasing">Reports</flux:navlist.item>
+                    <flux:navlist.item href="{{ route('requests.manage') }}" icon="bookmark-check">Approve Requests
+                    </flux:navlist.item>
                 </flux:navlist.group>
             @endif
             @if ($isFinanceAdmin || $isSuperAdmin)
@@ -46,6 +48,12 @@
                     <flux:navlist.item href="{{route('payouts.index')}}" icon="hand-coins">Payroll
                     </flux:navlist.item>
                     <flux:navlist.item href="#" icon="file-chart-column-increasing">Reports</flux:navlist.item>
+                </flux:navlist.group>
+            @endif
+            @if ($isManager)
+                <flux:navlist.group heading="My Approvals" expandable :expanded="false">
+                    <flux:navlist.item href="{{ route('requests.manage') }}" icon="bookmark-check">Approve Requests
+                    </flux:navlist.item>
                 </flux:navlist.group>
             @endif
 

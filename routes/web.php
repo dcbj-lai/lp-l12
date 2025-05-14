@@ -1,5 +1,6 @@
 <?php
 
+use App\Mail\RequestMade;
 use App\Models\Step;
 use App\Models\Ripple;
 use Livewire\Volt\Volt;
@@ -11,6 +12,7 @@ use App\Livewire\Attendance\MyAttendance;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\AttendanceController;
@@ -93,19 +95,6 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-Route::get('/ripple', fn() => view('ripple.index'))
-    ->name('ripple')
-    ->middleware('auth');
-
-Route::get('/ripples/download/{ripple}', function (Ripple $ripple) {
-        if (auth()->id() !== $ripple->user_id) {
-            abort(403);
-        }
-        
-        return Storage::download($ripple->file_path);
-    })->name('ripples.download')->middleware('auth');
-
-
 /**Steps */
 
 
@@ -122,6 +111,21 @@ Route::get('/steps', fn() => view('steps.index'))
 // About
 
 Route::get('/about', [UtilityController::class, 'about'])->name('about');
+
+// Requests
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/my-requests', [RequestController::class, 'index'])->name('my-requests');
+    Route::get('/requests/create', [RequestController::class, 'create'])->name('requests.create');
+    Route::post('/requests', [RequestController::class, 'store'])->name('requests.store');
+});
+
+Route::middleware(['auth', 'can:is-manager-or-hr'])->group(function () {
+    Route::get('/requests/manage', [RequestController::class, 'manage'])->name('requests.manage');
+    Route::post('/requests/{request}/process', [RequestController::class, 'process'])->name('requests.process');
+
+    Route::get('/requests/{request}', [RequestController::class, 'show'])->name('requests.show');
+});
 
 
 require __DIR__.'/auth.php';

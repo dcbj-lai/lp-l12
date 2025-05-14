@@ -1,16 +1,15 @@
 <x-layouts.app title="Payouts">
     <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 space-y-4">
-        <h1 class="text-2xl font-semibold mb-4 dark:text-gray-200">Payouts</h1>
-        <!-- Generate Payout Button -->
-        <div class="mb-4 flex justify-center sm:justify-start">
+        <div class="flex items-center justify-between mt-4 px-4 sm:px-6 lg:px-8">
+            <h1 class="text-2xl font-semibold mb-4 dark:text-gray-200">Payouts</h1>
             <flux:modal.trigger name="generate-payout">
                 <flux:button class="w-full sm:w-auto text-center">+ Generate Payout</flux:button>
             </flux:modal.trigger>
         </div>
 
         <div class="overflow-x-auto shadow border">
-            <table class="w-full table-auto border-collapse">
-                <thead class="bg-gray-100 dark:bg-gray-700 text-xs md:text-sm">
+            <table class="w-full table-auto border-collapse border-gray-200 dark:border-gray-700">
+                <thead class="bg-gray-100 dark:bg-gray-800 text-xs md:text-sm">
                     <tr>
                         <th class="border px-2 py-2 md:px-4 md:py-2 text-gray-600 dark:text-gray-300">Cycle</th>
                         <th class="border px-2 py-2 md:px-4 md:py-2 text-gray-600 dark:text-gray-300">Pay Period</th>
@@ -37,9 +36,9 @@
                             <td class="border px-4 py-2 dark:text-gray-300">
                                 <span
                                     class="px-2 py-1 text-xs font-medium rounded
-                                                                        @if($payout->status === 'pending') bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200
-                                                                        @elseif($payout->status === 'dispatched') bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200
-                                                                        @else bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200 @endif">
+                                                                                        @if($payout->status === 'pending') bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200
+                                                                                        @elseif($payout->status === 'dispatched') bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200
+                                                                                        @else bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200 @endif">
                                     {{ ucfirst($payout->status) }}
                                 </span>
                             </td>

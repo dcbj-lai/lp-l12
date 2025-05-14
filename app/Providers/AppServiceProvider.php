@@ -21,11 +21,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('manage-leaves', fn(User $user) => $user->hasAnyRole(['pnc.admin']));
         Gate::define('is-pnc', fn($user) => $user->hasAnyRole(['pnc.staff','super.admin']));
         Gate::define('is-admin', fn($user) => $user->hasAnyRole(['sys.admin','super.admin']));
         Gate::define('is-finance', fn($user) => $user->hasAnyRole(['finance.admin','super.admin']));
-        Gate::define('pin-ripple', fn($user) => in_array($user->role, ['sys.admin', 'super.admin']));
         Gate::define('pnc-admin', fn($user) => $user->hasAnyRole(['pnc.admin', 'super.admin']));
+        Gate::define('is-manager-or-hr', fn($user) => $user->hasAnyRole(['pnc.admin', 'super.admin']));
+        Gate::define('is-manager-or-hr', fn ($user) => $user->isManager() || $user->hasAnyRole(['pnc.admin', 'super.admin']));
+
+
     }
 }

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('rank')->default('employee');
             $table->boolean('payroll_on')->default(false);
             $table->decimal('monthly_rate', 15, 2)->nullable();
+            $table->string('bank_account');
             $table->json('roles')->nullable();
             $table->string('package')->nullable(); // ➜ Add the 'package' field here
             $table->timestamps();
