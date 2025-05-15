@@ -9,7 +9,7 @@
 <body class="min-h-screen bg-white dark:bg-zinc-800">
     @php
         $user = Auth::user();
-        $isPNC = in_array('pnc.staff', $user->roles ?? []);
+        $isPNC = in_array('pnc.admin', $user->roles ?? []);
         $isFinanceAdmin = in_array('finance.admin', $user->roles ?? []);
         $isSuperAdmin = in_array('super.admin', $user->roles ?? []);
         $isManager = $user->isManager();
@@ -39,8 +39,6 @@
                     <flux:navlist.item href="{{route('users.index')}}" icon="users">Users</flux:navlist.item>
                     <flux:navlist.item href="{{ route('attendance.index') }}" icon="user-check">Attendance
                     </flux:navlist.item>
-                    <flux:navlist.item href="{{ route('requests.manage') }}" icon="bookmark-check">Approve Requests
-                    </flux:navlist.item>
                 </flux:navlist.group>
             @endif
             @if ($isFinanceAdmin || $isSuperAdmin)
@@ -52,7 +50,7 @@
             @endif
             @if ($isManager)
                 <flux:navlist.group heading="My Approvals" expandable :expanded="false">
-                    <flux:navlist.item href="{{ route('requests.manage') }}" icon="bookmark-check">Approve Requests
+                    <flux:navlist.item href="{{ route('requests.manage') }}" icon="bookmark-check">Schedule Requests
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif

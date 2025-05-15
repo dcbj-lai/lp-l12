@@ -17,7 +17,6 @@ return new class extends Migration
 
             $table->decimal('pto', 5, 2)->default(env('REQUESTS_PTO_DEFAULT', 0));
             $table->decimal('wfh', 5, 2)->default(env('REQUESTS_WFH_DEFAULT', 0));
-            $table->decimal('offset', 5, 2)->default(0);
 
             $table->timestamps();
         });

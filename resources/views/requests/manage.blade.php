@@ -9,6 +9,7 @@
                             <th class="border px-4 py-2 text-left">Employee</th>
                             <th class="border px-4 py-2 text-left">Type</th>
                             <th class="border px-4 py-2 text-left">Dates</th>
+                            <th class="border px-4 py-2 text-left">Number of Days</th>
                             <th class="border px-4 py-2 text-left">Status</th>
                             <th class="border px-4 py-2 text-left">Actions</th>
                         </tr>
@@ -20,6 +21,7 @@
                                 <td class="border px-4 py-2">{{ $r->type }}</td>
                                 <td class="border px-4 py-2">{{ $r->start_date }} to {{ $r->end_date }}
                                     ({{ $r->number_of_days }}d)</td>
+                                <td class="border px-4 py-2">{{ $r->number_of_days }}</td>
                                 <td class="border px-4 py-2">
                                     @php
                                         $badgeColor = match ($r->status) {

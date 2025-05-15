@@ -118,13 +118,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-requests', [RequestController::class, 'index'])->name('my-requests');
     Route::get('/requests/create', [RequestController::class, 'create'])->name('requests.create');
     Route::post('/requests', [RequestController::class, 'store'])->name('requests.store');
+    Route::delete('/requests/{request}', [RequestController::class, 'destroy'])->name('requests.destroy');
+    Route::get('/requests/view/{requestModel}', [RequestController::class, 'view'])->name('requests.view');
+    Route::put('/requests/{requestModel}', [RequestController::class, 'update'])->name('requests.update');
+
 });
 
 Route::middleware(['auth', 'can:is-manager-or-hr'])->group(function () {
     Route::get('/requests/manage', [RequestController::class, 'manage'])->name('requests.manage');
     Route::post('/requests/{request}/process', [RequestController::class, 'process'])->name('requests.process');
-
     Route::get('/requests/{request}', [RequestController::class, 'show'])->name('requests.show');
+    Route::delete('/requests/{request}', [RequestController::class, 'destroy'])->name('requests.destroy');
+
 });
 
 

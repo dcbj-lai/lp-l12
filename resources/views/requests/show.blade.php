@@ -44,19 +44,34 @@
 
                         <input type="hidden" name="action_type" id="action_type" value="">
 
-                        <div class="mt-4 flex justify-end gap-4">
-                            <flux:button variant="ghost" type="submit"
-                                onclick="document.getElementById('action_type').value='reject';">
-                                Decline
-                            </flux:button>
+                        <div class="mt-4 flex justify-between items-center">
+                            <div class="flex gap-4">
+                                <flux:button variant="ghost" type="submit" size="sm"
+                                    onclick="document.getElementById('action_type').value='reject';">
+                                    Reject
+                                </flux:button>
 
-                            <flux:button variant="primary" type="submit"
-                                onclick="document.getElementById('action_type').value='approve';">
-                                Approve
-                            </flux:button>
+                                <flux:button variant="primary" type="submit" size="sm"
+                                    onclick="document.getElementById('action_type').value='approve';">
+                                    Approve
+                                </flux:button>
+                            </div>
                         </div>
                     </form>
+                    @if ($request->status !== 'pending')
+                        <form method="POST" action="{{ route('requests.destroy', $request->id) }}"
+                            onsubmit="return confirm('Are you sure you want to delete this request?');" class="ml-auto">
+                            @csrf
+                            @method('DELETE')
+                            <div class="flex justify-end">
+                                <flux:button variant="danger" type="submit" size="sm">
+                                    Delete
+                                </flux:button>
+                            </div>
+                        </form>
+                    @endif
                 </div>
+
             </div>
         </div>
     </div>

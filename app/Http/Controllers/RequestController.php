@@ -156,6 +156,7 @@ public function process(Request $request, $id)
     }
 
     $staffRequest = StaffRequest::findOrFail($id);
+    $originalStatus = $staffRequest->status;
 
     $validated = $request->validate([
         'remarks' => 'nullable|string|max:500',
@@ -167,23 +168,45 @@ public function process(Request $request, $id)
     $staffRequest->approver_id = auth()->id();
     $staffRequest->save();
 
-    // 🟡 Deduct credits only if approved
+    // Deduct credits only if approved
     if ($staffRequest->status === 'approved' && !in_array($staffRequest->type, ['LWOP'])) {
     $credit = $staffRequest->user->requestCredit;
 
-    if ($credit) {
-        switch ($staffRequest->type) {
-            case 'PTO':
-                $credit->pto -= $staffRequest->number_of_days;
-                break;
-            case 'WFH':
-                $credit->wfh -= $staffRequest->number_of_days;
-                break;
-        }
+        if ($credit) {
+            switch ($staffRequest->type) {
+                case 'PTO':
+                    $credit->pto -= $staffRequest->number_of_days;
+                    break;
+                case 'WFH':
+                    $credit->wfh -= $staffRequest->number_of_days;
+                    break;
+            }
 
-        $credit->save();
+            $credit->save();
+        }
     }
-}
+
+    // Reverse credits if approved → rejected
+    if (
+        $originalStatus === 'approved' &&
+        $staffRequest->status === 'rejected' &&
+        !in_array($staffRequest->type, ['LWOP'])
+    ) {
+        $credit = $staffRequest->user->requestCredit;
+        // dd($credit);
+        if ($credit) {
+            switch ($staffRequest->type) {
+                case 'PTO':
+                    $credit->pto += $staffRequest->number_of_days;
+                    break;
+                case 'WFH':
+                    $credit->wfh += $staffRequest->number_of_days;
+                    break;
+            }
+
+            $credit->save();
+        }
+    }
 
 
     // Notify the requester
@@ -209,6 +232,104 @@ public function show(StaffRequest $request)
         'request' => $request->load('user', 'approver'),
     ]);
 }
+
+/**Requester view for his own request */
+public function view(Request $request, StaffRequest $requestModel)
+{
+
+    $user = $request->user();
+    if ($user->id !== $requestModel->user_id) {
+        abort(403, 'Unauthorized access to request.');
+    }
+    
+    $canEdit = $requestModel->status === 'pending';
+    
+    return view('requests.edit-view', [
+        'request' => $requestModel,
+        'canEdit' => $canEdit,
+    ]);
+}
+
+
+public function destroy(StaffRequest $request, Request $httpRequest)
+{
+    if (!Gate::allows('is-manager-or-hr')) {
+        if ($request->status != 'pending') {
+            abort(409, 'Cannot delete an approved or rejected request');
+        }
+
+        if ($request->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
+    }
+
+    // Refresh credit if approved
+    if ($request->status === 'approved') {
+        $credits = $request->user->requestCredit;
+        // dd($credits);
+        if ($credits) {
+            switch ($request->type) {
+                case 'PTO':
+                    $credits->pto += $request->number_of_days;
+                    break;
+                case 'WFH':
+                    $credits->wfh += $request->number_of_days;
+                    break;
+            }
+
+            $credits->save();
+        }
+    }
+
+    $request->delete();
+
+    return redirect()
+        ->route('requests.manage')
+        ->with('success', 'Request deleted successfully.');
+}
+
+
+
+public function update(Request $request, StaffRequest $requestModel)
+{
+    $user = $request->user();
+
+    if ($user->id !== $requestModel->user_id) {
+        abort(403, 'Unauthorized update attempt.');
+    }
+
+    if ($requestModel->status !== 'pending') {
+        return back()->with('error', 'Only pending requests can be updated.');
+    }
+
+    $validated = $request->validate([
+        'type' => 'required|in:PTO,WFH,LWOP',
+        'reason' => 'required|string|max:255',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+        'end_date_type' => 'required|in:full,half',
+    ]);
+
+    // Compute number of days
+    $start = Carbon::parse($validated['start_date']);
+    $end = Carbon::parse($validated['end_date']);
+    $days = $start->diffInDays($end) + 1;
+    if ($validated['end_date_type'] === 'half') {
+        $days -= 0.5;
+    }
+
+    $requestModel->update([
+        'type' => $validated['type'],
+        'reason' => $validated['reason'],
+        'start_date' => $validated['start_date'],
+        'end_date' => $validated['end_date'],
+        'end_date_type' => $validated['end_date_type'],
+        'number_of_days' => $days,
+    ]);
+
+    return redirect()->route('my-requests', $requestModel)->with('success', 'Request updated.');
+}
+
 
 
 

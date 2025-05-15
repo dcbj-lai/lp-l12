@@ -23,7 +23,6 @@ class RequestCreditsSeeder extends Seeder
                 [
                     'pto' => $ptoDefault,
                     'wfh' => $wfhDefault,
-                    'offset' => 0,
                 ]
             );
         });
