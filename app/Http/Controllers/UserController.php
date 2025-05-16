@@ -27,7 +27,7 @@ class UserController extends Controller
     // Edit User Page (placeholder for now)
     public function edit(User $user)
     {
-        $supervisors = User::where('rank', 'Manager')->get();
+        $supervisors = User::where('rank', 'manager')->get();
         $departments = Department::orderBy('name')->get();
         return view('users.edit', compact('user', 'departments', 'supervisors'));
 
@@ -65,9 +65,10 @@ public function update(Request $request, User $user)
         $validated['roles'] = $roles;
 
         // Clean and format the monthly rate (optional but nice)
-        $validated['monthly_rate'] = $validated['monthly_rate'] 
-            ? str_replace(',', '', $validated['monthly_rate']) 
+        $validated['monthly_rate'] = isset($validated['monthly_rate']) && is_numeric(str_replace(',', '', $validated['monthly_rate']))
+            ? str_replace(',', '', $validated['monthly_rate'])
             : null;
+
 
         // Update the user with validated data
         $user->update([
