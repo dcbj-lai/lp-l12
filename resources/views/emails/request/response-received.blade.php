@@ -1,6 +1,5 @@
 @component('mail::message')
 # Your {{ $request->type }} Request Has Been {{ ucfirst($request->status) }}
-
 **Type:** {{ $request->type }}<br>
 **Reason:** {{ $request->reason }}<br>
 **From:** {{ \Carbon\Carbon::parse($request->start_date)->toFormattedDateString() }}<br>
