@@ -17,7 +17,7 @@ class SuperUserSeeder extends Seeder
         $user = User::updateOrCreate(
             ['email' => 'laicportal000@gmail.com'],
             [
-                'name' => 'Test Employee',
+                'name' => 'Super Admin',
                 'password' => Hash::make('Makarios@nyn'), // Default password
                 'roles' => ['user', 'super.admin', 'sys.admin', 'pnc.admin', 'pnc.staff', 'finance.staff', 'finance.admin'],
                 'google_id' => '000000000000000000001',
