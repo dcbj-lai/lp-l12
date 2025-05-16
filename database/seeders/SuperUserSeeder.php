@@ -15,7 +15,7 @@ class SuperUserSeeder extends Seeder
     public function run(): void
     {
         $user = User::updateOrCreate(
-            ['email' => 'test.student@lifeacademy.edu.ph'],
+            ['email' => 'laicportal000@gmail.com'],
             [
                 'name' => 'Test Employee',
                 'password' => Hash::make('Makarios@nyn'), // Default password
