@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Mail\RequestMade;
 use Illuminate\Http\Request;
 use App\Mail\ResponseReceived;
+use Spatie\GoogleCalendar\Event;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -59,7 +60,6 @@ public function store(Request $request)
         if ($request->end_date_type === 'half') {
             $days -= 0.5;
         }
-
         $hasOverlap = StaffRequest::where('user_id', $user->id)
             ->where(function ($query) use ($request) {
                 $query->whereBetween('start_date', [$request->start_date, $request->end_date])
@@ -168,7 +168,6 @@ public function process(Request $request, $id)
     $staffRequest->approver_id = auth()->id();
     $staffRequest->save();
 
-    // Deduct credits only if approved
     if ($staffRequest->status === 'approved' && !in_array($staffRequest->type, ['LWOP'])) {
     $credit = $staffRequest->user->requestCredit;
 
@@ -181,9 +180,15 @@ public function process(Request $request, $id)
                     $credit->wfh -= $staffRequest->number_of_days;
                     break;
             }
-
             $credit->save();
         }
+
+        /**Create Event in Leave Calendar */
+        $event = new Event;
+        $event->name = $staffRequest->user->name . ' is on ' . $staffRequest->type;
+        $event->startDate = Carbon::parse($staffRequest->start_date);
+        $event->endDate = Carbon::parse($staffRequest->end_date);
+        $event->save();
     }
 
     // Reverse credits if approved → rejected
@@ -207,7 +212,6 @@ public function process(Request $request, $id)
             $credit->save();
         }
     }
-
 
     // Notify the requester
     $requester = $staffRequest->user;

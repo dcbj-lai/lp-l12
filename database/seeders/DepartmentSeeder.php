@@ -9,7 +9,7 @@ class DepartmentSeeder extends Seeder
 {
     public function run()
     {
-        $departments = ['PNC', 'Finance', 'Digital Transformation', 'Academics', 'Campus Life', 'Operations','Marketing'];
+        $departments = ['PNC', 'Finance', 'Digital Transformation', 'Academics', 'Campus Life', 'Operations','Marketing','External Affairs', 'Christian Formation'];
 
         foreach ($departments as $department) {
             Department::firstOrCreate(['name' => $department]);
