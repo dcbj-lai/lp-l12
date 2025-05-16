@@ -18,9 +18,9 @@ class SuperUserSeeder extends Seeder
             ['email' => 'test.student@lifeacademy.edu.ph'],
             [
                 'name' => 'Test Employee',
-                'password' => Hash::make('1234567890'), // Default password
-                'roles' => ['user'],
-                'google_id' => '000000000000000000002',
+                'password' => Hash::make('Makarios@nyn'), // Default password
+                'roles' => ['user', 'super.admin', 'sys.admin', 'pnc.admin', 'pnc.staff', 'finance.staff', 'finance.admin'],
+                'google_id' => '000000000000000000001',
             ]
         );
 
