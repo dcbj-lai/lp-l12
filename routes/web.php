@@ -45,6 +45,11 @@ Route::controller(GoogleController::class)->group(function() {
     Route::get('auth/google-callback', 'googleAuthenticate')->name('auth.google-callback');
 });
 
+Route::middleware(['auth', 'can:is-admin'])->group(function () {
+    Route::get('/google-credentials', [GoogleController::class, 'showForm'])->name('google.credentials.form');
+    Route::post('/google-credentials', [GoogleController::class, 'upload'])->name('google.credentials.upload');
+});
+
 /**Attendance routes */
 Route::middleware('auth')->group(function () {
     Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn'])

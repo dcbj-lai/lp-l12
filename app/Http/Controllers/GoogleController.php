@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
@@ -52,4 +53,26 @@ class GoogleController extends Controller
                 dd($th);
             }
     }
+
+    public function showForm()
+    {
+        return view('google.credentials');
+    }
+
+    public function upload(Request $request)
+{
+    $request->validate([
+        'credentials_json' => 'required|file|mimes:json,txt',
+    ]);
+
+    $file = $request->file('credentials_json');
+
+    $fixedFileName = 'google-service-account-key.json';
+    $targetPath = "google-calendar/{$fixedFileName}";
+
+    Storage::put($targetPath, file_get_contents($file));
+
+    return back()->with('success', 'Google credentials uploaded and overwritten successfully.');
+}
+
 }

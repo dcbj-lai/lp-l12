@@ -13,7 +13,7 @@ return [
             /*
              * Path to the json file containing the credentials.
              */
-            'credentials_json' => storage_path('app/google-calendar/laramail-450216-1e52284177db.json'),
+            'credentials_json' => storage_path('app/private/google-calendar/google-service-account-key.json'),
         ],
 
         /*
