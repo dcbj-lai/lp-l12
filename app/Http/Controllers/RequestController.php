@@ -230,12 +230,12 @@ public function process(Request $request, $id)
     Log::info("Processing staff request", ['request_id' => $id]);
 
     if (!Gate::allows('is-manager-or-hr')) {
-        Log::warning("Access denied for user", ['user_id' => auth()->id()]);
+        // Log::warning("Access denied for user", ['user_id' => auth()->id()]);
         abort(403);
     }
 
     $staffRequest = StaffRequest::findOrFail($id);
-    Log::info("Staff request found", ['id' => $staffRequest->id, 'type' => $staffRequest->type, 'status' => $staffRequest->status]);
+    // Log::info("Staff request found", ['id' => $staffRequest->id, 'type' => $staffRequest->type, 'status' => $staffRequest->status]);
 
     $originalStatus = $staffRequest->status;
 
@@ -243,34 +243,34 @@ public function process(Request $request, $id)
         'remarks' => 'nullable|string|max:500',
         'action_type' => 'required|in:approve,reject',
     ]);
-    Log::info("Request validated", $validated);
+    // Log::info("Request validated", $validated);
 
     $staffRequest->remarks = $validated['remarks'];
     $staffRequest->status = $validated['action_type'] === 'approve' ? 'approved' : 'rejected';
     $staffRequest->approver_id = auth()->id();
     $staffRequest->save();
 
-    Log::info("Staff request updated", [
-        'new_status' => $staffRequest->status,
-        'approver_id' => $staffRequest->approver_id,
-    ]);
+    // Log::info("Staff request updated", [
+    //     'new_status' => $staffRequest->status,
+    //     'approver_id' => $staffRequest->approver_id,
+    // ]);
 
     if ($staffRequest->status === 'approved' && !in_array($staffRequest->type, ['LWOP'])) {
-        Log::info("Handling credit deduction for approval");
+        // Log::info("Handling credit deduction for approval");
 
         $credit = $staffRequest->user->requestCredit;
 
         if ($credit) {
-            Log::info("User credit found", ['user_id' => $staffRequest->user_id]);
+            // Log::info("User credit found", ['user_id' => $staffRequest->user_id]);
 
             switch ($staffRequest->type) {
                 case 'PTO':
                     $credit->pto -= $staffRequest->number_of_days;
-                    Log::info("Deducting PTO", ['deducted_days' => $staffRequest->number_of_days]);
+                    // Log::info("Deducting PTO", ['deducted_days' => $staffRequest->number_of_days]);
                     break;
                 case 'WFH':
                     $credit->wfh -= $staffRequest->number_of_days;
-                    Log::info("Deducting WFH", ['deducted_days' => $staffRequest->number_of_days]);
+                    // Log::info("Deducting WFH", ['deducted_days' => $staffRequest->number_of_days]);
                     break;
             }
 
@@ -284,7 +284,7 @@ public function process(Request $request, $id)
         $event->startDate = Carbon::parse($staffRequest->start_date);
         $event->endDate = Carbon::parse($staffRequest->end_date);
         $event->save();
-        Log::info("Leave calendar event created", ['event_id' => $event->id]);
+        // Log::info("Leave calendar event created", ['event_id' => $event->id]);
     }
 
     if (
@@ -292,7 +292,7 @@ public function process(Request $request, $id)
         $staffRequest->status === 'rejected' &&
         !in_array($staffRequest->type, ['LWOP'])
     ) {
-        Log::info("Reversing credit for rejected request", ['request_id' => $id]);
+        // Log::info("Reversing credit for rejected request", ['request_id' => $id]);
 
         $credit = $staffRequest->user->requestCredit;
 
@@ -317,10 +317,10 @@ public function process(Request $request, $id)
     $requester = $staffRequest->user;
     if ($requester && $requester->email) {
         Mail::to($requester->email)->queue(new ResponseReceived($staffRequest));
-        Log::info("Notification queued to requester", ['email' => $requester->email]);
+        // Log::info("Notification queued to requester", ['email' => $requester->email]);
     }
 
-    Log::info("Redirecting after process complete", ['final_status' => $staffRequest->status]);
+    // Log::info("Redirecting after process complete", ['final_status' => $staffRequest->status]);
 
     return redirect()->route('requests.manage')
         ->with('success', "Request {$staffRequest->status} successfully.");
