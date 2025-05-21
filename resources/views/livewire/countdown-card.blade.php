@@ -5,7 +5,7 @@
         &times;
     </button>
     <h2 class="text-md font-semibold text-gray-800 dark:text-gray-200 mb-2">
-        <flux:icon.clock class="w-5 h-5 inline" /> Classes Open
+        Classes Open
     </h2>
 
     <div x-data="countdown()" x-init="startCountdown()">

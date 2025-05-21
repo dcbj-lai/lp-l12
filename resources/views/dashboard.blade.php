@@ -3,9 +3,9 @@
         <div class="grid auto-rows-min md:grid-cols-4 gap-4">
             <!-- Bible Verse Card -->
             <livewire:feature-verse />
-            <!-- Countdown Card -->
             <livewire:countdown-card />
-            <livewire:steps-leaderboard />
+            {{-- <livewire:steps-leaderboard /> --}}
+            <livewire:calendar-widget />
 
         </div>
     </div>
