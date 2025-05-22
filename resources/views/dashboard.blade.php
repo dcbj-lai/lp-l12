@@ -5,7 +5,7 @@
             <livewire:feature-verse />
             <livewire:countdown-card />
             {{-- <livewire:steps-leaderboard /> --}}
-            <livewire:calendar-widget />
+            {{-- <livewire:calendar-widget /> --}}
 
         </div>
     </div>
