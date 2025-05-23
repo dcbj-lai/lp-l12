@@ -53,7 +53,7 @@
                         </flux:button>
 
                         <div x-show="checkedIn && !checkedOut"
-                            class="text-md font-extralight text-slate-500 dark:text-gray-100">
+                            class="text-md font-extralight text-slate-500 dark:text-neutral-100">
                             Hours today: <span x-text="elapsed"></span>
                         </div>
                     </div>
@@ -63,9 +63,9 @@
             <div x-data @check-in.window="location.reload()" @check-out.window="location.reload()">
                 <div class="overflow-x-auto">
                     <table
-                        class="w-full min-w-max border-collapse border border-gray-200 dark:border-gray-700 text-sm mt-4">
+                        class="w-full min-w-max border-collapse border border-neutral-200 dark:border-neutral-700 text-sm mt-4">
                         <thead>
-                            <tr class="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-200">
+                            <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
                                 <th class="border  px-4 py-2 text-left">Date</th>
                                 <th class="border  px-4 py-2 text-left">Check-In
                                 </th>
@@ -81,14 +81,14 @@
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-800 dark:text-gray-300">
+                        <tbody class="text-neutral-800 dark:text-neutral-300">
                             @forelse ($attendances as $attendance)
                                 @php
                                     $remarkColor = match ($attendance->remarks) {
                                         'Early check-in' => 'text-blue-500 dark:text-blue-400 font-semibold',
                                         'Late' => 'text-red-500 dark:text-red-400 font-semibold',
                                         'On Time' => 'text-green-500 dark:text-green-400 font-semibold',
-                                        'Absent' => 'text-gray-500 dark:text-gray-400 font-semibold',
+                                        'Absent' => 'text-neutral-500 dark:text-neutral-400 font-semibold',
                                         'Undertime' => 'text-yellow-500 dark:text-yellow-400 font-semibold',
                                         default => 'text-black dark:text-white'
                                     };
@@ -131,7 +131,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center px-4 py-6 text-gray-500 dark:text-gray-400">
+                                    <td colspan="8" class="text-center px-4 py-6 text-neutral-500 dark:text-neutral-400">
                                         No attendance records found.
                                     </td>
                                 </tr>
@@ -151,9 +151,9 @@
 
     <!-- Check-in Confirmation Modal -->
     <x-modal name="checkInModal">
-        <div class="p-6 bg-blue-50 dark:bg-neutral-700 dark:text-gray-200 rounded-lg">
+        <div class="p-6 bg-blue-50 dark:bg-neutral-700 dark:text-neutral-200 rounded-lg">
             <h2 class="text-lg font-semibold mb-4">Check-in Confirmation</h2>
-            <p class="text-gray-600 dark:text-gray-400 mb-6">Please confirm check-in.</p>
+            <p class="text-neutral-600 dark:text-neutral-400 mb-6">Please confirm check-in.</p>
 
             <div class="flex flex-col md:flex-row justify-center gap-3">
                 <flux:button @click="$dispatch('close-modal', 'checkInModal')" class="w-full md:w-auto">Cancel
@@ -173,9 +173,9 @@
 
     <!-- Check-out Confirmation Modal -->
     <x-modal name="checkOutModal">
-        <div class="p-6 bg-blue-50 dark:bg-neutral-700 dark:text-gray-200 rounded-lg">
+        <div class="p-6 bg-blue-50 dark:bg-neutral-700 dark:text-neutral-200 rounded-lg">
             <h2 class="text-lg font-semibold mb-4">Check-out Confirmation</h2>
-            <p class="text-gray-600 dark:text-gray-400 mb-6">Please confirm check-out.</p>
+            <p class="text-neutral-600 dark:text-neutral-400 mb-6">Please confirm check-out.</p>
 
             <div class="flex flex-col md:flex-row justify-center gap-3">
                 <x-secondary-button @click="$dispatch('close-modal', 'checkOutModal')" class="w-full md:w-auto">

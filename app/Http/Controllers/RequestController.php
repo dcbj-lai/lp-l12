@@ -149,93 +149,20 @@ public function manage()
 
 
 
-
-// public function process(Request $request, $id)
-// {
-//     if (!Gate::allows('is-manager-or-hr')) {
-//         abort(403);
-//     }
-
-//     $staffRequest = StaffRequest::findOrFail($id);
-//     $originalStatus = $staffRequest->status;
-
-//     $validated = $request->validate([
-//         'remarks' => 'nullable|string|max:500',
-//         'action_type' => 'required|in:approve,reject',
-//     ]);
-
-//     $staffRequest->remarks = $validated['remarks'];
-//     $staffRequest->status = $validated['action_type'] === 'approve' ? 'approved' : 'rejected';
-//     $staffRequest->approver_id = auth()->id();
-//     $staffRequest->save();
-
-//     if ($staffRequest->status === 'approved' && !in_array($staffRequest->type, ['LWOP'])) {
-//     $credit = $staffRequest->user->requestCredit;
-
-//         if ($credit) {
-//             switch ($staffRequest->type) {
-//                 case 'PTO':
-//                     $credit->pto -= $staffRequest->number_of_days;
-//                     break;
-//                 case 'WFH':
-//                     $credit->wfh -= $staffRequest->number_of_days;
-//                     break;
-//             }
-//             $credit->save();
-//         }
-
-//         /**Create Event in Leave Calendar */
-//         $event = new Event;
-//         $event->name = $staffRequest->user->name . ' is on ' . $staffRequest->type;
-//         $event->startDate = Carbon::parse($staffRequest->start_date);
-//         $event->endDate = Carbon::parse($staffRequest->end_date);
-//         $event->save();
-//     }
-
-//     // Reverse credits if approved → rejected
-//     if (
-//         $originalStatus === 'approved' &&
-//         $staffRequest->status === 'rejected' &&
-//         !in_array($staffRequest->type, ['LWOP'])
-//     ) {
-//         $credit = $staffRequest->user->requestCredit;
-//         // dd($credit);
-//         if ($credit) {
-//             switch ($staffRequest->type) {
-//                 case 'PTO':
-//                     $credit->pto += $staffRequest->number_of_days;
-//                     break;
-//                 case 'WFH':
-//                     $credit->wfh += $staffRequest->number_of_days;
-//                     break;
-//             }
-
-//             $credit->save();
-//         }
-//     }
-
-//     // Notify the requester
-//     $requester = $staffRequest->user;
-//     if ($requester && $requester->email) {
-//         Mail::to($requester->email)->queue(new ResponseReceived($staffRequest));
-//     }
-
-//     return redirect()->route('requests.manage')
-//         ->with('success', "Request {$staffRequest->status} successfully.");
-// }
-
-
 public function process(Request $request, $id)
 {
-    Log::info("Processing staff request", ['request_id' => $id]);
-
     if (!Gate::allows('is-manager-or-hr')) {
         // Log::warning("Access denied for user", ['user_id' => auth()->id()]);
         abort(403);
     }
 
     $staffRequest = StaffRequest::findOrFail($id);
-    // Log::info("Staff request found", ['id' => $staffRequest->id, 'type' => $staffRequest->type, 'status' => $staffRequest->status]);
+
+    if (($staffRequest->status === 'approved' && $request->input('action_type') === 'approve') || ($staffRequest->status === 'rejected' && $request->input('action_type') === 'reject'))
+    {   
+        return redirect()->back()
+            ->with('error', "Request already {$staffRequest->status}.");
+    }
 
     $originalStatus = $staffRequest->status;
 
@@ -243,17 +170,12 @@ public function process(Request $request, $id)
         'remarks' => 'nullable|string|max:500',
         'action_type' => 'required|in:approve,reject',
     ]);
-    // Log::info("Request validated", $validated);
 
     $staffRequest->remarks = $validated['remarks'];
     $staffRequest->status = $validated['action_type'] === 'approve' ? 'approved' : 'rejected';
     $staffRequest->approver_id = auth()->id();
     $staffRequest->save();
 
-    // Log::info("Staff request updated", [
-    //     'new_status' => $staffRequest->status,
-    //     'approver_id' => $staffRequest->approver_id,
-    // ]);
 
     if ($staffRequest->status === 'approved' && !in_array($staffRequest->type, ['LWOP'])) {
         // Log::info("Handling credit deduction for approval");
@@ -261,7 +183,6 @@ public function process(Request $request, $id)
         $credit = $staffRequest->user->requestCredit;
 
         if ($credit) {
-            // Log::info("User credit found", ['user_id' => $staffRequest->user_id]);
 
             switch ($staffRequest->type) {
                 case 'PTO':
@@ -279,12 +200,6 @@ public function process(Request $request, $id)
             Log::warning("No credit record found for user", ['user_id' => $staffRequest->user_id]);
         }
 
-        $event = new Event;
-        $event->name = $staffRequest->user->name . ' is on ' . $staffRequest->type;
-        $event->startDate = Carbon::parse($staffRequest->start_date);
-        $event->endDate = Carbon::parse($staffRequest->end_date);
-        $event->save();
-        // Log::info("Leave calendar event created", ['event_id' => $event->id]);
     }
 
     if (
@@ -292,7 +207,6 @@ public function process(Request $request, $id)
         $staffRequest->status === 'rejected' &&
         !in_array($staffRequest->type, ['LWOP'])
     ) {
-        // Log::info("Reversing credit for rejected request", ['request_id' => $id]);
 
         $credit = $staffRequest->user->requestCredit;
 
@@ -300,11 +214,9 @@ public function process(Request $request, $id)
             switch ($staffRequest->type) {
                 case 'PTO':
                     $credit->pto += $staffRequest->number_of_days;
-                    Log::info("Restored PTO", ['restored_days' => $staffRequest->number_of_days]);
                     break;
                 case 'WFH':
                     $credit->wfh += $staffRequest->number_of_days;
-                    Log::info("Restored WFH", ['restored_days' => $staffRequest->number_of_days]);
                     break;
             }
 
@@ -317,10 +229,8 @@ public function process(Request $request, $id)
     $requester = $staffRequest->user;
     if ($requester && $requester->email) {
         Mail::to($requester->email)->queue(new ResponseReceived($staffRequest));
-        // Log::info("Notification queued to requester", ['email' => $requester->email]);
     }
 
-    // Log::info("Redirecting after process complete", ['final_status' => $staffRequest->status]);
 
     return redirect()->route('requests.manage')
         ->with('success', "Request {$staffRequest->status} successfully.");

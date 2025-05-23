@@ -36,8 +36,8 @@
         x-transition:leave-end="opacity-0 translate-x-10"
         class="fixed top-5 right-5 flex items-center space-x-3 px-5 py-3 rounded-lg border-l-4 shadow-lg {{ $styles }}">
 
-        <span class="text-xl">{{ $icon }}</span>
-        <span class="font-semibold">{{ $message }}</span>
+        <span>{{ $icon }}</span>
+        <span class="text-sm">{{ $message }}</span>
 
         <button @click="show = false"
             class="ml-4 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-lg font-bold">&times;</button>

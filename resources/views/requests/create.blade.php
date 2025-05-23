@@ -1,6 +1,6 @@
 <x-layouts.app title="New Request">
     <div class="max-w-4xl mx-auto py-10 sm:px-6 lg:px-8">
-        <div class="bg-white dark:bg-gray-800 shadow-xl sm:rounded-lg p-6">
+        <div class="bg-white dark:bg-gray-900 shadow-xl sm:rounded-lg p-6">
             <livewire:request-credits-widget /> <!-- ← Request credits -->
             <div class="flex items-center justify-between mb-6 mt-4">
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">New Request</h2>
