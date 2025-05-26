@@ -120,8 +120,11 @@ public function store(Request $request)
         // Notify supervisor
         $supervisor = $user->supervisor;
         if ($supervisor && $supervisor->email) {
-            Mail::to($supervisor)->queue(new RequestMade($requestRecord));
+            Mail::to($supervisor->email)
+            ->cc(env('REQUESTS_HR_EMAIL'))
+            ->queue(new RequestMade($requestRecord));
         }
+
         
 
         return redirect()->route('my-requests')->with('success', 'Request submitted successfully.');
@@ -228,9 +231,10 @@ public function process(Request $request, $id)
 
     $requester = $staffRequest->user;
     if ($requester && $requester->email) {
-        Mail::to($requester->email)->queue(new ResponseReceived($staffRequest));
+        Mail::to($requester->email)
+            ->cc(env('REQUESTS_HR_EMAIL'))
+            ->queue(new ResponseReceived($staffRequest));
     }
-
 
     return redirect()->route('requests.manage')
         ->with('success', "Request {$staffRequest->status} successfully.");
