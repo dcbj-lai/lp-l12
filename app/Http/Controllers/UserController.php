@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Department;
 use Illuminate\Http\Request;
+use App\Models\RequestCredit;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -27,6 +28,8 @@ class UserController extends Controller
     // Edit User Page (placeholder for now)
     public function edit(User $user)
     {
+        $user->load('requestCredit');
+        // dd($user);
         $supervisors = User::where('rank', 'manager')->get();
         $departments = Department::orderBy('name')->get();
         return view('users.edit', compact('user', 'departments', 'supervisors'));
@@ -94,6 +97,30 @@ public function update(Request $request, User $user)
             ->with('error', 'Please correct the errors and try again.');
     }
 }
+
+public function updateLeaveCredits(Request $request, User $user)
+{
+    $validated = $request->validate([
+        'pto' => ['required', 'numeric', 'min:0'],
+        'wfh' => ['required', 'numeric', 'min:0'],
+    ]);
+
+    // Ensure the user has a related requestCredits record
+    $credits = $user->requestCredit()->firstOrCreate([
+        'user_id' => $user->id,
+    ]);
+
+    // Update the fields
+    $credits->update([
+        'pto' => $validated['pto'],
+        'wfh' => $validated['wfh'],
+    ]);
+
+    return redirect()
+        ->route('users.edit', $user->id)
+        ->with('success', 'Leave credits updated successfully.');
+}
+
 
 
 }

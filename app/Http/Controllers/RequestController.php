@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Mail\RequestMade;
+use App\Models\OrgSetting;
 use Illuminate\Http\Request;
+use App\Models\RequestCredit;
 use App\Mail\ResponseReceived;
 use Spatie\GoogleCalendar\Event;
 use Illuminate\Support\Facades\Log;
@@ -349,8 +351,24 @@ public function update(Request $request, StaffRequest $requestModel)
 
     return redirect()->route('my-requests', $requestModel)->with('success', 'Request updated.');
 }
+    public function initiateLeave()
+{
+    $settings = OrgSetting::firstOrFail();
 
+    // loop through all users
+    $users = User::all();
 
+    foreach ($users as $user) {
+        RequestCredit::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'pto' => $settings->pto_default,
+                'wfh' => $settings->wfh_default,
+            ]
+        );
+    }
 
+    return redirect()->back()->with('success', 'Leave credits updated for all users.');
+}
 
 }

@@ -39,6 +39,8 @@
                     <flux:navlist.item href="{{route('users.index')}}" icon="users">Users</flux:navlist.item>
                     <flux:navlist.item href="{{ route('attendance.index') }}" icon="user-check">Attendance
                     </flux:navlist.item>
+                    <flux:navlist.item href="{{ route('org-settings.index') }}" icon="settings">Setup Requests
+                    </flux:navlist.item>
                 </flux:navlist.group>
             @endif
             @if ($isFinanceAdmin || $isSuperAdmin)

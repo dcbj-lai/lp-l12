@@ -1,9 +1,9 @@
 <?php
 
-use App\Mail\RequestMade;
 use App\Models\Step;
 use App\Models\Ripple;
 use Livewire\Volt\Volt;
+use App\Mail\RequestMade;
 use App\Livewire\RippleFeed;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StepController;
@@ -16,6 +16,7 @@ use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\OrgSettingController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -136,6 +137,23 @@ Route::middleware(['auth', 'can:is-manager-or-hr'])->group(function () {
     Route::delete('/requests/{request}', [RequestController::class, 'destroy'])->name('requests.destroy');
 
 });
+
+Route::middleware(['auth', 'can:is-pnc'])->group(function () {
+    // Initialize leave credits for all users
+    Route::post('/initiate-leave', [RequestController::class, 'initiateLeave'])
+        ->name('org-settings.initiate-leave');
+
+    // Org settings
+    Route::get('/org-settings', [OrgSettingController::class, 'index'])
+        ->name('org-settings.index');
+    Route::post('/org-settings', [OrgSettingController::class, 'update'])
+        ->name('org-settings.update');
+
+    Route::put('/users/{user}/leave-credits', [UserController::class, 'updateLeaveCredits'])
+    ->name('users.leave-credits.update');
+
+});
+
 
 
 require __DIR__.'/auth.php';

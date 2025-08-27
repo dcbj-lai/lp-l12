@@ -283,6 +283,43 @@
             </div>
         @endif
     </div>
+
+        {{-- Leave Credits Section --}}
+    <div class="mt-8 p-4 border-t border-zinc-300 dark:border-zinc-600">
+        <h2 class="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-4">Leave Credits</h2>
+
+        <form action="{{ route('users.leave-credits.update', $user->id) }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @csrf
+            @method('PUT')
+
+            <!-- PTO Credits -->
+            <div>
+                <label for="pto" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">PTO Credits</label>
+                <input 
+                    type="number" step="0.01" name="pto" id="pto"
+                    value="{{ old('pto', $user->requestCredit->pto ?? 0) }}"
+                    class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
+                />
+            </div>
+
+            <!-- WFH Credits -->
+            <div>
+                <label for="wfh" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">WFH Credits</label>
+                <input 
+                    type="number" step="0.01" name="wfh" id="wfh"
+                    value="{{ old('wfh', $user->requestCredit->wfh ?? 0) }}"
+                    class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
+                />
+            </div>
+
+            <div class="col-span-1 md:col-span-2 flex justify-end">
+                <flux:button type="submit" size="sm" variant="primary">
+                    Update Leave Credits
+                </flux:button>
+            </div>
+        </form>
+    </div>
+
     
     <!-- Role Management Script -->
     <script>
