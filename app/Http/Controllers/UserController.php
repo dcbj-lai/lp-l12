@@ -121,6 +121,18 @@ public function updateLeaveCredits(Request $request, User $user)
         ->with('success', 'Leave credits updated successfully.');
 }
 
+public function delete(User $user)
+{
+    if ($user->id === auth()->id()) {
+        abort(403, 'You cannot delete your own account.');
+    }
+
+    $user->delete();
+
+    return redirect()->route('users.index')
+        ->with('success', "User {$user->name} has been deleted.");
+}
+
 
 
 }

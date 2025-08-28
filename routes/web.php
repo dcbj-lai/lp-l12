@@ -154,6 +154,9 @@ Route::middleware(['auth', 'can:is-pnc'])->group(function () {
 
 });
 
+Route::get('/users/{user}/delete', [UserController::class, 'delete'])
+    ->middleware(['auth', 'can:is-super-admin'])
+    ->name('users.delete');
 
 
 require __DIR__.'/auth.php';

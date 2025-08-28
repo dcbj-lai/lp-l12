@@ -275,15 +275,14 @@ public function view(Request $request, StaffRequest $requestModel)
 
 public function destroy(StaffRequest $request, Request $httpRequest)
 {
-    if (!Gate::allows('is-manager-or-hr')) {
-        if ($request->status != 'pending') {
-            abort(409, 'Cannot delete an approved or rejected request');
-        }
-
-        if ($request->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized');
-        }
+    if (!Gate::allows('is-manager-or-hr') && $request->user_id !== auth()->id()) {
+        abort(403, 'Unauthorized');
     }
+
+    if (Gate::allows('is-manager-or-hr') && $request->status !== 'pending') {
+        abort(409, 'Cannot delete an approved or rejected request');
+    }
+
 
     // Refresh credit if approved
     if ($request->status === 'approved') {
