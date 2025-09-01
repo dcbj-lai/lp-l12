@@ -58,9 +58,11 @@
                                 </td>
                                 <td class="border px-4 py-2">
                                     <a href="{{ route('requests.show', $r) }}"
-                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs">
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+                                        title="Open Request Details">
                                         View
                                     </a>
+
                                 </td>
                             </tr>
                         @empty
