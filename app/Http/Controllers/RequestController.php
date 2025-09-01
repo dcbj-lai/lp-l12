@@ -146,20 +146,19 @@ public function manage()
         abort(403, "Unauthorized Access.");
     }
 
-    $query = StaffRequest::with('user')->latest();
+    $query = StaffRequest::with(['user.requestCredit'])->latest();
 
-    // If the user is not HR, filter by supervisor_id
-    if (auth()->user()->isManager()) {
-        $query->whereHas('user', function ($q) {
-            $q->where('supervisor_id', auth()->id());
-        });
-    }
-
-    $requests = $query->paginate(10);
-
-    return view('requests.manage', compact('requests'));
+    // Managers only see requests of their direct reports
+    if (auth()->user()->isManager() && !Gate::allows('is-super-admin')) {
+    $query->whereHas('user', function ($q) {
+        $q->where('supervisor_id', auth()->id());
+    });
 }
 
+    $requests = $query->paginate(10);
+    // dd($requests);
+    return view('requests.manage', compact('requests'));
+}
 
 
 

@@ -27,10 +27,16 @@
             <tbody class="text-neutral-800 dark:text-neutral-300">
                 @forelse ($requests as $request)
                     <tr class="border-b">
-                        <td class="border px-4 py-2 whitespace-nowrap capitalize">
-                            {{ $request->type }}
+                        <td class="border px-4 py-2">
+                            @if ($request->type === 'PTO')
+                                Leave
+                            @elseif ($request->type === 'WFH')
+                                Work From Home
+                            @else
+                                {{ ucfirst($request->type) }}
+                            @endif
                         </td>
-                        <td class="border px-4 py-2 whitespace-nowrap">
+                        <td class="border px-4 py-2 whitespace-nowrap text-xs">
                             {{ \Carbon\Carbon::parse($request->start_date)->format('Y-m-d') }} —
                             {{ \Carbon\Carbon::parse($request->end_date)->format('Y-m-d') }}
                         </td>
@@ -53,7 +59,7 @@
 
                             <span
                                 class="inline-block px-2 py-0.5 rounded-md text-xs font-medium capitalize
-                                                                                                                                                            {{ $statusColors[$status] ?? 'bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
+                                                                                                                                                                                        {{ $statusColors[$status] ?? 'bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
                                 {{ $status }}
                             </span>
                         </td>

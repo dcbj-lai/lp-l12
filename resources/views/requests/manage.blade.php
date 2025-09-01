@@ -11,6 +11,7 @@
                             <th class="border px-4 py-2 text-left">Type</th>
                             <th class="border px-4 py-2 text-left">Dates</th>
                             <th class="border px-4 py-2 text-left">Number of Days</th>
+                            <th class="border px-4 py-2 text-left">Balance</th>
                             <th class="border px-4 py-2 text-left">Status</th>
                             <th class="border px-4 py-2 text-left">Actions</th>
                         </tr>
@@ -19,10 +20,29 @@
                         @forelse ($requests as $r)
                             <tr class="border-b border-neutral-200 dark:border-neutral-700">
                                 <td class="border px-4 py-2">{{ $r->user->name }}</td>
-                                <td class="border px-4 py-2">{{ $r->type }}</td>
-                                <td class="border px-4 py-2">{{ $r->start_date }} to {{ $r->end_date }}
+                                <td class="border px-4 py-2">
+                                    @if ($r->type === 'PTO')
+                                        Leave
+                                    @elseif ($r->type === 'WFH')
+                                        Work From Home
+                                    @else
+                                        {{ ucfirst($r->type) }}
+                                    @endif
+                                </td>
+
+                                <td class="border px-4 py-2 text-xs">{{ $r->start_date }} to {{ $r->end_date }}
                                     ({{ $r->number_of_days }}d)</td>
                                 <td class="border px-4 py-2">{{ $r->number_of_days }}</td>
+                                <td class="border px-4 py-2">
+                                    @if ($r->type === 'PTO')
+                                        {{ optional($r->user->requestCredit)->pto ?? 'N/A' }}
+                                    @elseif ($r->type === 'WFH')
+                                        {{ optional($r->user->requestCredit)->wfh ?? 'N/A' }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </td>
+
                                 <td class="border px-4 py-2">
                                     @php
                                         $badgeColor = match ($r->status) {
@@ -45,12 +65,13 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-neutral-500 dark:text-neutral-400 py-4 italic">
+                                <td colspan="7" class="text-center text-neutral-500 dark:text-neutral-400 py-4 italic">
                                     No requests found.
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
+
                 </table>
             </div>
 
