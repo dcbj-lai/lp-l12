@@ -145,12 +145,21 @@ public function manage()
     if (!Gate::allows('is-manager-or-hr')) {
         abort(403, "Unauthorized Access.");
     }
-    $requests = StaffRequest::with('user')
-        ->latest()
-        ->paginate(10);
+
+    $query = StaffRequest::with('user')->latest();
+
+    // If the user is not HR, filter by supervisor_id
+    if (auth()->user()->isManager()) {
+        $query->whereHas('user', function ($q) {
+            $q->where('supervisor_id', auth()->id());
+        });
+    }
+
+    $requests = $query->paginate(10);
 
     return view('requests.manage', compact('requests'));
 }
+
 
 
 
