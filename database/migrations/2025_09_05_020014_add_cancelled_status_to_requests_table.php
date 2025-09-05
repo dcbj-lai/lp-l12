@@ -12,8 +12,8 @@ return new class extends Migration
             $table->string('status')->default('pending')->change();
         });
 
-        // Add CHECK constraint separately (Postgres style)
-        DB::statement("ALTER TABLE requests ADD CONSTRAINT requests_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled'));");
+        DB::statement("ALTER TABLE requests DROP CONSTRAINT IF EXISTS requests_status_check");
+        DB::statement("ALTER TABLE requests ADD CONSTRAINT requests_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled'))");
     }
 
     public function down()
@@ -22,7 +22,8 @@ return new class extends Migration
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending')->change();
         });
 
-        DB::statement("ALTER TABLE requests DROP CONSTRAINT IF EXISTS requests_status_check;");
+        DB::statement("ALTER TABLE requests DROP CONSTRAINT IF EXISTS requests_status_check");
+        DB::statement("ALTER TABLE requests ADD CONSTRAINT requests_status_check CHECK (status IN ('pending', 'approved', 'rejected'))");
     }
 
 };
