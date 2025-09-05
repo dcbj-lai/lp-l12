@@ -72,7 +72,7 @@
                             <label class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">Status</label>
                             <div
                                 class="mt-1 px-3 py-2 rounded-md text-sm font-medium
-                                    {{ $statusClasses[$status] ?? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
+                                                                                    {{ $statusClasses[$status] ?? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
                                 {{ ucfirst($request->status) }}
                             </div>
                         </div>
@@ -88,15 +88,19 @@
                                 Cancel
                             </flux:button>
                         </div>
-
-                        <form method="POST" action="{{ route('requests.destroy', $request->id) }}"
-                            onsubmit="return confirm('Are you sure you want to delete this request?');">
-                            @csrf
-                            @method('DELETE')
-                            <flux:button type="submit" variant="danger" size="sm">Delete</flux:button>
-                        </form>
                     </div>
                 </form>
+                @if ($request->status === 'pending' && \Carbon\Carbon::parse($request->start_date)->isFuture())
+                    <div class="mt-4">
+                        <form method="POST" action="{{ route('requests.archive', $request->id) }}">
+                            @csrf
+                            @method('PUT')
+                            <flux:button type="submit" size="sm">
+                                Cancel Request
+                            </flux:button>
+                        </form>
+                    </div>
+                @endif
             @else
                 <div class="space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
                     <p><strong>Type:</strong> {{ $request->type }}</p>

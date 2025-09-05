@@ -20,7 +20,7 @@
                     <th class="border px-4 py-2 text-left">Status</th>
                     <th class="border px-4 py-2 text-left">Approver</th>
                     <th class="border px-4 py-2 text-left">Requested At</th>
-                    <th class="border px-4 py-2 text-left">Updated At</th>
+                    {{-- <th class="border px-4 py-2 text-left">Updated At</th> --}}
                     <th class="border px-4 py-2 text-left">Actions</th>
                 </tr>
             </thead>
@@ -59,7 +59,7 @@
 
                             <span
                                 class="inline-block px-2 py-0.5 rounded-md text-xs font-medium capitalize
-                                                                                                                                                                                        {{ $statusColors[$status] ?? 'bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
+                                                                                                                                                                                                    {{ $statusColors[$status] ?? 'bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
                                 {{ $status }}
                             </span>
                         </td>
@@ -69,9 +69,9 @@
                         <td class="border px-4 py-2 whitespace-nowrap">
                             {{ $request->created_at->timezone('Asia/Manila')->format('Y-m-d h:i A') }}
                         </td>
-                        <td class="border px-4 py-2 whitespace-nowrap">
+                        {{-- <td class="border px-4 py-2 whitespace-nowrap">
                             {{ $request->updated_at->timezone('Asia/Manila')->format('Y-m-d h:i A') }}
-                        </td>
+                        </td> --}}
                         <td class="border px-4 py-2">
                             <a href="{{ route('requests.view', $request->id) }}"
                                 class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs">

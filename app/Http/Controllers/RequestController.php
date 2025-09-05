@@ -25,7 +25,7 @@ class RequestController extends Controller
     $requests = StaffRequest::with('approver')
         ->where('user_id', auth()->id())
         ->latest('created_at')
-        ->paginate(15);
+        ->paginate(10);
 
     return view('requests.my-requests', compact('requests'));
 }
@@ -43,13 +43,33 @@ public function create()
 public function store(Request $request)
 {
     try {
-        $request->validate([
-            'type' => 'required|in:PTO,WFH,LWOP', // removed 'Offset', added 'LWOP'
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'end_date_type' => 'required|in:full,half',
-            'reason' => 'required|string',
-        ]);
+        $request->validate(
+    [
+        'type' => 'required|in:PTO,WFH,LWOP', 
+        'start_date' => 'required|date|after_or_equal:today',
+        'end_date' => 'required|date|after_or_equal:start_date',
+        'end_date_type' => 'required|in:full,half',
+        'reason' => 'required|string',
+    ],
+    [
+        'type.required' => 'Please select a request type (Leave, Work from Home, or Leave Without Pay).',
+        'type.in' => 'The request type must be PTO, WFH, or LWOP.',
+
+        'start_date.required' => 'Start date is required.',
+        'start_date.date' => 'Start date must be a valid date.',
+        'start_date.after_or_equal' => 'Start date cannot be in the past.',
+
+        'end_date.required' => 'End date is required.',
+        'end_date.date' => 'End date must be a valid date.',
+        'end_date.after_or_equal' => 'End date must be the same or after the start date.',
+
+        'end_date_type.required' => 'Please specify if the last day is full or half.',
+        'end_date_type.in' => 'End date type must be either full or half day.',
+
+        'reason.required' => 'Please provide a reason for your request.',
+        'reason.string' => 'Reason must be valid text.',
+    ]);
+
 
         $user = Auth::user();
         $credits = $user->requestCredit;
@@ -64,6 +84,7 @@ public function store(Request $request)
             $days -= 0.5;
         }
         $hasOverlap = StaffRequest::where('user_id', $user->id)
+            ->where('status', '!=', 'cancelled')
             ->where(function ($query) use ($request) {
                 $query->whereBetween('start_date', [$request->start_date, $request->end_date])
                     ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
@@ -177,6 +198,11 @@ public function process(Request $request, $id)
             ->with('error', "Request already {$staffRequest->status}.");
     }
 
+    if($staffRequest->status==='cancelled') {
+        return redirect()->back()
+            ->with('error', "Request already {$staffRequest->status}.");
+    }
+
     $originalStatus = $staffRequest->status;
 
     $validated = $request->validate([
@@ -281,40 +307,26 @@ public function view(Request $request, StaffRequest $requestModel)
 }
 
 
-public function destroy(StaffRequest $request, Request $httpRequest)
+public function archive(Request $request, $id)
 {
-    if (!Gate::allows('is-manager-or-hr') && $request->user_id !== auth()->id()) {
+    $staffRequest = StaffRequest::findOrFail($id);
+    if ($staffRequest->user_id !== auth()->id()) {
         abort(403, 'Unauthorized');
     }
 
-    if (Gate::allows('is-manager-or-hr') && $request->status !== 'pending') {
-        abort(409, 'Cannot delete an approved or rejected request');
+    // Allow only if pending and in the future
+    if (
+        $staffRequest->status !== 'pending' ||
+        Carbon::parse($staffRequest->start_date)->isPast()
+    ) {
+        abort(409, 'Request cannot be cancelled');
     }
 
-
-    // Refresh credit if approved
-    if ($request->status === 'approved') {
-        $credits = $request->user->requestCredit;
-        // dd($credits);
-        if ($credits) {
-            switch ($request->type) {
-                case 'PTO':
-                    $credits->pto += $request->number_of_days;
-                    break;
-                case 'WFH':
-                    $credits->wfh += $request->number_of_days;
-                    break;
-            }
-
-            $credits->save();
-        }
-    }
-
-    $request->delete();
+    $staffRequest->update(['status' => 'cancelled']);
 
     return redirect()
-        ->route('requests.manage')
-        ->with('success', 'Request deleted successfully.');
+        ->route('my-requests')
+        ->with('success', 'Request has been cancelled.');
 }
 
 
@@ -376,6 +388,12 @@ public function update(Request $request, StaffRequest $requestModel)
     }
 
     return redirect()->back()->with('success', 'Leave credits updated for all users.');
+}
+
+public function forceDestroy(StaffRequest $request)
+{
+    $request->delete();
+    return redirect()->route('requests.manage')->with('success', 'Request permanently deleted.');
 }
 
 }

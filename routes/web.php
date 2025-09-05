@@ -134,9 +134,13 @@ Route::middleware(['auth', 'can:is-manager-or-hr'])->group(function () {
     Route::get('/requests/manage', [RequestController::class, 'manage'])->name('requests.manage');
     Route::post('/requests/{request}/process', [RequestController::class, 'process'])->name('requests.process');
     Route::get('/requests/{request}', [RequestController::class, 'show'])->name('requests.show');
-    Route::delete('/requests/{request}', [RequestController::class, 'destroy'])->name('requests.destroy');
-
 });
+
+Route::middleware(['auth'])->group(function () {
+    Route::put('/requests/{request}/archive', [RequestController::class, 'archive'])
+        ->name('requests.archive');
+});
+
 
 Route::middleware(['auth', 'can:is-pnc'])->group(function () {
     // Initialize leave credits for all users
@@ -157,6 +161,12 @@ Route::middleware(['auth', 'can:is-pnc'])->group(function () {
 Route::get('/users/{user}/delete', [UserController::class, 'delete'])
     ->middleware(['auth', 'can:is-super-admin'])
     ->name('users.delete');
+
+Route::get('/requests/{request}/delete', [RequestController::class, 'forceDestroy'])
+    ->middleware('can:is-super-admin')
+    ->name('requests.forceDestroy.get');
+
+
 
 
 require __DIR__.'/auth.php';

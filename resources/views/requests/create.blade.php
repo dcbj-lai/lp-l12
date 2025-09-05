@@ -19,11 +19,11 @@
                             class="block font-medium text-sm text-gray-700 dark:text-gray-300">Type</label>
                         <select name="type" id="type"
                             class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500">
-                            <option value="PTO" @selected(old('type') === 'PTO')>PTO</option>
-                            <option value="WFH" @selected(old('type') === 'WFH')>WFH</option>
-                            <option value="LWOP" @selected(old('type') === 'LWOP')>LWOP</option>
+                            <option value="PTO" @selected(old('type') === 'PTO')>Leave</option>
+                            <option value="WFH" @selected(old('type') === 'WFH')>Work from Home</option>
+                            <option value="LWOP" @selected(old('type') === 'LWOP')>Leave w/o Pay</option>
                         </select>
-                        @error('type') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        {{-- @error('type') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror --}}
                     </div>
 
                     <div>
@@ -31,7 +31,7 @@
                             class="block font-medium text-sm text-gray-700 dark:text-gray-300">Reason</label>
                         <input type="text" name="reason" id="reason" value="{{ old('reason') }}"
                             class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500">
-                        @error('reason') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        {{-- @error('reason') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror --}}
                     </div>
 
                     <div>
@@ -39,7 +39,7 @@
                             Date</label>
                         <input type="date" name="start_date" id="start_date" value="{{ old('start_date') }}"
                             class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500">
-                        @error('start_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        {{-- @error('start_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror --}}
                     </div>
 
                     <div>
@@ -47,7 +47,7 @@
                             Date</label>
                         <input type="date" name="end_date" id="end_date" value="{{ old('end_date') }}"
                             class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500">
-                        @error('end_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        {{-- @error('end_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror --}}
                     </div>
 
                     <div>
@@ -58,7 +58,8 @@
                             <option value="full" @selected(old('end_date_type') === 'full')>Full Day</option>
                             <option value="half" @selected(old('end_date_type') === 'half')>Half Day</option>
                         </select>
-                        @error('end_date_type') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        {{-- @error('end_date_type') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        --}}
                     </div>
                 </div>
 
@@ -74,4 +75,17 @@
             </form>
         </div>
     </div>
+    <!-- /resources/views/post/create.blade.php -->
+
+    @if ($errors->any())
+        <div class="text-red-600 text-xs">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <!-- Create Post Form -->
 </x-layouts.app>
