@@ -85,6 +85,7 @@ public function store(Request $request)
         }
         $hasOverlap = StaffRequest::where('user_id', $user->id)
             ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', 'rejected')
             ->where(function ($query) use ($request) {
                 $query->whereBetween('start_date', [$request->start_date, $request->end_date])
                     ->orWhereBetween('end_date', [$request->start_date, $request->end_date])

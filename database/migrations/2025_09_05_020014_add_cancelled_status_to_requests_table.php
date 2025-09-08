@@ -6,25 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::table('requests', function (Blueprint $table) {
-            $table->string('status')->default('pending')->change();
+            // Drop the old enum and recreate with the new values
+            $table->enum('status', ['pending', 'approved', 'rejected', 'cancelled'])
+                  ->default('pending')
+                  ->change();
         });
-
-        DB::statement("ALTER TABLE requests DROP CONSTRAINT IF EXISTS requests_status_check");
-        DB::statement("ALTER TABLE requests ADD CONSTRAINT requests_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled'))");
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::table('requests', function (Blueprint $table) {
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending')->change();
+            // Rollback to original enum
+            $table->enum('status', ['pending', 'approved', 'rejected'])
+                  ->default('pending')
+                  ->change();
         });
-
-        DB::statement("ALTER TABLE requests DROP CONSTRAINT IF EXISTS requests_status_check");
-        DB::statement("ALTER TABLE requests ADD CONSTRAINT requests_status_check CHECK (status IN ('pending', 'approved', 'rejected'))");
     }
-
 };
-
