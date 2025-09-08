@@ -17,6 +17,7 @@ use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\OrgSettingController;
+use App\Http\Controllers\VisitorLogController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -166,7 +167,19 @@ Route::get('/requests/{request}/delete', [RequestController::class, 'forceDestro
     ->middleware('can:is-super-admin')
     ->name('requests.forceDestroy.get');
 
+/**Visitor */
 
+
+Route::get('/visitor/start', [VisitorLogController::class, 'showStart'])->name('visitor.start');
+Route::post('/visitor/start', [VisitorLogController::class, 'sendOtp'])->name('visitor.sendOtp');
+Route::post('/visitor/verify', [VisitorLogController::class, 'verifyOtp'])->name('visitor.verifyOtp');
+
+Route::get('/visitor/form/{id}', [VisitorLogController::class, 'showForm'])->name('visitor.form');
+Route::post('/visitor/form/{id}', [VisitorLogController::class, 'submitForm'])->name('visitor.form.submit');
+
+Route::get('/visitor/thankyou', function () {
+    return view('visitor.thankyou');
+})->name('visitor.thankyou');
 
 
 require __DIR__.'/auth.php';

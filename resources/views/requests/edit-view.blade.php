@@ -19,10 +19,10 @@
                             <label for="type"
                                 class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">Type</label>
                             <select name="type" id="type"
-                                class="mt-1 block w-full border-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500">
-                                @foreach (['PTO', 'WFH', 'LWOP'] as $type)
-                                    <option value="{{ $type }}" @selected($request->type === $type)>{{ $type }}</option>
-                                @endforeach
+                                class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500">
+                                <option value="PTO" @selected(old('type') === 'PTO')>Leave</option>
+                                <option value="WFH" @selected(old('type') === 'WFH')>Work from Home</option>
+                                <option value="LWOP" @selected(old('type') === 'LWOP')>Leave w/o Pay</option>
                             </select>
                         </div>
 
@@ -72,7 +72,7 @@
                             <label class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">Status</label>
                             <div
                                 class="mt-1 px-3 py-2 rounded-md text-sm font-medium
-                                                                                    {{ $statusClasses[$status] ?? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
+                                                                                        {{ $statusClasses[$status] ?? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
                                 {{ ucfirst($request->status) }}
                             </div>
                         </div>
