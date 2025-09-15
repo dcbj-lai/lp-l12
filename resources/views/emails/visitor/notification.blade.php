@@ -5,7 +5,7 @@
 **Purpose:** {{ $visitor->purpose }}<br>
 **Check-In Time:** {{ \Carbon\Carbon::parse($visitor->check_in_at)->toDayDateTimeString() }}<br>
 
-@component('mail::button', ['url' => route('visitor.show', $visitor->id)])
+@component('mail::button', ['url' => route('visitors.show', $visitor->id)])
 View Visitor
 @endcomponent
 
