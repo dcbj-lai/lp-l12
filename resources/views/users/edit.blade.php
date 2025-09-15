@@ -86,6 +86,7 @@
                             <option value="pnc.staff">P&C Staff</option>
                             <option value="pnc.admin">P&C Admin</option>
                             <option value="sys.admin">System Admin</option>
+                            <option value="frontdesk.staff">Front Desk</option>
                         </select>
                         <flux:button type="button" size="sm" variant="primary" onclick="addRole()">Add Role</flux:button>
                     </div>
