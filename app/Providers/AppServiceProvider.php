@@ -28,5 +28,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('is-manager-or-hr', fn($user) => $user->hasAnyRole(['pnc.admin', 'super.admin']));
         Gate::define('is-manager-or-hr', fn ($user) => $user->isManager() || $user->hasAnyRole(['pnc.admin', 'super.admin']));
         Gate::define('is-super-admin', fn($user) => $user->hasAnyRole(['super.admin']));
+        Gate::define('is-frontdesk', fn($user) => $user->hasAnyRole(['frontdesk.staff']));
     }
 }

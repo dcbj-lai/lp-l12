@@ -20,7 +20,7 @@ use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\VisitorLogController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 })->name('home');
 
 // Route::view('dashboard', 'dashboard')
@@ -180,6 +180,43 @@ Route::post('/visitor/form/{id}', [VisitorLogController::class, 'submitForm'])->
 Route::get('/visitor/thankyou', function () {
     return view('visitor.thankyou');
 })->name('visitor.thankyou');
+
+Route::middleware(['auth', 'can:is-frontdesk'])->group(function () {
+    Route::get('frontdesk/visitors', [VisitorLogController::class, 'frontdeskIndex'])->name('frontdesk.visitors');
+    Route::post('frontdesk/visitors/{visitor}/checkin', [VisitorLogController::class, 'checkIn'])->name('frontdesk.checkin');
+    Route::post('frontdesk/visitors/{visitor}/checkout', [VisitorLogController::class, 'checkOut'])->name('frontdesk.checkout');
+    Route::get('/frontdesk/visitors/csv', [VisitorLogController::class, 'downloadCsv'])
+    ->name('frontdesk.visitors.csv')
+    ->middleware('auth');
+
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('visitor/acknowledge', [VisitorLogController::class, 'userIndex'])->name('user.visitors');
+    Route::post('visitor/acknowledge/{visitor}', [VisitorLogController::class, 'acknowledge'])->name('user.visitors.acknowledge');
+});
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('visitor/{visitor}/approve', [VisitorLogController::class, 'approveVisit'])
+        ->name('visitor.approve');
+});
+
+
+// Visited-user routes
+Route::middleware(['auth'])->group(function () {
+    // Logged-in user's own visitor logs
+    Route::get('/visitors/mine', [VisitorLogController::class, 'mine'])
+        ->name('visitors.mine');
+
+    // View a single visitor's details
+    Route::get('/visitors/{visitor}', [VisitorLogController::class, 'showVisitor'])
+        ->name('visitors.show');
+});
+
+
+Route::get('/frontdesk/visitors/{visitor}', [VisitorLogController::class, 'show'])
+    ->name('frontdesk.visitors.show');
 
 
 require __DIR__.'/auth.php';

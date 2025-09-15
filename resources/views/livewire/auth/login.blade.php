@@ -111,6 +111,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
             </a>
         </div>
 
+        <div style="display:flex;justify-content:center;align-items:center">
+            <span class="text-xs" style="color:#ED9122;"
+                title="In the same way, let your light shine before others, that they may see your good deeds and glorify your Father in heaven.">
+                Matthew 5:16
+            </span>
+        </div>
+
+
 
     </form>
 

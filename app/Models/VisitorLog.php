@@ -7,9 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 class VisitorLog extends Model
 {
     protected $fillable = [
-        'email', 'mobile','otp', 
-        'full_name', 'address', 
-        'check_in_at', 'visited_user_id','purpose','check_out_at'
+    'email',
+    'otp',
+    'full_name',
+    'address',
+    'mobile',
+    'check_in_at',
+    'check_out_at',
+    'visited_user_id',
+    'purpose',
+    'status',
+    'meetup_spot',
+];
+
+    public function visitedUser()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'visited_user_id');
+    }
+
+    protected $casts = [
+        'check_in_at' => 'datetime',
+        'check_out_at' => 'datetime',
     ];
 }
 

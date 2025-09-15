@@ -13,6 +13,7 @@
         $isFinanceAdmin = in_array('finance.admin', $user->roles ?? []);
         $isSuperAdmin = in_array('super.admin', $user->roles ?? []);
         $isManager = $user->isManager();
+        $isFrontDesk = in_array('frontdesk.staff', $user->roles ?? []);
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -29,6 +30,7 @@
                 <flux:navlist.item href="{{route('my-requests')}}" icon="calendar">Requests</flux:navlist.item>
                 <flux:navlist.item href="{{route('payslips.index')}}" icon="banknotes">Payslips</flux:navlist.item>
                 <flux:navlist.item href="#" icon="bot-message-square">Notifications</flux:navlist.item>
+                <flux:navlist.item href="{{route('visitors.mine')}}" icon="book-user">Visitors</flux:navlist.item>
                 <flux:navlist.group heading="Life Steps">
                     <flux:navlist.item href="{{route('my-steps.index')}}" icon="footprints">My Steps</flux:navlist.item>
                     <flux:navlist.item href="{{route('steps.index')}}" icon="trophy">Leaderboard</flux:navlist.item>
@@ -46,6 +48,13 @@
             @if ($isFinanceAdmin || $isSuperAdmin)
                 <flux:navlist.group heading="Finance" expandable :expanded="false">
                     <flux:navlist.item href="{{route('payouts.index')}}" icon="hand-coins">Payroll
+                    </flux:navlist.item>
+                    <flux:navlist.item href="#" icon="file-chart-column-increasing">Reports</flux:navlist.item>
+                </flux:navlist.group>
+            @endif
+            @if ($isFrontDesk || $isSuperAdmin)
+                <flux:navlist.group heading="Front Desk" expandable :expanded="false">
+                    <flux:navlist.item href="{{route('frontdesk.visitors')}}" icon="logs">Visitor Logs
                     </flux:navlist.item>
                     <flux:navlist.item href="#" icon="file-chart-column-increasing">Reports</flux:navlist.item>
                 </flux:navlist.group>

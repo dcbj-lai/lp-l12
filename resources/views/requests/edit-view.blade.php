@@ -72,7 +72,7 @@
                             <label class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">Status</label>
                             <div
                                 class="mt-1 px-3 py-2 rounded-md text-sm font-medium
-                                                                                        {{ $statusClasses[$status] ?? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
+                                                                                            {{ $statusClasses[$status] ?? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
                                 {{ ucfirst($request->status) }}
                             </div>
                         </div>
@@ -103,12 +103,27 @@
                 @endif
             @else
                 <div class="space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
-                    <p><strong>Type:</strong> {{ $request->type }}</p>
+                    <p><strong>Type:</strong> 
+                        @switch($request->type)
+                            @case('PTO')
+                                Leave
+                                @break
+                            @case('WFH')
+                                Work from Home
+                                @break
+                            @case('LWOP')
+                                Leave w/o Pay
+                                @break
+                            @default
+                                {{ $request->type }}
+                        @endswitch
+                    </p>
                     <p><strong>Date Range:</strong> {{ $request->start_date }} to {{ $request->end_date }}</p>
                     <p><strong>Days:</strong> {{ $request->number_of_days }}</p>
                     <p><strong>Reason:</strong> {{ $request->reason }}</p>
                     <p><strong>Status:</strong> {{ ucfirst($request->status) }}</p>
                     <p><strong>Approver:</strong> {{ optional($request->approver)->name ?? '—' }}</p>
+                    <p><strong>Remarks:</strong> {{ $request->remarks }}</p>
                 </div>
             @endif
         </div>
