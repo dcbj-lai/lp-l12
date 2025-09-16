@@ -274,5 +274,20 @@ public function mine(Request $request)
     }, 200, $headers);
 }
 
+public function visitorDestroy(VisitorLog $visitor)
+{
+    $visitor->delete();
+    return redirect()->route('frontdesk.visitors')->with('success', 'Visitor log permanently deleted.');
+
+}
+
+public function visitorDestroyAll()
+{
+    \DB::table('visitor_logs')->truncate();
+
+    return redirect()
+        ->route('frontdesk.visitors')
+        ->with('success', 'All visitor logs have been permanently deleted.');
+}
 
 }

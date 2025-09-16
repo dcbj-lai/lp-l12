@@ -159,6 +159,8 @@ Route::middleware(['auth', 'can:is-pnc'])->group(function () {
 
 });
 
+
+
 Route::get('/users/{user}/delete', [UserController::class, 'delete'])
     ->middleware(['auth', 'can:is-super-admin'])
     ->name('users.delete');
@@ -166,6 +168,14 @@ Route::get('/users/{user}/delete', [UserController::class, 'delete'])
 Route::get('/requests/{request}/delete', [RequestController::class, 'forceDestroy'])
     ->middleware('can:is-super-admin')
     ->name('requests.forceDestroy.get');
+    
+Route::get('/frontdesk/visitors/{visitor}/delete', [VisitorLogController::class, 'visitorDestroy'])
+    ->middleware('can:is-super-admin')
+    ->name('requests.visitorDestroy.get');
+
+Route::get('/frontdesk/visitors/delete-all', [VisitorLogController::class, 'visitorDestroyAll'])
+    ->middleware(['auth', 'can:is-super-admin']);
+
 
 /**Visitor */
 
@@ -191,10 +201,10 @@ Route::middleware(['auth', 'can:is-frontdesk'])->group(function () {
 
 });
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('visitor/acknowledge', [VisitorLogController::class, 'userIndex'])->name('user.visitors');
-    Route::post('visitor/acknowledge/{visitor}', [VisitorLogController::class, 'acknowledge'])->name('user.visitors.acknowledge');
-});
+// Route::middleware(['auth'])->group(function () {
+//     Route::get('visitor/acknowledge', [VisitorLogController::class, 'userIndex'])->name('user.visitors');
+//     Route::post('visitor/acknowledge/{visitor}', [VisitorLogController::class, 'acknowledge'])->name('user.visitors.acknowledge');
+// });
 
 
 Route::middleware(['auth'])->group(function () {
