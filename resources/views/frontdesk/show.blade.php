@@ -68,14 +68,14 @@
                     <button type="submit"
                         class="px-3 py-1 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         onclick="document.getElementById('action_type').value='decline';"
-                        @disabled(in_array($visitor->status, ['approved', 'declined', 'checked_out']))>
+                        @disabled(in_array($visitor->status, ['approved', 'declined', 'checked_out', 'pending']))>
                         Decline Visit
                     </button>
 
                     <button type="submit"
                         class="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         onclick="document.getElementById('action_type').value='approve';"
-                        @disabled(in_array($visitor->status, ['approved', 'declined', 'checked_out']))>
+                        @disabled(in_array($visitor->status, ['approved', 'declined', 'checked_out', 'pending']))>
                         Approve Visit
                     </button>
                 </div>
