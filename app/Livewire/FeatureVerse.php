@@ -3,8 +3,7 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use App\Models\BibleVerse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class FeatureVerse extends Component
 {
@@ -14,24 +13,30 @@ class FeatureVerse extends Component
 
     public function mount()
     {
-        $latestVerse = BibleVerse::latest()->first();
-        $this->verse = $latestVerse->text ?? 'Loading verse...';
-        $this->reference = $latestVerse->reference ?? '';
+        $this->fetchVerseFromApi();
     }
 
-    public function saveVerse()
+    public function fetchVerseFromApi()
     {
-        if (!Auth::user()->can('is-admin')) {
-            return; // Ensure only admins can update
-        }
-        // dd('hello');
-        BibleVerse::updateOrCreate([], [
-            'text' => $this->verse,
-            'reference' => $this->reference
-        ]);
+        try {
+            $response = Http::timeout(5)->get('https://beta.ourmanna.com/api/v1/get?format=json');
 
-        $this->editing = false;
-        session()->flash('success', 'Bible verse updated successfully!');
+            if ($response->successful()) {
+                $data = $response->json();
+                $this->verse = $data['verse']['details']['text'] ?? 'Let your light shine before others, that they may see your good deeds and glorify your Father in heaven.';
+                $this->reference = $data['verse']['details']['reference'] ?? 'Matthew 5:16';
+            } else {
+                $this->useFallbackVerse();
+            }
+        } catch (\Exception $e) {
+            $this->useFallbackVerse();
+        }
+    }
+
+    private function useFallbackVerse()
+    {
+        $this->verse = 'Let your light shine before others, that they may see your good deeds and glorify your Father in heaven.';
+        $this->reference = 'Matthew 5:16';
     }
 
     public function render()

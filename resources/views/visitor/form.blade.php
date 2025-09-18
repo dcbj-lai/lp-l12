@@ -179,7 +179,27 @@
 
             <button type="submit">Submit</button>
         </form>
+        <a href="https://laicollege.edu.ph/privacy-policy/" target="_blank" class="privacy-link">
+            Privacy Policy
+        </a>
     </div>
 </body>
+<style>
+    .privacy-link {
+        display: block;
+        text-align: center;
+        font-size: 0.75rem;
+        /* smaller text */
+        color: var(--text-color, #666);
+        opacity: 0.7;
+        text-decoration: none;
+        margin-top: 12px;
+    }
+
+    .privacy-link:hover {
+        opacity: 1;
+        text-decoration: underline;
+    }
+</style>
 
 </html>
