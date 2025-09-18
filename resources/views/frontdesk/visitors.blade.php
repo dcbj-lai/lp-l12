@@ -36,6 +36,7 @@
                     <thead>
                         <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
                             <th class="border px-4 py-2 text-left">Full Name</th>
+                            <th class="border px-4 py-2 text-left">Company</th>
                             <th class="border px-4 py-2 text-left hidden md:table-cell">Email</th>
                             <th class="border px-4 py-2 text-left">Mobile</th>
                             <th class="border px-4 py-2 text-left hidden lg:table-cell">Person Visited</th>
@@ -48,6 +49,7 @@
                         @forelse ($visitors as $visitor)
                             <tr class="border-b border-neutral-200 dark:border-neutral-700">
                                 <td class="border px-4 py-2">{{ $visitor->full_name }}</td>
+                                <td class="border px-4 py-2">{{ $visitor->company }}</td>
                                 <td class="border px-4 py-2 hidden md:table-cell">{{ $visitor->email }}</td>
                                 <td class="border px-4 py-2">{{ $visitor->mobile }}</td>
                                 <td class="border px-4 py-2 hidden lg:table-cell">
