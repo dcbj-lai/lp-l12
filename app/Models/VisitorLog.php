@@ -18,6 +18,7 @@ class VisitorLog extends Model
     'purpose',
     'status',
     'meetup_spot',
+    'company',
 ];
 
     public function visitedUser()

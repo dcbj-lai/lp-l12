@@ -84,6 +84,7 @@ public function submitForm(Request $request, $id)
 {
     $request->validate([
     'full_name'       => 'required|string|max:255',
+    'company'         => 'required|string|max:255',
     'address'         => 'required|string|max:500',
     'mobile'          => 'required|string|max:20',
     'visited_user_id' => 'required|exists:users,id',
@@ -95,6 +96,7 @@ public function submitForm(Request $request, $id)
     $visitor = VisitorLog::findOrFail($id);
     $visitor->update([
         'full_name' => $request->full_name,
+        'company' => $request->company,
         'address'   => $request->address,
         'mobile'    => $request->mobile,
         'visited_user_id'    => $request->visited_user_id,

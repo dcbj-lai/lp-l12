@@ -140,10 +140,17 @@
             </div>
 
             <div>
+                <label>Company</label>
+                <input type="text" name="company" required value="{{ old('company', $visitor->company) }}">
+                @error('company') <p class="error">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
                 <label>Address</label>
                 <textarea name="address" required>{{ old('address', $visitor->address) }}</textarea>
                 @error('address') <p class="error">{{ $message }}</p> @enderror
             </div>
+
 
             <div>
                 <label>Mobile Number</label>
