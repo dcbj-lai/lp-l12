@@ -1,6 +1,7 @@
 @component('mail::message')
 # New Visitor: {{ $visitor->full_name }}
 
+**Company:** {{ $visitor->company }}<br>
 **Mobile:** {{ $visitor->mobile }}<br>
 **Purpose:** {{ $visitor->purpose }}<br>
 **Check-In Time:** {{ \Carbon\Carbon::parse($visitor->check_in_at)->toDayDateTimeString() }}<br>

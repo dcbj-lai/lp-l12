@@ -38,6 +38,7 @@
 
                 <div class="space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
                     <p><span class="font-semibold">Full Name:</span> {{ $visitor->full_name }}</p>
+                    <p><span class="font-semibold">Company:</span> {{ $visitor->company }}</p>
                     <p><span class="font-semibold">Email:</span> {{ $visitor->email }}</p>
                     <p><span class="font-semibold">Mobile:</span> {{ $visitor->mobile }}</p>
                     <p><span class="font-semibold">Address:</span> {{ $visitor->address }}</p>

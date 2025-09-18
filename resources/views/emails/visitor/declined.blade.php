@@ -4,6 +4,7 @@
 The visit scheduled by **{{ $visitor->full_name }}** has been declined by the visited party.
 
 **Visitor Details:**
+- **Company:** {{ $visitor->company }}
 - **Email:** {{ $visitor->email }}
 - **Mobile:** {{ $visitor->mobile }}
 - **Purpose:** {{ $visitor->purpose ?? '-' }}
