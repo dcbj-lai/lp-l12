@@ -266,10 +266,12 @@ public function process(Request $request, $id)
         }
     }
 
+    $ccRecipients = [env('REQUESTS_HR_EMAIL'),env('REQUESTS_OP_EMAIL')];
+
     $requester = $staffRequest->user;
     if ($requester && $requester->email) {
         Mail::to($requester->email)
-            ->cc(env('REQUESTS_HR_EMAIL'))
+            ->cc($ccRecipients)
             ->queue(new ResponseReceived($staffRequest));
     }
 
