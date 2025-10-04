@@ -90,7 +90,7 @@
                         </div>
                     </div>
                 </form>
-                @if ($request->status === 'pending' && \Carbon\Carbon::parse($request->start_date)->isFuture())
+                @if ($request->status === 'pending')
                     <div class="mt-4">
                         <form method="POST" action="{{ route('requests.archive', $request->id) }}">
                             @csrf
