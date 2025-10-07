@@ -1,6 +1,7 @@
 @component('mail::message')
 # New Request Submitted by {{ $request->user->name }}
-**Type:** {{ $request->type }}<br>
+**Type:**
+{{ $request->type === 'PTO' ? 'Leave' : ($request->type === 'WFH' ? 'Work from home' : strtolower($request->type)) }}<br>
 **Reason:** {{ $request->reason }}<br>
 **From:** {{ \Carbon\Carbon::parse($request->start_date)->toFormattedDateString() }}<br>
 **To:** {{ \Carbon\Carbon::parse($request->end_date)->toFormattedDateString() }}<br>
