@@ -43,7 +43,7 @@ class VisitorPreApprovedMail extends Mailable implements ShouldQueue
 
     public function build()
     {
-        return $this->subject('Your Pre-Approved Visit')
+        return $this->subject('Your Visit with LAIC')
             ->view('emails.visitors.preapproved')
             ->with([
                 'visitor' => $this->visitor,
