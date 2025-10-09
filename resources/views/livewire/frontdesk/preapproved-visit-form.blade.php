@@ -9,13 +9,21 @@
             ← Back to My Visitors
         </a>
     </div>
+
     {{-- Visit Details --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Visit Date</label>
-            <input type="date" wire:model.defer="visit_date"
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Visit Date & Time</label>
+            <input type="datetime-local" wire:model.defer="visit_date"
                 class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full">
             @error('visit_date') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Company</label>
+            <input type="text" wire:model.defer="company" placeholder="Visitor's Company"
+                class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full">
+            @error('company') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div>
@@ -45,9 +53,7 @@
                 <span class="text-xs text-zinc-400">Add expected visitor(s) here...</span>
             @endforelse
         </div>
-        @error('visitors')
-            <p class="text-red-500 text-sm mb-2">{{ $message }}</p>
-        @enderror
+        @error('visitors') <p class="text-red-500 text-sm mb-2">{{ $message }}</p> @enderror
 
         {{-- Input fields --}}
         <div class="flex flex-col md:flex-row gap-2">
@@ -64,12 +70,10 @@
         <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Notes <span class="text-xs text-zinc-400">(optional)</span>
         </label>
-        <textarea wire:model.defer="notes" rows="3" placeholder="Any special instructions or remarks..." class="border px-4 py-2 rounded-md text-sm w-full transition
-               dark:bg-zinc-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-    </textarea>
+        <textarea wire:model.defer="notes" rows="3" placeholder="Any special instructions or remarks..."
+            class="border px-4 py-2 rounded-md text-sm w-full transition dark:bg-zinc-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
         @error('notes') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
     </div>
-
 
     {{-- Submit --}}
     <div class="flex justify-end">

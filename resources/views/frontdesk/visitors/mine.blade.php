@@ -77,8 +77,16 @@
                                 </td>
                                 <td class="border px-4 py-2">{{ $visitor->company ?? '-' }}</td>
                                 <td class="border px-4 py-2">
-                                    {{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '-' }}
+                                    @if($visitor->visit_date)
+                                        {{ \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') }}<br>
+                                        <span class="text-xs text-neutral-500 dark:text-neutral-400">
+                                            {{ \Carbon\Carbon::parse($visitor->visit_date)->format('h:i A') }}
+                                        </span>
+                                    @else
+                                        -
+                                    @endif
                                 </td>
+
                                 <td class="border px-4 py-2 hidden md:table-cell">{{ $visitor->email ?? '-' }}</td>
                                 <td class="border px-4 py-2">{{ $visitor->mobile ?? '-' }}</td>
                                 <td class="border px-4 py-2 hidden md:table-cell">{{ $visitor->purpose ?? '-' }}</td>

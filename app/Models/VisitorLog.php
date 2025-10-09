@@ -21,6 +21,7 @@ class VisitorLog extends Model
         'check_out_at',
         'batch_id',
         'visit_date',
+        'company',
     ];
 
     protected $casts = [

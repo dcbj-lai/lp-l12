@@ -23,11 +23,17 @@
                     Here are the details to your upcoming visit to <strong style="color:#1390B4;">LAIC</strong>.
                 </p>
 
+                <!-- Visit Details Table -->
                 <table width="100%" cellpadding="8" cellspacing="0"
                     style="margin:20px 0; border-radius:8px; background:#f3f4f6; text-align:left;">
                     <tr>
                         <td style="font-weight:bold; width:130px;">Date:</td>
-                        <td>{{ \Carbon\Carbon::parse($visitor->visit_date)->format('F j, Y') }}</td>
+                        <td>
+                            {{ \Carbon\Carbon::parse($visitor->visit_date)->format('F j, Y') }}<br>
+                            <span style="font-size:12px; color:#4b5563;">
+                                {{ \Carbon\Carbon::parse($visitor->visit_date)->format('h:i A') }}
+                            </span>
+                        </td>
                     </tr>
                     <tr>
                         <td style="font-weight:bold;">Purpose:</td>
@@ -43,11 +49,11 @@
                     </tr>
                 </table>
 
+                <!-- QR Code Instructions -->
                 <div
                     style="background:#F8E9D6; color:#1390B4; padding:15px; border-radius:8px; margin:20px 0; font-weight:bold; display:block; min-height:1px; border:1px solid transparent;">
                     Present attached QR Code at the reception desk for check-in.
                 </div>
-
 
                 <p style="color:#4b5563; font-size:16px;">Thanks,<br><strong>Your Team at LAIC</strong></p>
             </td>

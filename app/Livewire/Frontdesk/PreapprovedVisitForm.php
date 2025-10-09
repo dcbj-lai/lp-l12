@@ -12,6 +12,7 @@ class PreapprovedVisitForm extends Component
 {
     public $visit_date;
     public $purpose;
+    public $company;
     public $notes;
     public $visitor_name = '';
     public $visitor_email = '';
@@ -46,6 +47,7 @@ class PreapprovedVisitForm extends Component
             'visitors' => 'required|array|min:1',
             'visitors.*.name' => 'required|string|max:255',
             'visitors.*.email' => 'required|email',
+            'company' => 'required|string|max:255',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -70,6 +72,7 @@ class PreapprovedVisitForm extends Component
                 'full_name' => $visitor['name'],
                 'email' => $visitor['email'],
                 'purpose' => $this->purpose,
+                'company' => $this->company,
                 'visit_date' => $this->visit_date,
                 'meetup_spot' => $this->notes,
                 'visited_user_id' => Auth::id(),
