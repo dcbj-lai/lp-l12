@@ -44,9 +44,10 @@
                 </table>
 
                 <div
-                    style="background:#F8E9D6; color:#1390B4; padding:15px; border-radius:8px; margin:20px 0; font-weight:bold;">
+                    style="background:#F8E9D6; color:#1390B4; padding:15px; border-radius:8px; margin:20px 0; font-weight:bold; display:block; min-height:1px; border:1px solid transparent;">
                     Present attached QR Code at the reception desk for check-in.
                 </div>
+
 
                 <p style="color:#4b5563; font-size:16px;">Thanks,<br><strong>Your Team at LAIC</strong></p>
             </td>
