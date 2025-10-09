@@ -20,12 +20,29 @@
             <p><strong>Visit Date:</strong> {{ \Carbon\Carbon::parse($visitor->visit_date)->format('F d, Y') }}</p>
             <p><strong>Host:</strong> {{ optional($visitor->visitedUser)->name ?? 'Unassigned' }}</p>
             <p><strong>Status:</strong>
-                <span
-                    class="px-2 py-1 rounded-full text-sm 
-                    {{ $visitor->status === 'checked_in' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                <span class="px-2 py-1 rounded-full text-sm 
+                    @if($visitor->status === 'checked_in') bg-green-100 text-green-700
+                    @elseif($visitor->status === 'approved') bg-emerald-100 text-emerald-700
+                    @elseif($visitor->status === 'endorsed') bg-blue-100 text-blue-700
+                    @elseif($visitor->status === 'pending') bg-yellow-100 text-yellow-700
+                    @elseif($visitor->status === 'checked_out') bg-purple-100 text-purple-700
+                    @else bg-gray-100 text-gray-700 @endif">
                     {{ ucfirst(str_replace('_', ' ', $visitor->status)) }}
                 </span>
             </p>
+        </div>
+
+        {{-- Action Buttons --}}
+        <div class="mt-6 flex flex-col gap-2">
+            @if($visitor->status === 'approved')
+                {{-- Check-In button --}}
+                <form action="{{ route('frontdesk.checkin', $visitor) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="w-full px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">
+                        Check In
+                    </button>
+                </form>
+            @endif
         </div>
     </div>
 </body>

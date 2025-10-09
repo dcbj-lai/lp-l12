@@ -56,8 +56,14 @@
                     </label>
 
                     @php
-                        $isEditable = $visitor->batch_id && $visitor->status != 'checked_out';
+                        $isEditable = false;
+                        if ($visitor->batch_id === NULL) {
+                            if ($visitor->status === 'endorsed') {
+                                $isEditable = true;
+                            }
+                        }
                     @endphp
+
 
                     <input type="text" name="meetup_spot" id="meetup_spot"
                         value="{{ old('meetup_spot', $visitor->meetup_spot) }}" class="w-full rounded-md border border-neutral-300 dark:border-neutral-700 
@@ -68,39 +74,43 @@
                 </div>
 
 
-                <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-3 flex-wrap">
-                    <button type="submit"
-                        class="px-3 py-1 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        onclick="document.getElementById('action_type').value='decline';"
-                        @disabled(in_array($visitor->status, ['approved', 'declined', 'checked_out', 'pending']))>
-                        Decline Visit
-                    </button>
+                @if($visitor->batch_id === NULL)
+                    <div class="flex flex-col sm:flex-row gap-3 flex-wrap">
+                        <button type="submit"
+                            class="px-3 py-1 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onclick="document.getElementById('action_type').value='decline';"
+                            @disabled(in_array($visitor->status, ['approved', 'declined', 'checked_out', 'pending']))>
+                            Decline Visit
+                        </button>
 
-                    <button type="submit"
-                        class="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        onclick="document.getElementById('action_type').value='approve';"
-                        @disabled(in_array($visitor->status, ['approved', 'declined', 'checked_out', 'pending']))>
-                        Approve Visit
-                    </button>
-                </div>
+                        <button type="submit"
+                            class="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onclick="document.getElementById('action_type').value='approve';"
+                            @disabled(in_array($visitor->status, ['approved', 'declined', 'checked_out', 'pending']))>
+                            Approve Visit
+                        </button>
+                    </div>
+                @endif
 
                 <input type="hidden" name="action_type" id="action_type" value="">
             </form>
 
             <!-- Cancel Visit Button (Separate Form) -->
-            @if ($isEditable)
+            @if ($visitor->batch_id != NULL)
                 <form action="{{ route('visitor.cancel-batch', $visitor->batch_id) }}" method="POST"
                     onsubmit="return confirm('Are you sure you want to cancel this pre-approved visit? This will delete all visitors in this batch.');"
                     class="pt-4 border-t border-neutral-200 dark:border-neutral-700">
                     @csrf
                     @method('DELETE')
                     <button type="submit"
-                        class="px-3 py-1 rounded bg-amber-600 text-white text-sm font-medium hover:bg-amber-700">
+                        class="px-3 py-1 rounded text-white text-sm font-medium 
+                                {{ $visitor->status === 'checked_out' ? 'bg-gray-400 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-700' }}"
+                        {{ $visitor->status === 'checked_out' ? 'disabled' : '' }}>
                         Cancel Visit
                     </button>
                 </form>
             @endif
+
 
         </div>
     </div>

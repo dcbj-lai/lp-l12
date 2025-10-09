@@ -16,7 +16,7 @@
             </div>
 
             <!-- Visitor Info and Check-In -->
-            <form action="{{ route('frontdesk.checkin', $visitor) }}" method="POST" class="space-y-6">
+            <form action="{{ route('frontdesk.endorse', $visitor) }}" method="POST" class="space-y-6">
                 @csrf
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-neutral-700 dark:text-neutral-300">
@@ -44,14 +44,15 @@
                                 'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300',
                                 'endorsed' => 'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300',
                                 'approved' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800/20 dark:text-emerald-300',
-                                'declined' => 'bg-rose-100 text-rose-800 dark:bg-rose-800/20 dark:text-rose-300',
+                                'checked_in' => 'bg-cyan-100 text-cyan-800 dark:bg-cyan-800/20 dark:text-cyan-300',
                                 'checked_out' => 'bg-purple-100 text-purple-800 dark:bg-purple-800/20 dark:text-purple-300',
+                                'declined' => 'bg-rose-100 text-rose-800 dark:bg-rose-800/20 dark:text-rose-300',
                             ];
-
                         @endphp
+
                         <span
                             class="inline-block px-2 py-0.5 rounded-md text-xs font-medium
-    {{ $statusColors[strtolower($visitor->status)] ?? 'bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
+        {{ $statusColors[strtolower($visitor->status)] ?? 'bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' }}">
                             {{ ucfirst($visitor->status) }}
                         </span>
 
@@ -59,11 +60,13 @@
                             $instructions = [
                                 'pending' => 'Review details and endorse this visitor.',
                                 'endorsed' => 'Wait for approval from the visited person.',
-                                'approved' => 'Issue a guest badge or prepare for checkout.',
-                                'declined' => 'Visitor declined—notify and escort them out.',
-                                'checked_out' => 'Visitor already checked out—no further action needed.',
+                                'approved' => 'Issue a guest badge and check the guest in at reception.',
+                                'checked_in' => 'Guest is currently inside the campus. Check out when leaving.',
+                                'checked_out' => 'Visitor already checked out — no further action needed.',
+                                'declined' => 'Visitor declined — notify and escort them out.',
                             ];
                         @endphp
+
 
                         @if(isset($instructions[strtolower($visitor->status)]))
                             <span class="block mt-1 text-xs text-neutral-600 dark:text-neutral-400 italic">
@@ -100,8 +103,16 @@
                 @endif
             </form>
 
-            <!-- Checkout Button -->
+            {{-- Step 1: Approved → show Check In --}}
             @if ($visitor->status === 'approved')
+                <form action="{{ route('frontdesk.checkin', $visitor) }}" method="POST" class="mt-4">
+                    @csrf
+                    <button type="submit" class="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        Check In
+                    </button>
+                </form>
+                {{-- Step 2: Checked In → show Check Out --}}
+            @elseif ($visitor->status === 'checked_in')
                 <form action="{{ route('frontdesk.checkout', $visitor) }}" method="POST" class="mt-4">
                     @csrf
                     <button type="submit" class="text-sm px-3 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700">
@@ -109,6 +120,7 @@
                     </button>
                 </form>
             @endif
+
         </div>
     </div>
 </x-layouts.app>

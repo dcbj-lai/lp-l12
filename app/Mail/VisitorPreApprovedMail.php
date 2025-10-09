@@ -27,7 +27,7 @@ class VisitorPreApprovedMail extends Mailable implements ShouldQueue
         $qrPng = QrCode::format('png')
             ->size(300)
             ->margin(2)
-            ->generate(config('app.url') . "/visitors/verify/{$visitor->batch_id}");
+            ->generate(config('app.url') . "/visitors/{$visitor->id}/verify/{$visitor->batch_id}");
 
 
 

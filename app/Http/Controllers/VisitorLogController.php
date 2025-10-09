@@ -129,6 +129,19 @@ public function frontdeskIndex(Request $request)
 
 public function checkIn(Request $request, VisitorLog $visitor)
 {
+
+    // Update the visitor record with status, check-in, and meetup_spot
+    $visitor->update([
+        'status' => 'checked_in',
+        'check_in_at' => now(),
+    ]);
+
+    return redirect()
+        ->route('frontdesk.visitors')
+        ->with('success', 'Visitor checked in!');
+}
+public function endorse(Request $request, VisitorLog $visitor)
+{
     // Validate the meetup_spot input
     $validated = $request->validate([
         'meetup_spot' => 'nullable|string|max:255',
@@ -137,7 +150,6 @@ public function checkIn(Request $request, VisitorLog $visitor)
     // Update the visitor record with status, check-in, and meetup_spot
     $visitor->update([
         'status' => 'endorsed',
-        'check_in_at' => now(),
     ]);
 
     // Send email to the visited party if email exists
@@ -148,7 +160,7 @@ public function checkIn(Request $request, VisitorLog $visitor)
 
     return redirect()
         ->route('frontdesk.visitors')
-        ->with('success', 'Visitor endorsed, meetup spot updated, and notification sent.');
+        ->with('success', 'Visitor endorsed and notification sent.');
 }
 
 public function checkOut(Request $request, VisitorLog $visitor)
@@ -309,34 +321,19 @@ public function cancelBatch($batchId)
         ->with('success', "Cancelled {$count} pre-approved visit(s).");
 }
 
-public function showValidQr($batch_id)
+public function showValidQr($visitor_id, $batch_id)
 {
-    $visitor = VisitorLog::where('batch_id', $batch_id)->first();
+    $visitor = VisitorLog::where('id', $visitor_id)
+        ->where('batch_id', $batch_id)
+        ->first();
 
-    // Check for invalid cases
-    if (! $visitor) {
-        return view('frontdesk.visitors.qr-invalid', [
-            'reason' => 'QR code not recognized.',
-        ]);
+    if (! $visitor || $visitor->status !== 'approved' || \Carbon\Carbon::parse($visitor->visit_date)->isPast()) {
+        return view('frontdesk.visitors.qr-invalid');
     }
 
-    // Visit date in the past
-    if (\Carbon\Carbon::parse($visitor->visit_date)->isPast()) {
-        return view('frontdesk.visitors.qr-invalid', [
-            'reason' => 'Visit date has expired.',
-        ]);
-    }
-
-    // Not approved yet
-    if ($visitor->status !== 'approved') {
-        return view('frontdesk.visitors.qr-invalid', [
-            'reason' => 'Visit not yet approved.',
-        ]);
-    }
-
-    // ✅ Valid case
     return view('frontdesk.visitors.qr-valid', compact('visitor'));
 }
+
 
 
 }

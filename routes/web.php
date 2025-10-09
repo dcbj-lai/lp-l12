@@ -193,9 +193,12 @@ Route::get('/visitor/thankyou', function () {
 })->name('visitor.thankyou');
 
 Route::middleware(['auth', 'can:is-frontdesk'])->group(function () {
-    Route::get('/visitors/verify/{batch_id}', [VisitorLogController::class, 'showValidQr'])
+    // Route::get('/visitors/verify/{batch_id}', [VisitorLogController::class, 'showValidQr'])
+    // ->name('visitors.verify');
+    Route::get('/visitors/{visitor_id}/verify/{batch_id}', [VisitorLogController::class, 'showValidQr'])
     ->name('visitors.verify');
     Route::get('frontdesk/visitors', [VisitorLogController::class, 'frontdeskIndex'])->name('frontdesk.visitors');
+    Route::post('frontdesk/visitors/{visitor}/endorse', [VisitorLogController::class, 'endorse'])->name('frontdesk.endorse');
     Route::post('frontdesk/visitors/{visitor}/checkin', [VisitorLogController::class, 'checkIn'])->name('frontdesk.checkin');
     Route::post('frontdesk/visitors/{visitor}/checkout', [VisitorLogController::class, 'checkOut'])->name('frontdesk.checkout');
     Route::get('/frontdesk/visitors/csv', [VisitorLogController::class, 'downloadCsv'])

@@ -37,11 +37,13 @@
                         <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
                             <th class="border px-4 py-2 text-left">Full Name</th>
                             <th class="border px-4 py-2 text-left">Company</th>
+                            <th class="border px-4 py-2 text-left">Set Date</th>
                             <th class="border px-4 py-2 text-left hidden md:table-cell">Email</th>
                             <th class="border px-4 py-2 text-left">Mobile</th>
                             <th class="border px-4 py-2 text-left hidden lg:table-cell">Person Visited</th>
                             <th class="border px-4 py-2 text-left hidden md:table-cell">Purpose</th>
-                            <th class="border px-4 py-2 text-left hidden md:table-cell">Date/Time</th>
+                            <th class="border px-4 py-2 text-left hidden md:table-cell">Check-in Time</th>
+                            <th class="border px-4 py-2 text-left hidden md:table-cell">Check-out Time</th>
                             <th class="border px-4 py-2 text-left">Status</th>
                             <th class="border px-4 py-2 text-left">Actions</th>
                         </tr>
@@ -49,21 +51,34 @@
                     <tbody>
                         @forelse ($visitors as $visitor)
                             <tr class="border-b border-neutral-200 dark:border-neutral-700">
-                                <td class="border px-4 py-2">
-                                    <div class="flex items-center gap-2">
-                                        @if ($visitor->batch_id)
-                                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full
-                                                       bg-indigo-100 text-indigo-700
-                                                       dark:bg-indigo-800/30 dark:text-indigo-300">
-                                                {{ strtoupper(substr($visitor->batch_id, 0, 3)) }}
-                                            </span>
-                                        @endif
-                                        <span>{{ $visitor->full_name }}</span>
-                                    </div>
+                                @php
+                                    if (!function_exists('batchColor')) {
+                                        function batchColor($id)
+                                        {
+                                            if (!$id)
+                                                return null;
+                                            $hue = hexdec(substr(md5($id), 0, 4)) % 360;
+                                            return "hsl($hue, 45%, 80%)";
+                                        }
+                                    }
+                                @endphp
+                                <td class="border px-4 py-2 flex items-center gap-2">
+                                    @if ($visitor->batch_id)
+                                        <span
+                                            class="inline-flex items-center justify-center text-[10px] font-semibold rounded-full px-2 py-0.5 border border-neutral-300/50 dark:border-neutral-700/50"
+                                            title="Batch: {{ $visitor->batch_id }}"
+                                            style="background-color: {{ batchColor($visitor->batch_id) }};">
+                                            {{ Str::upper(Str::substr($visitor->batch_id, 0, 3)) }}
+                                        </span>
+                                    @endif
+                                    <span>{{ $visitor->full_name ?? '-' }}</span>
                                 </td>
-                                <td class="border px-4 py-2">{{ $visitor->company }}</td>
-                                <td class="border px-4 py-2 hidden md:table-cell">{{ $visitor->email }}</td>
-                                <td class="border px-4 py-2">{{ $visitor->mobile }}</td>
+                                <td class="border px-4 py-2">{{ $visitor->company ?? '-' }}</td>
+                                <td class="border px-4 py-2">
+                                    {{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '-' }}
+                                </td>
+                                <td class="border px-4 py-2 hidden md:table-cell">{{ $visitor->email ?? '-' }}</td>
+                                <td class="border px-4 py-2">{{ $visitor->mobile ?? '-' }}</td>
                                 <td class="border px-4 py-2 hidden lg:table-cell">
                                     {{ optional($visitor->visitedUser)->name ?? '-' }}
                                 </td>
@@ -71,19 +86,24 @@
                                 <td class="border px-4 py-2 hidden md:table-cell">
                                     {{ $visitor->check_in_at ? $visitor->check_in_at->format('M d, Y h:i A') : '-' }}
                                 </td>
+                                <td class="border px-4 py-2 hidden md:table-cell">
+                                    {{ $visitor->check_out_at ? $visitor->check_out_at->format('M d, Y h:i A') : '-' }}
+                                </td>
                                 <td class="border px-4 py-2">
                                     @php
                                         $statusColors = [
                                             'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300',
                                             'endorsed' => 'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300',
                                             'approved' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800/20 dark:text-emerald-300',
+                                            'checked_in' => 'bg-cyan-100 text-cyan-800 dark:bg-cyan-800/20 dark:text-cyan-300',
                                             'declined' => 'bg-rose-100 text-rose-800 dark:bg-rose-800/20 dark:text-rose-300',
                                             'checked_out' => 'bg-purple-100 text-purple-800 dark:bg-purple-800/20 dark:text-purple-300',
                                         ];
                                     @endphp
+
                                     <span
                                         class="inline-block px-3 py-1 rounded-full text-xs font-medium {{ $statusColors[$visitor->status] ?? 'bg-gray-200 text-gray-800' }}">
-                                        {{ ucfirst($visitor->status) }}
+                                        {{ $visitor->status ? ucfirst($visitor->status) : '-' }}
                                     </span>
                                 </td>
                                 <td class="border px-4 py-2">
@@ -95,13 +115,15 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-neutral-500 dark:text-neutral-400 py-4 italic">
+                                <td colspan="11" class="text-center text-neutral-500 dark:text-neutral-400 py-4 italic">
                                     No visitor logs found.
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
+
+
             </div>
 
             <div class="mt-6">
