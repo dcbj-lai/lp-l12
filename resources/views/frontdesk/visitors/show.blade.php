@@ -29,13 +29,13 @@
                         {{ optional($visitor->visitedUser)->name ?? '-' }}</p>
                     <p><span class="font-semibold">Purpose:</span> {{ $visitor->purpose ?? '-' }}</p>
 
-                    <!-- Editable field for meetup spot -->
                     <div class="sm:col-span-2">
-                        <label for="meetup_spot" class="font-semibold block mb-1">Meetup Instructions:</label>
+                        <label for="meetup_spot" class="font-semibold block mb-1">Meetup Notes:</label>
                         <input type="text" id="meetup_spot" name="meetup_spot"
-                            value="{{ old('meetup_spot', $visitor->meetup_spot) }}"
-                            class="w-full rounded-md border-gray-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 text-sm">
+                            value="{{ old('meetup_spot', $visitor->meetup_spot) }}" readonly
+                            class="w-full rounded-md border-gray-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 text-sm cursor-not-allowed bg-gray-100 dark:bg-neutral-900">
                     </div>
+
 
                     <p>
                         <span class="font-semibold">Status:</span>

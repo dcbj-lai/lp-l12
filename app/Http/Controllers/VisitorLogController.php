@@ -292,4 +292,51 @@ public function visitorDestroyAll()
         ->with('success', 'All visitor logs have been permanently deleted.');
 }
 
+
+// Add Pre-approved 
+public function createPreapproved()
+{
+    return view('frontdesk.visitors.create-preapproved');
+}
+
+public function cancelBatch($batchId)
+{
+    $count = VisitorLog::where('batch_id', $batchId)->count();
+
+    VisitorLog::where('batch_id', $batchId)->delete();
+
+    return redirect()->route('visitors.mine')
+        ->with('success', "Cancelled {$count} pre-approved visit(s).");
+}
+
+public function showValidQr($batch_id)
+{
+    $visitor = VisitorLog::where('batch_id', $batch_id)->first();
+
+    // Check for invalid cases
+    if (! $visitor) {
+        return view('frontdesk.visitors.qr-invalid', [
+            'reason' => 'QR code not recognized.',
+        ]);
+    }
+
+    // Visit date in the past
+    if (\Carbon\Carbon::parse($visitor->visit_date)->isPast()) {
+        return view('frontdesk.visitors.qr-invalid', [
+            'reason' => 'Visit date has expired.',
+        ]);
+    }
+
+    // Not approved yet
+    if ($visitor->status !== 'approved') {
+        return view('frontdesk.visitors.qr-invalid', [
+            'reason' => 'Visit not yet approved.',
+        ]);
+    }
+
+    // ✅ Valid case
+    return view('frontdesk.visitors.qr-valid', compact('visitor'));
+}
+
+
 }

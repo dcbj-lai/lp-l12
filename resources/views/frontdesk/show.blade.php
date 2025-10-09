@@ -8,10 +8,10 @@
                     Visitor Details
                 </h2>
 
-                <a href="{{ route('dashboard') }}" class="inline-block px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 
+                <a href="{{ route('visitors.mine') }}" class="inline-block px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 
                           dark:bg-neutral-700 dark:hover:bg-neutral-600 
                           text-sm font-medium text-center transition">
-                    ← Back to My Dashboard
+                    ← Back to My Visitors
                 </a>
             </div>
 
@@ -43,29 +43,33 @@
                     <p><span class="font-semibold">Mobile:</span> {{ $visitor->mobile }}</p>
                     <p><span class="font-semibold">Address:</span> {{ $visitor->address }}</p>
                     <p><span class="font-semibold">Purpose:</span> {{ $visitor->purpose ?? '-' }}</p>
+                    <p><span class="font-semibold">Visit Date:</span>
+                        {{ \Carbon\Carbon::parse($visitor->visit_date)->format('F j, Y') }}
+                    </p>
                 </div>
 
                 <!-- Meetup Instructions -->
                 <div>
                     <label for="meetup_spot"
                         class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Meetup Instructions
+                        Meetup Notes
                     </label>
+
+                    @php
+                        $isEditable = $visitor->batch_id && $visitor->status != 'checked_out';
+                    @endphp
+
                     <input type="text" name="meetup_spot" id="meetup_spot"
-                        value="{{ old('meetup_spot', $visitor->meetup_spot) }}"
-                        class="w-full rounded-md border border-neutral-300 dark:border-neutral-700 
-                               bg-neutral-50 dark:bg-neutral-800 
-                               text-neutral-800 dark:text-neutral-100 
-                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                               px-3 py-2 text-sm transition disabled:bg-gray-100 disabled:text-gray-500 disabled:dark:bg-neutral-700 disabled:dark:text-neutral-400"
-                        @disabled(in_array($visitor->status, ['approved', 'declined', 'checked_out']))>
-                    @error('meetup_spot')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                        value="{{ old('meetup_spot', $visitor->meetup_spot) }}" class="w-full rounded-md border border-neutral-300 dark:border-neutral-700 
+                    px-3 py-2 text-sm transition
+                    {{ $isEditable
+    ? 'bg-neutral-50 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+    : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-500 dark:text-neutral-500 cursor-not-allowed opacity-70' }}" {{ $isEditable ? '' : 'readonly' }}>
                 </div>
 
+
                 <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex flex-col sm:flex-row gap-3 flex-wrap">
                     <button type="submit"
                         class="px-3 py-1 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         onclick="document.getElementById('action_type').value='decline';"
@@ -83,6 +87,20 @@
 
                 <input type="hidden" name="action_type" id="action_type" value="">
             </form>
+
+            <!-- Cancel Visit Button (Separate Form) -->
+            @if ($isEditable)
+                <form action="{{ route('visitor.cancel-batch', $visitor->batch_id) }}" method="POST"
+                    onsubmit="return confirm('Are you sure you want to cancel this pre-approved visit? This will delete all visitors in this batch.');"
+                    class="pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                        class="px-3 py-1 rounded bg-amber-600 text-white text-sm font-medium hover:bg-amber-700">
+                        Cancel Visit
+                    </button>
+                </form>
+            @endif
 
         </div>
     </div>

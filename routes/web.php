@@ -14,6 +14,7 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UtilityController;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\OrgSettingController;
@@ -201,11 +202,6 @@ Route::middleware(['auth', 'can:is-frontdesk'])->group(function () {
 
 });
 
-// Route::middleware(['auth'])->group(function () {
-//     Route::get('visitor/acknowledge', [VisitorLogController::class, 'userIndex'])->name('user.visitors');
-//     Route::post('visitor/acknowledge/{visitor}', [VisitorLogController::class, 'acknowledge'])->name('user.visitors.acknowledge');
-// });
-
 
 Route::middleware(['auth'])->group(function () {
     Route::post('visitor/{visitor}/approve', [VisitorLogController::class, 'approveVisit'])
@@ -222,11 +218,48 @@ Route::middleware(['auth'])->group(function () {
     // View a single visitor's details
     Route::get('/visitors/{visitor}', [VisitorLogController::class, 'showVisitor'])
         ->name('visitors.show');
+
+    Route::get('/visitors/preapproved/create', [VisitorLogController::class, 'createPreapproved'])
+    ->name('visitors.create-preapproved');
+
 });
 
 
 Route::get('/frontdesk/visitors/{visitor}', [VisitorLogController::class, 'show'])
     ->name('frontdesk.visitors.show');
 
+// Pre-approved visit creation (by visited user)
+Route::get('/visitors/pre-approve', [VisitorLogController::class, 'createPreApproved'])
+    ->middleware('auth')
+    ->name('visitors.preapprove.create');
+
+Route::post('/visitors/pre-approve', [VisitorLogController::class, 'storePreApproved'])
+    ->middleware('auth')
+    ->name('visitors.preapprove.store');
+
+Route::delete('/visitors/cancel-batch/{batchId}', [VisitorLogController::class, 'cancelBatch'])
+    ->name('visitor.cancel-batch');
+
+// Receptionist checks in visitor after verifying
+Route::post('/visitors/check-in/{visitor}', [VisitorLogController::class, 'checkIn'])
+    ->name('visitors.checkin');
+
+Route::get('/visitors/verify/{batch_id}', [VisitorLogController::class, 'showValidQr'])
+    ->name('visitors.verify');
+
+
+// Test
+
+Route::get('/phpinfo', function () {
+    phpinfo();
+});
+
+Route::get('/test-qr', function () {
+    $data = 'https://lifeacademy.ph/visitors/checkin?id=12345'; // sample data
+
+    $qr = base64_encode(QrCode::format('png')->size(200)->generate($data));
+
+    return view('test-qr', ['qr' => $qr, 'data' => $data]);
+});
 
 require __DIR__.'/auth.php';

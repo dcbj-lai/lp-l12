@@ -41,6 +41,7 @@
                             <th class="border px-4 py-2 text-left">Mobile</th>
                             <th class="border px-4 py-2 text-left hidden lg:table-cell">Person Visited</th>
                             <th class="border px-4 py-2 text-left hidden md:table-cell">Purpose</th>
+                            <th class="border px-4 py-2 text-left hidden md:table-cell">Date/Time</th>
                             <th class="border px-4 py-2 text-left">Status</th>
                             <th class="border px-4 py-2 text-left">Actions</th>
                         </tr>
@@ -48,7 +49,18 @@
                     <tbody>
                         @forelse ($visitors as $visitor)
                             <tr class="border-b border-neutral-200 dark:border-neutral-700">
-                                <td class="border px-4 py-2">{{ $visitor->full_name }}</td>
+                                <td class="border px-4 py-2">
+                                    <div class="flex items-center gap-2">
+                                        @if ($visitor->batch_id)
+                                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full
+                                                       bg-indigo-100 text-indigo-700
+                                                       dark:bg-indigo-800/30 dark:text-indigo-300">
+                                                {{ strtoupper(substr($visitor->batch_id, 0, 3)) }}
+                                            </span>
+                                        @endif
+                                        <span>{{ $visitor->full_name }}</span>
+                                    </div>
+                                </td>
                                 <td class="border px-4 py-2">{{ $visitor->company }}</td>
                                 <td class="border px-4 py-2 hidden md:table-cell">{{ $visitor->email }}</td>
                                 <td class="border px-4 py-2">{{ $visitor->mobile }}</td>
@@ -56,6 +68,9 @@
                                     {{ optional($visitor->visitedUser)->name ?? '-' }}
                                 </td>
                                 <td class="border px-4 py-2 hidden md:table-cell">{{ $visitor->purpose ?? '-' }}</td>
+                                <td class="border px-4 py-2 hidden md:table-cell">
+                                    {{ $visitor->check_in_at ? $visitor->check_in_at->format('M d, Y h:i A') : '-' }}
+                                </td>
                                 <td class="border px-4 py-2">
                                     @php
                                         $statusColors = [
