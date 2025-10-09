@@ -44,7 +44,7 @@
                 </table>
 
                 <div
-                    style="background:#D48626; color:#1390B4; padding:15px; border-radius:8px; margin:20px 0; font-weight:bold;">
+                    style="background:#F8E9D6; color:#1390B4; padding:15px; border-radius:8px; margin:20px 0; font-weight:bold;">
                     Present attached QR Code at the reception desk for check-in.
                 </div>
 
