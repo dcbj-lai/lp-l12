@@ -193,6 +193,8 @@ Route::get('/visitor/thankyou', function () {
 })->name('visitor.thankyou');
 
 Route::middleware(['auth', 'can:is-frontdesk'])->group(function () {
+    Route::get('/visitors/verify/{batch_id}', [VisitorLogController::class, 'showValidQr'])
+    ->name('visitors.verify');
     Route::get('frontdesk/visitors', [VisitorLogController::class, 'frontdeskIndex'])->name('frontdesk.visitors');
     Route::post('frontdesk/visitors/{visitor}/checkin', [VisitorLogController::class, 'checkIn'])->name('frontdesk.checkin');
     Route::post('frontdesk/visitors/{visitor}/checkout', [VisitorLogController::class, 'checkOut'])->name('frontdesk.checkout');
@@ -239,14 +241,6 @@ Route::post('/visitors/pre-approve', [VisitorLogController::class, 'storePreAppr
 
 Route::delete('/visitors/cancel-batch/{batchId}', [VisitorLogController::class, 'cancelBatch'])
     ->name('visitor.cancel-batch');
-
-// Receptionist checks in visitor after verifying
-Route::post('/visitors/check-in/{visitor}', [VisitorLogController::class, 'checkIn'])
-    ->name('visitors.checkin');
-
-Route::get('/visitors/verify/{batch_id}', [VisitorLogController::class, 'showValidQr'])
-    ->name('visitors.verify');
-
 
 // Test
 
