@@ -6,31 +6,54 @@
     <title>Visit Confirmed</title>
 </head>
 
-<body style="font-family:Arial, sans-serif; background-color:#f8fafc; padding:20px;">
+<body style="font-family: Arial, sans-serif; background-color: #f0f4f8; padding: 20px;">
+
     <table width="100%" cellpadding="0" cellspacing="0"
-        style="max-width:600px; margin:auto; background:white; border-radius:8px; padding:24px;">
+        style="max-width:600px; margin:auto; background:white; border-radius:12px; padding:30px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
         <tr>
-            <td>
-                <h1 style="color:#2d3748;">Visit Confirmed</h1>
-                <p>Hi {{ $visitor->full_name }},</p>
+            <td style="text-align:center;">
+                <!-- Logo -->
+                <img src="{{ config('app.url') }}/images/lai-logo.png" alt="Life Academy Logo"
+                    style="width:120px; margin-bottom:20px;">
 
-                <p>Your visit to <strong>Life Academy</strong> has been <strong>pre-approved</strong>.</p>
+                <h1 style="color:#1f2937; font-size:24px; margin-bottom:10px;">✅ Visit Confirmed</h1>
+                <p style="color:#4b5563; font-size:16px;">Hi <strong>{{ $visitor->full_name }}</strong>,</p>
 
-                <ul>
-                    <li><strong>Date:</strong> {{ \Carbon\Carbon::parse($visitor->visit_date)->format('F j, Y') }}</li>
-                    <li><strong>Purpose:</strong> {{ $visitor->purpose }}</li>
-                    <li><strong>Host:</strong> {{ $visitor->visitedUser?->name ?? 'Unassigned' }}</li>
-                    <li><strong>Meetup Notes:</strong> {{ $visitor->meetup_spot ?: 'No special instructions.' }}</li>
-                </ul>
+                <p style="color:#4b5563; font-size:16px;">
+                    Your visit to <strong style="color:#2563eb;">Life Academy</strong> has been <strong
+                        style="color:#16a34a;">pre-approved</strong>.
+                </p>
 
-                <div style="background:#edf2f7; padding:12px; border-radius:6px; text-align:center;">
+                <table width="100%" cellpadding="8" cellspacing="0"
+                    style="margin:20px 0; border-radius:8px; background:#f3f4f6;">
+                    <tr>
+                        <td style="font-weight:bold; width:120px;">Date:</td>
+                        <td>{{ \Carbon\Carbon::parse($visitor->visit_date)->format('F j, Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:bold;">Purpose:</td>
+                        <td>{{ $visitor->purpose ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:bold;">Host:</td>
+                        <td>{{ $visitor->visitedUser?->name ?? 'Unassigned' }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:bold;">Meetup Notes:</td>
+                        <td>{{ $visitor->meetup_spot ?: 'No special instructions.' }}</td>
+                    </tr>
+                </table>
+
+                <div
+                    style="background:#dbeafe; color:#1e40af; padding:15px; border-radius:8px; margin:20px 0; font-weight:bold;">
                     Present attached QR Code at the reception desk for check-in.
                 </div>
 
-                <p>Thanks,<br><strong>Your Team at LAIC</strong></p>
+                <p style="color:#4b5563; font-size:16px;">Thanks,<br><strong>Your Team at Life Academy</strong></p>
             </td>
         </tr>
     </table>
+
 </body>
 
 </html>
