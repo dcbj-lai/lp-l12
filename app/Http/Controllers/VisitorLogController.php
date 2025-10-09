@@ -112,12 +112,12 @@ public function frontdeskIndex(Request $request)
     $query = VisitorLog::query()->with('visitedUser');
 
     if ($request->filled('search')) {
-        $search = $request->search;
+        $search = strtolower($request->search); // normalize input
         $query->where(function($q) use ($search) {
-            $q->where('full_name', 'like', "%$search%")
-              ->orWhere('email', 'like', "%$search%")
+            $q->whereRaw('LOWER(full_name) LIKE ?', ["%{$search}%"])
+              ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
               ->orWhereHas('visitedUser', function($q2) use ($search) {
-                  $q2->where('name', 'like', "%$search%");
+                  $q2->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
               });
         });
     }
@@ -126,6 +126,7 @@ public function frontdeskIndex(Request $request)
 
     return view('frontdesk.visitors', compact('visitors'));
 }
+
 
 public function checkIn(Request $request, VisitorLog $visitor)
 {
@@ -235,24 +236,25 @@ public function show(VisitorLog $visitor)
 }
 
 public function mine(Request $request)
-    {
-        // dd('hello world!');
-        $search = $request->input('search');
+{
+    $search = $request->input('search');
 
-        $visitors = VisitorLog::where('visited_user_id', auth()->id()) // adjust if your FK differs
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('full_name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('mobile', 'like', "%{$search}%")
-                      ->orWhere('purpose', 'like', "%{$search}%");
-                });
-            })
-            ->latest()
-            ->paginate(10);
+    $visitors = VisitorLog::where('visited_user_id', auth()->id()) // adjust if your FK differs
+        ->when($search, function ($query) use ($search) {
+            $search = strtolower($search); // normalize input
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(full_name) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(mobile) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(purpose) LIKE ?', ["%{$search}%"]);
+            });
+        })
+        ->latest()
+        ->paginate(10);
 
-        return view('frontdesk.visitors.mine', compact('visitors'));
-    }
+    return view('frontdesk.visitors.mine', compact('visitors'));
+}
+
 
     public function downloadCsv(): StreamedResponse
 {
