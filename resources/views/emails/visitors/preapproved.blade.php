@@ -20,14 +20,13 @@
                 <p style="color:#4b5563; font-size:16px;">Hi <strong>{{ $visitor->full_name }}</strong>,</p>
 
                 <p style="color:#4b5563; font-size:16px;">
-                    Your visit to <strong style="color:#2563eb;">Life Academy</strong> has been <strong
-                        style="color:#16a34a;">pre-approved</strong>.
+                    Here are the details to your upcoming visit to <strong style="color:#1390B4;">LAIC</strong>.
                 </p>
 
                 <table width="100%" cellpadding="8" cellspacing="0"
-                    style="margin:20px 0; border-radius:8px; background:#f3f4f6;">
+                    style="margin:20px 0; border-radius:8px; background:#f3f4f6; text-align:left;">
                     <tr>
-                        <td style="font-weight:bold; width:120px;">Date:</td>
+                        <td style="font-weight:bold; width:130px;">Date:</td>
                         <td>{{ \Carbon\Carbon::parse($visitor->visit_date)->format('F j, Y') }}</td>
                     </tr>
                     <tr>
@@ -45,11 +44,11 @@
                 </table>
 
                 <div
-                    style="background:#dbeafe; color:#1e40af; padding:15px; border-radius:8px; margin:20px 0; font-weight:bold;">
+                    style="background:#D48626; color:#1390B4; padding:15px; border-radius:8px; margin:20px 0; font-weight:bold;">
                     Present attached QR Code at the reception desk for check-in.
                 </div>
 
-                <p style="color:#4b5563; font-size:16px;">Thanks,<br><strong>Your Team at Life Academy</strong></p>
+                <p style="color:#4b5563; font-size:16px;">Thanks,<br><strong>Your Team at LAIC</strong></p>
             </td>
         </tr>
     </table>
