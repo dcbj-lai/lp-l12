@@ -19,6 +19,7 @@
                 <ul>
                     <li><strong>Date:</strong> {{ \Carbon\Carbon::parse($visitor->visit_date)->format('F j, Y') }}</li>
                     <li><strong>Purpose:</strong> {{ $visitor->purpose }}</li>
+                    <li><strong>Host:</strong> {{ $visitor->visitedUser?->name ?? 'Unassigned' }}</li>
                     <li><strong>Meetup Notes:</strong> {{ $visitor->meetup_spot ?: 'No special instructions.' }}</li>
                 </ul>
 
