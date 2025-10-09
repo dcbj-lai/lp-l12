@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('visitor_logs', function (Blueprint $table) {
-            $table->dateTime('visit_date')->change();
+            $table->dateTime('visit_date')->nullable()->change();
         });
     }
 
