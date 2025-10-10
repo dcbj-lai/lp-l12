@@ -328,9 +328,16 @@ public function showValidQr($visitor_id, $batch_id)
         ->where('batch_id', $batch_id)
         ->first();
 
-    if (! $visitor || $visitor->status !== 'approved' || \Carbon\Carbon::parse($visitor->visit_date)->isPast()) {
-        return view('frontdesk.visitors.qr-invalid');
-    }
+    // if (! $visitor || $visitor->status !== 'approved' || \Carbon\Carbon::parse($visitor->visit_date)->isPast()) {
+    //     return view('frontdesk.visitors.qr-invalid');
+    // }
+    if (
+        ! $visitor ||
+        ! in_array($visitor->status, ['approved', 'checked_in']) ||
+        \Carbon\Carbon::parse($visitor->visit_date)->isPast()
+) {
+    return view('frontdesk.visitors.qr-invalid');
+}
 
     return view('frontdesk.visitors.qr-valid', compact('visitor'));
 }
