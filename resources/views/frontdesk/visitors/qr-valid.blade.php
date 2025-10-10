@@ -17,8 +17,20 @@
             <p><strong>Email:</strong> {{ $visitor->email }}</p>
             <p><strong>Mobile:</strong> {{ $visitor->mobile }}</p>
             <p><strong>Purpose:</strong> {{ $visitor->purpose }}</p>
-            <p><strong>Visit Date:</strong> {{ \Carbon\Carbon::parse($visitor->visit_date)->format('F d, Y') }}</p>
+            <p><strong>Visit Date:</strong> {{ \Carbon\Carbon::parse($visitor->visit_date)->format('F d, Y h:i A') }}
+            </p>
             <p><strong>Host:</strong> {{ optional($visitor->visitedUser)->name ?? 'Unassigned' }}</p>
+
+            {{-- ✅ Check-In / Check-Out Times --}}
+            @if($visitor->check_in_at)
+                <p><strong>Check-In Time:</strong>
+                    {{ \Carbon\Carbon::parse($visitor->checked_in_at)->format('F d, Y h:i A') }}</p>
+            @endif
+            @if($visitor->check_out_at)
+                <p><strong>Check-Out Time:</strong>
+                    {{ \Carbon\Carbon::parse($visitor->checked_out_at)->format('F d, Y h:i A') }}</p>
+            @endif
+
             <p><strong>Status:</strong>
                 <span class="px-2 py-1 rounded-full text-sm 
                     @if($visitor->status === 'checked_in') bg-green-100 text-green-700
@@ -35,13 +47,28 @@
         {{-- Action Buttons --}}
         <div class="mt-6 flex flex-col gap-2">
             @if($visitor->status === 'approved')
-                {{-- Check-In button --}}
+                {{-- Check-In Button --}}
                 <form action="{{ route('frontdesk.checkin', $visitor) }}" method="POST">
                     @csrf
-                    <button type="submit" class="w-full px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">
+                    <button type="submit"
+                        class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
                         Check In
                     </button>
                 </form>
+            @elseif($visitor->status === 'checked_in')
+                {{-- Check-Out Button --}}
+                <form action="{{ route('frontdesk.checkout', $visitor) }}" method="POST">
+                    @csrf
+                    <button type="submit"
+                        class="w-full px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
+                        Check Out
+                    </button>
+                </form>
+            @elseif($visitor->status === 'checked_out')
+                {{-- Already Checked Out --}}
+                <div class="w-full px-4 py-2 text-purple-300 bg-purple-50 rounded-lg">
+                    This visitor has already checked out.
+                </div>
             @endif
         </div>
     </div>
