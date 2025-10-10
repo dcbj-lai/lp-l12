@@ -137,9 +137,7 @@ public function checkIn(Request $request, VisitorLog $visitor)
         'check_in_at' => now(),
     ]);
 
-    return redirect()
-        ->route('frontdesk.visitors')
-        ->with('success', 'Visitor checked in!');
+    return back()->with('success', 'Visitor checked in.');
 }
 public function endorse(Request $request, VisitorLog $visitor)
 {
@@ -158,10 +156,7 @@ public function endorse(Request $request, VisitorLog $visitor)
         Mail::to($visitor->visitedUser->email)
             ->send(new VisitorNotification($visitor));
     }
-
-    return redirect()
-        ->route('frontdesk.visitors')
-        ->with('success', 'Visitor endorsed and notification sent.');
+    return back()->with('success', 'Visitor endorsed and notification sent.');
 }
 
 public function checkOut(Request $request, VisitorLog $visitor)
