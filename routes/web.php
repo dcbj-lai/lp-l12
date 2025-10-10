@@ -174,7 +174,7 @@ Route::get('/frontdesk/visitors/{visitor}/delete', [VisitorLogController::class,
     ->middleware('can:is-super-admin')
     ->name('requests.visitorDestroy.get');
 
-Route::get('/frontdesk/visitors/delete-all', [VisitorLogController::class, 'visitorDestroyAll'])
+Route::get('/frontdesk/visitors/clean-up', [VisitorLogController::class, 'cleanUp'])
     ->middleware(['auth', 'can:is-super-admin']);
 
 

@@ -292,14 +292,18 @@ public function visitorDestroy(VisitorLog $visitor)
 
 }
 
-public function visitorDestroyAll()
+public function cleanUp()
 {
-    \DB::table('visitor_logs')->truncate();
+    \DB::table('visitor_logs')
+        ->where('status', 'pending')
+        ->whereNull('full_name')
+        ->delete();
 
     return redirect()
         ->route('frontdesk.visitors')
-        ->with('success', 'All visitor logs have been permanently deleted.');
+        ->with('success', 'All incomplete pending visitor records have been cleaned up.');
 }
+
 
 
 // Add Pre-approved 
