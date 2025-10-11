@@ -331,10 +331,10 @@ public function showValidQr($visitor_id, $batch_id)
     // if (! $visitor || $visitor->status !== 'approved' || \Carbon\Carbon::parse($visitor->visit_date)->isPast()) {
     //     return view('frontdesk.visitors.qr-invalid');
     // }
-    if (
-        ! $visitor ||
-        ! in_array($visitor->status, ['approved', 'checked_in', 'checked_out']) ||
-        \Carbon\Carbon::parse($visitor->visit_date)->isPast()
+    if ( ! $visitor
+        // ! $visitor ||
+        // ! in_array($visitor->status, ['approved', 'checked_in', 'checked_out']) ||
+        // \Carbon\Carbon::parse($visitor->visit_date)->isPast()
 ) {
     return view('frontdesk.visitors.qr-invalid');
 }
