@@ -107,25 +107,53 @@ public function submitForm(Request $request, $id)
 }
 
 
+// public function frontdeskIndex(Request $request)
+// {
+//     $query = VisitorLog::query()->with('visitedUser');
+
+//     if ($request->filled('search')) {
+//         $search = strtolower($request->search); // normalize input
+//         $query->where(function($q) use ($search) {
+//             $q->whereRaw('LOWER(full_name) LIKE ?', ["%{$search}%"])
+//               ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
+//               ->orWhereHas('visitedUser', function($q2) use ($search) {
+//                   $q2->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+//               });
+//         });
+//     }
+
+//     $visitors = $query->latest()->paginate(10)->withQueryString();
+
+//     return view('frontdesk.visitors', compact('visitors'));
+// }
 public function frontdeskIndex(Request $request)
 {
     $query = VisitorLog::query()->with('visitedUser');
 
+    // 🔍 Search filter
     if ($request->filled('search')) {
-        $search = strtolower($request->search); // normalize input
-        $query->where(function($q) use ($search) {
+        $search = strtolower($request->search);
+        $query->where(function ($q) use ($search) {
             $q->whereRaw('LOWER(full_name) LIKE ?', ["%{$search}%"])
               ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
-              ->orWhereHas('visitedUser', function($q2) use ($search) {
-                  $q2->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-              });
+              ->orWhereRaw('LOWER(mobile) LIKE ?', ["%{$search}%"])
+              ->orWhereRaw('LOWER(purpose) LIKE ?', ["%{$search}%"])
+              ->orWhereHas('visitedUser', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
         });
     }
 
-    $visitors = $query->latest()->paginate(10)->withQueryString();
+    // 🔽 Sorting
+    $sortable = ['full_name', 'company', 'visit_date', 'email', 'mobile', 'visited_user_id', 'purpose', 'status', 'check_in_at', 'check_out_at'];
+    $sort = in_array($request->get('sort'), $sortable) ? $request->get('sort') : 'visit_date';
+    $direction = $request->get('direction') === 'asc' ? 'asc' : 'desc';
+
+    $query->orderBy($sort, $direction);
+
+    $visitors = $query->paginate(10)->withQueryString();
 
     return view('frontdesk.visitors', compact('visitors'));
 }
+
 
 
 public function checkIn(Request $request, VisitorLog $visitor)
@@ -251,11 +279,66 @@ public function mine(Request $request)
 }
 
 
-    public function downloadCsv(): StreamedResponse
+//     public function downloadCsv(): StreamedResponse
+// {
+//     $fileName = 'visitor_logs_' . now()->format('Y-m-d_H-i-s') . '.csv';
+
+//     $visitors = VisitorLog::with('visitedUser')->latest()->get();
+
+//     $headers = [
+//         'Content-Type' => 'text/csv',
+//         'Content-Disposition' => "attachment; filename=\"$fileName\"",
+//     ];
+
+//     $columns = ['Full Name', 'Email', 'Mobile', 'Person Visited', 'Purpose', 'Status', 'Check-In', 'Check-Out'];
+
+//     return response()->stream(function () use ($visitors, $columns) {
+//         $handle = fopen('php://output', 'w');
+//         fputcsv($handle, $columns);
+
+//         foreach ($visitors as $v) {
+//             fputcsv($handle, [
+//                 $v->full_name,
+//                 $v->email,
+//                 $v->mobile,
+//                 optional($v->visitedUser)->name ?? '-',
+//                 $v->purpose ?? '-',
+//                 ucfirst($v->status),
+//                 $v->check_in_at ? $v->check_in_at->format('Y-m-d H:i') : '-',
+//                 $v->check_out_at ? $v->check_out_at->format('Y-m-d H:i') : '-',
+//             ]);
+//         }
+
+//         fclose($handle);
+//     }, 200, $headers);
+// }
+
+
+public function downloadCsv(Request $request): StreamedResponse
 {
     $fileName = 'visitor_logs_' . now()->format('Y-m-d_H-i-s') . '.csv';
 
-    $visitors = VisitorLog::with('visitedUser')->latest()->get();
+    $query = VisitorLog::with('visitedUser');
+
+    // Same search filter as in index
+    if ($request->filled('search')) {
+        $search = strtolower($request->search);
+        $query->where(function ($q) use ($search) {
+            $q->whereRaw('LOWER(full_name) LIKE ?', ["%{$search}%"])
+              ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
+              ->orWhereRaw('LOWER(mobile) LIKE ?', ["%{$search}%"])
+              ->orWhereRaw('LOWER(purpose) LIKE ?', ["%{$search}%"])
+              ->orWhereHas('visitedUser', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
+        });
+    }
+
+    // Apply sorting
+    $sortable = ['full_name', 'company', 'visit_date', 'email', 'mobile', 'visited_user_id', 'purpose', 'status', 'check_in_at', 'check_out_at'];
+    $sort = in_array($request->get('sort'), $sortable) ? $request->get('sort') : 'visit_date';
+    $direction = $request->get('direction') === 'asc' ? 'asc' : 'desc';
+    $query->orderBy($sort, $direction);
+
+    $visitors = $query->get();
 
     $headers = [
         'Content-Type' => 'text/csv',
@@ -284,6 +367,11 @@ public function mine(Request $request)
         fclose($handle);
     }, 200, $headers);
 }
+
+
+
+
+
 
 public function visitorDestroy(VisitorLog $visitor)
 {

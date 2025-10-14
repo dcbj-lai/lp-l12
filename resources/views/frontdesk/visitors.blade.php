@@ -20,10 +20,11 @@
                             class="px-3 py-1 rounded bg-gray-300 hover:bg-gray-400 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-xs font-medium">
                             Clear
                         </button>
-                        <a href="{{ route('frontdesk.visitors.csv') }}" class="inline-flex items-center justify-center px-3 py-1 rounded bg-green-600 
-           hover:bg-green-700 text-white text-xs font-medium">
+                        <a href="{{ route('frontdesk.visitors.csv', request()->query()) }}"
+                            class="inline-flex items-center justify-center px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-medium">
                             Download CSV
                         </a>
+
 
                     </div>
                 </form>
@@ -33,7 +34,7 @@
             <div class="overflow-x-auto">
                 <table
                     class="w-full min-w-max border-collapse border border-neutral-200 dark:border-neutral-700 text-sm">
-                    <thead>
+                    {{-- <thead>
                         <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
                             <th class="border px-4 py-2 text-left">Full Name</th>
                             <th class="border px-4 py-2 text-left">Company</th>
@@ -47,7 +48,50 @@
                             <th class="border px-4 py-2 text-left">Status</th>
                             <th class="border px-4 py-2 text-left">Actions</th>
                         </tr>
+                    </thead> --}}
+                    @php
+                        $sort = request('sort', 'visit_date');
+                        $direction = request('direction', 'desc');
+                        $nextDirection = $direction === 'asc' ? 'desc' : 'asc';
+
+                        function sortLink($column, $label)
+                        {
+                            $isCurrent = request('sort') === $column;
+                            $direction = request('direction', 'desc');
+                            $nextDirection = $direction === 'asc' ? 'desc' : 'asc';
+                            $icon = $isCurrent ? ($direction === 'asc' ? '▲' : '▼') : '';
+                            $params = array_merge(request()->query(), ['sort' => $column, 'direction' => $nextDirection]);
+                            $url = request()->url() . '?' . http_build_query($params);
+                            return "<a href='{$url}' class='flex items-center gap-1 hover:underline'>{$label} <span class='text-xs'>{$icon}</span></a>";
+                        }
+                    @endphp
+
+                    <thead>
+                        <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
+                            <th class="border px-4 py-2 text-left">{!! sortLink('full_name', 'Full Name') !!}</th>
+                            <th class="border px-4 py-2 text-left">{!! sortLink('company', 'Company') !!}</th>
+                            <th class="border px-4 py-2 text-left">{!! sortLink('visit_date', 'Set Date') !!}</th>
+                            <th class="border px-4 py-2 text-left hidden md:table-cell">
+                                {!! sortLink('email', 'Email') !!}
+                            </th>
+                            <th class="border px-4 py-2 text-left">{!! sortLink('mobile', 'Mobile') !!}</th>
+                            <th class="border px-4 py-2 text-left hidden lg:table-cell">
+                                {!! sortLink('visited_user_id', 'Person Visited') !!}
+                            </th>
+                            <th class="border px-4 py-2 text-left hidden md:table-cell">
+                                {!! sortLink('purpose', 'Purpose') !!}
+                            </th>
+                            <th class="border px-4 py-2 text-left hidden md:table-cell">
+                                {!! sortLink('check_in_at', 'Check-in Time') !!}
+                            </th>
+                            <th class="border px-4 py-2 text-left hidden md:table-cell">
+                                {!! sortLink('check_out_at', 'Check-out Time') !!}
+                            </th>
+                            <th class="border px-4 py-2 text-left">{!! sortLink('status', 'Status') !!}</th>
+                            <th class="border px-4 py-2 text-left">Actions</th>
+                        </tr>
                     </thead>
+
                     <tbody>
                         @forelse ($visitors as $visitor)
                             <tr class="border-b border-neutral-200 dark:border-neutral-700">
@@ -62,16 +106,18 @@
                                         }
                                     }
                                 @endphp
-                                <td class="border px-4 py-2 flex items-center gap-2">
-                                    @if ($visitor->batch_id)
-                                        <span
-                                            class="inline-flex items-center justify-center text-[10px] font-semibold rounded-full px-2 py-0.5 border border-neutral-300/50 dark:border-neutral-700/50"
-                                            title="Batch: {{ $visitor->batch_id }}"
-                                            style="background-color: {{ batchColor($visitor->batch_id) }};">
-                                            {{ Str::upper(Str::substr($visitor->batch_id, 0, 3)) }}
-                                        </span>
-                                    @endif
-                                    <span>{{ $visitor->full_name ?? '-' }}</span>
+                                <td class="border px-4 py-2 align-middle">
+                                    <div class="flex items-center gap-2">
+                                        @if ($visitor->batch_id)
+                                            <span
+                                                class="inline-flex items-center justify-center text-[10px] font-semibold rounded-full px-2 py-0.5 border border-neutral-300/50 dark:border-neutral-700/50"
+                                                title="Batch: {{ $visitor->batch_id }}"
+                                                style="background-color: {{ batchColor($visitor->batch_id) }};">
+                                                {{ Str::upper(Str::substr($visitor->batch_id, 0, 3)) }}
+                                            </span>
+                                        @endif
+                                        <span>{{ $visitor->full_name ?? '-' }}</span>
+                                    </div>
                                 </td>
                                 <td class="border px-4 py-2">{{ $visitor->company ?? '-' }}</td>
                                 <td class="border px-4 py-2">
