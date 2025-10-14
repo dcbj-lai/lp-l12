@@ -130,7 +130,7 @@ public function frontdeskIndex(Request $request)
 {
     $query = VisitorLog::query()->with('visitedUser');
 
-    // 🔍 Search filter
+    // 🔍 Search
     if ($request->filled('search')) {
         $search = strtolower($request->search);
         $query->where(function ($q) use ($search) {
@@ -138,21 +138,44 @@ public function frontdeskIndex(Request $request)
               ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
               ->orWhereRaw('LOWER(mobile) LIKE ?', ["%{$search}%"])
               ->orWhereRaw('LOWER(purpose) LIKE ?', ["%{$search}%"])
-              ->orWhereHas('visitedUser', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
+              ->orWhereHas('visitedUser', fn($sub) => 
+                  $sub->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+              );
         });
     }
 
-    // 🔽 Sorting
-    $sortable = ['full_name', 'company', 'visit_date', 'email', 'mobile', 'visited_user_id', 'purpose', 'status', 'check_in_at', 'check_out_at'];
-    $sort = in_array($request->get('sort'), $sortable) ? $request->get('sort') : 'visit_date';
-    $direction = $request->get('direction') === 'asc' ? 'asc' : 'desc';
+    // 🏢 Company filter
+    if ($request->filled('company')) {
+        $query->whereRaw('LOWER(company) LIKE ?', ["%" . strtolower($request->company) . "%"]);
+    }
 
-    $query->orderBy($sort, $direction);
+    // 📅 Visit date filter
+    if ($request->filled('visit_date')) {
+        $query->whereDate('visit_date', $request->visit_date);
+    }
+
+    // 📊 Status filter
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    // 📋 Sorting
+    $sortable = ['full_name', 'company', 'visit_date', 'email', 'mobile', 'visited_user_id', 'purpose', 'status', 'check_in_at', 'check_out_at'];
+    if ($request->filled('sort') && in_array($request->get('sort'), $sortable)) {
+        $sort = $request->get('sort');
+        $direction = $request->get('direction') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sort, $direction);
+    } else {
+        // Default: most recent visitors first
+        $query->orderBy('visit_date', 'desc');
+    }
 
     $visitors = $query->paginate(10)->withQueryString();
 
     return view('frontdesk.visitors', compact('visitors'));
 }
+
+
 
 
 
@@ -320,7 +343,7 @@ public function downloadCsv(Request $request): StreamedResponse
 
     $query = VisitorLog::with('visitedUser');
 
-    // Same search filter as in index
+    // 🔍 Search filter
     if ($request->filled('search')) {
         $search = strtolower($request->search);
         $query->where(function ($q) use ($search) {
@@ -328,24 +351,58 @@ public function downloadCsv(Request $request): StreamedResponse
               ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
               ->orWhereRaw('LOWER(mobile) LIKE ?', ["%{$search}%"])
               ->orWhereRaw('LOWER(purpose) LIKE ?', ["%{$search}%"])
-              ->orWhereHas('visitedUser', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
+              ->orWhereHas('visitedUser', fn($sub) =>
+                  $sub->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+              );
         });
     }
 
-    // Apply sorting
+    // 🏢 Company filter
+    if ($request->filled('company')) {
+        $query->whereRaw('LOWER(company) LIKE ?', ["%" . strtolower($request->company) . "%"]);
+    }
+
+    // 📅 Visit date filter
+    if ($request->filled('visit_date')) {
+        $query->whereDate('visit_date', $request->visit_date);
+    }
+
+    // 📊 Status filter
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    // 📋 Sorting — match UI + default to latest visits first
     $sortable = ['full_name', 'company', 'visit_date', 'email', 'mobile', 'visited_user_id', 'purpose', 'status', 'check_in_at', 'check_out_at'];
-    $sort = in_array($request->get('sort'), $sortable) ? $request->get('sort') : 'visit_date';
-    $direction = $request->get('direction') === 'asc' ? 'asc' : 'desc';
-    $query->orderBy($sort, $direction);
+    if ($request->filled('sort') && in_array($request->get('sort'), $sortable)) {
+        $sort = $request->get('sort');
+        $direction = $request->get('direction') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sort, $direction);
+    } else {
+        // Default: most recent visit first
+        $query->orderBy('visit_date', 'desc');
+    }
 
     $visitors = $query->get();
 
+    // 🧾 CSV headers
     $headers = [
         'Content-Type' => 'text/csv',
         'Content-Disposition' => "attachment; filename=\"$fileName\"",
     ];
 
-    $columns = ['Full Name', 'Email', 'Mobile', 'Person Visited', 'Purpose', 'Status', 'Check-In', 'Check-Out'];
+    $columns = [
+        'Full Name',
+        'Email',
+        'Mobile',
+        'Company',
+        'Person Visited',
+        'Purpose',
+        'Status',
+        'Visit Date',
+        'Check-In',
+        'Check-Out',
+    ];
 
     return response()->stream(function () use ($visitors, $columns) {
         $handle = fopen('php://output', 'w');
@@ -353,12 +410,14 @@ public function downloadCsv(Request $request): StreamedResponse
 
         foreach ($visitors as $v) {
             fputcsv($handle, [
-                $v->full_name,
-                $v->email,
-                $v->mobile,
+                $v->full_name ?? '-',
+                $v->email ?? '-',
+                $v->mobile ?? '-',
+                $v->company ?? '-',
                 optional($v->visitedUser)->name ?? '-',
                 $v->purpose ?? '-',
-                ucfirst($v->status),
+                ucfirst($v->status ?? '-'),
+                $v->visit_date ? \Carbon\Carbon::parse($v->visit_date)->format('Y-m-d H:i') : '-',
                 $v->check_in_at ? $v->check_in_at->format('Y-m-d H:i') : '-',
                 $v->check_out_at ? $v->check_out_at->format('Y-m-d H:i') : '-',
             ]);
@@ -367,6 +426,8 @@ public function downloadCsv(Request $request): StreamedResponse
         fclose($handle);
     }, 200, $headers);
 }
+
+
 
 
 

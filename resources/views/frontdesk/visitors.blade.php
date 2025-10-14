@@ -4,31 +4,60 @@
 
         <div class="overflow-hidden shadow-xl sm:rounded-lg p-6 bg-white dark:bg-neutral-900">
             <div class="mb-4">
-                <form method="GET" action="{{ route('frontdesk.visitors') }}" class="flex flex-col sm:flex-row gap-2">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search visitors..."
-                        class="flex-1 border rounded px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 
-                               text-neutral-800 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 
-                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                <form method="GET" action="{{ route('frontdesk.visitors') }}"
+                    class="flex flex-col sm:flex-row flex-wrap gap-2">
 
+                    {{-- Search --}}
+                    <input type="text" name="search" value="{{ request('search') }}"
+                        placeholder="Search name, email, mobile..." class="flex-1 border rounded px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 
+                      text-neutral-800 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 
+                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+
+                    {{-- Company Filter --}}
+                    <input type="text" name="company" value="{{ request('company') }}" placeholder="Filter by company"
+                        class="border rounded px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 
+                      text-neutral-800 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 
+                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition w-40">
+
+                    {{-- Date Filter --}}
+                    <input type="date" name="visit_date" value="{{ request('visit_date') }}" class="border rounded px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 
+                      text-neutral-800 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 
+                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition w-44">
+
+                    {{-- Status Filter --}}
+                    <select name="status" class="border rounded px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 
+                       text-neutral-800 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 
+                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition w-36">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="checked_in" {{ request('status') == 'checked_in' ? 'selected' : '' }}>Checked In
+                        </option>
+                        <option value="checked_out" {{ request('status') == 'checked_out' ? 'selected' : '' }}>Checked Out
+                        </option>
+                        <option value="endorsed" {{ request('status') == 'endorsed' ? 'selected' : '' }}>Endorsed</option>
+                    </select>
+
+                    {{-- Buttons --}}
                     <div class="flex gap-2">
                         <button type="submit"
                             class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">
-                            Search
+                            Apply
                         </button>
 
                         <button type="button" onclick="window.location='{{ route('frontdesk.visitors') }}'"
                             class="px-3 py-1 rounded bg-gray-300 hover:bg-gray-400 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-xs font-medium">
                             Clear
                         </button>
+
                         <a href="{{ route('frontdesk.visitors.csv', request()->query()) }}"
                             class="inline-flex items-center justify-center px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-medium">
                             Download CSV
                         </a>
-
-
                     </div>
                 </form>
             </div>
+
 
             <!-- Responsive table wrapper -->
             <div class="overflow-x-auto">
