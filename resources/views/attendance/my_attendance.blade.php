@@ -5,58 +5,65 @@
         <div class="overflow-hidden shadow-xl sm:rounded-lg p-6">
             <div class="flex flex-wrap justify-between items-center">
                 <!-- Buttons and Clock -->
+                @php
+                    $isFaculty = strtolower(optional(auth()->user()->department)->name ?? '') === 'faculty';
+                @endphp
                 <div class="w-full md:w-auto flex flex-wrap items-center justify-center md:justify-start">
-                    <div x-data="{
-                            checkedIn: {{ $hasCheckedIn ? 'true' : 'false' }},
-                            checkedOut: {{ $hasCheckedOut ? 'true' : 'false' }},
-                            checkInTime: {{ $hasCheckedIn && !$hasCheckedOut ? "'" . $lastCheckIn . "'" : 'null' }},
-                            elapsed: '00:00:00',
-                            interval: null,
-                            startTimer() {
-                                if (!this.checkInTime || this.checkedOut) return;
-                                let checkInTimestamp = new Date(this.checkInTime).getTime();
-                                
-                                this.interval = setInterval(() => {
-                                    let now = new Date().getTime();
-                                    let diff = now - checkInTimestamp;
-                    
-                                    let hours = Math.floor(diff / (1000 * 60 * 60));
-                                    let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                                    let seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                    
-                                    this.elapsed = 
-                                        String(hours).padStart(2, '0') + ':' +
-                                        String(minutes).padStart(2, '0') + ':' +
-                                        String(seconds).padStart(2, '0');
-                    
-                                }, 1000);
-                            },
-                            stopTimer() {
-                                if (this.interval) {
-                                    clearInterval(this.interval);
-                                    this.elapsed = '00:00:00';
-                                }
-                            }
-                        }" x-init="if (checkedIn && !checkedOut) startTimer(); else stopTimer();"
-                        class="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                        {{-- {{ dd($hasCheckedIn) }} --}}
-                        <flux:button @click="$dispatch('open-modal', 'checkInModal')"
-                            x-bind:disabled="checkedIn || hasCheckedIn"
-                            class="w-full md:w-auto text-center disabled:cursor-not-allowed" variant="primary">
-                            Check In
-                        </flux:button>
+                    @unless($isFaculty)
+                        <div x-data="{
+                                    checkedIn: {{ $hasCheckedIn ? 'true' : 'false' }},
+                                    checkedOut: {{ $hasCheckedOut ? 'true' : 'false' }},
+                                    checkInTime: {{ $hasCheckedIn && !$hasCheckedOut ? "'" . $lastCheckIn . "'" : 'null' }},
+                                    elapsed: '00:00:00',
+                                    interval: null,
+                                    startTimer() {
+                                        if (!this.checkInTime || this.checkedOut) return;
+                                        let checkInTimestamp = new Date(this.checkInTime).getTime();
 
-                        <flux:button @click="$dispatch('open-modal', 'checkOutModal')"
-                            x-bind:disabled="checkedOut || !checkedIn"
-                            class="w-full md:w-auto text-center disabled:cursor-not-allowed">
-                            Check Out
-                        </flux:button>
+                                        this.interval = setInterval(() => {
+                                            let now = new Date().getTime();
+                                            let diff = now - checkInTimestamp;
 
-                        <div x-show="checkedIn && !checkedOut"
-                            class="text-md font-extralight text-slate-500 dark:text-neutral-100">
-                            Hours today: <span x-text="elapsed"></span>
+                                            let hours = Math.floor(diff / (1000 * 60 * 60));
+                                            let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                            let seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                                            this.elapsed = 
+                                                String(hours).padStart(2, '0') + ':' +
+                                                String(minutes).padStart(2, '0') + ':' +
+                                                String(seconds).padStart(2, '0');
+
+                                        }, 1000);
+                                    },
+                                    stopTimer() {
+                                        if (this.interval) {
+                                            clearInterval(this.interval);
+                                            this.elapsed = '00:00:00';
+                                        }
+                                    }
+                                }" x-init="if (checkedIn && !checkedOut) startTimer(); else stopTimer();"
+                            class="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                            {{-- {{ dd($hasCheckedIn) }} --}}
+                            <flux:button @click="$dispatch('open-modal', 'checkInModal')"
+                                x-bind:disabled="checkedIn || hasCheckedIn"
+                                class="w-full md:w-auto text-center disabled:cursor-not-allowed" variant="primary">
+                                Check In
+                            </flux:button>
+
+                            <flux:button @click="$dispatch('open-modal', 'checkOutModal')"
+                                x-bind:disabled="checkedOut || !checkedIn"
+                                class="w-full md:w-auto text-center disabled:cursor-not-allowed">
+                                Check Out
+                            </flux:button>
+
+                            <div x-show="checkedIn && !checkedOut"
+                                class="text-md font-extralight text-slate-500 dark:text-neutral-100">
+                                Hours today: <span x-text="elapsed"></span>
+                            </div>
                         </div>
-                    </div>
+                    @else
+                        <p>Scan Admin QR</p>
+                    @endunless
                 </div>
             </div>
             <!-- Responsive Table -->

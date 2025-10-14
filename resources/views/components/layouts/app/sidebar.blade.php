@@ -14,6 +14,7 @@
         $isSuperAdmin = in_array('super.admin', $user->roles ?? []);
         $isManager = $user->isManager();
         $isFrontDesk = in_array('frontdesk.staff', $user->roles ?? []);
+        $isAcadAdmin = in_array('acad.admin', $user->roles ?? []);
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -57,6 +58,13 @@
                     <flux:navlist.item href="{{route('frontdesk.visitors')}}" icon="logs">Visitor Logs
                     </flux:navlist.item>
                     <flux:navlist.item href="#" icon="file-chart-column-increasing">Reports</flux:navlist.item>
+                </flux:navlist.group>
+            @endif
+            @if ($isAcadAdmin || $isSuperAdmin)
+                <flux:navlist.group heading="Acad Admin" expandable :expanded="false">
+                    <flux:navlist.item href="{{route('attendance.show_qr')}}" icon="qr-code">Attendance
+                        QR Code
+                    </flux:navlist.item>
                 </flux:navlist.group>
             @endif
             @if ($isManager)

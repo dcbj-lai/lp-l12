@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\User;
+use App\Models\QrToken;
 use \App\Models\Attendance;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class AttendanceController extends Controller
 {
@@ -126,10 +129,121 @@ public function week(Request $request)
     return view('attendance.week', compact('weekDays', 'attendances', 'employees', 'weekOffset'));
 }
 
+public function showQr(Request $request)
+{
+    $user = auth()->user();
+    if (Gate::denies('is-acad-admin', $user)) {
+        abort(403, 'Unauthorized');
+    }
+
+    $type = $request->get('type', 'check_in');
+
+    // Find active token of this type
+    $token = QrToken::where('active', true)
+        ->where('type', $type)
+        ->where('expires_at', '>', now())
+        ->latest()
+        ->first();
+
+    if (!$token) {
+        $token = QrToken::generate($type);
+    }
+
+    $qrUrl = config('app.url') . "/qr_{$type}/" . $token->token;
+    $qrImage = base64_encode(QrCode::format('svg')->size(250)->generate($qrUrl));
+
+    return view('attendance.show-qr', compact('qrUrl', 'qrImage', 'token', 'type'));
+}
 
 
 
+public function qrCheckIn(Request $request, $token)
+{
+    $qrToken = QrToken::where('token', $token)
+        ->where('type', 'check_in')
+        ->first();
 
-    
+    if (!$qrToken || !$qrToken->isValid()) {
+        return redirect()->route('attendance.qr-result', [
+            'status' => 'error',
+            'message' => 'Invalid or expired QR token.',
+        ]);
+    }
+
+    $user = auth()->user();
+
+    if (strtolower(optional($user->department)->name ?? '') !== 'faculty') {
+        return redirect()->route('attendance.qr-result', [
+            'status' => 'error',
+            'message' => 'Unauthorized department.',
+        ]);
+    }
+
+    // 🧠 Check if already checked in today
+    $existing = Attendance::where('user_id', $user->id)
+        ->whereDate('created_at', today())
+        ->whereNotNull('check_in')
+        ->first();
+
+    if ($existing) {
+        return redirect()->route('attendance.qr-result', [
+            'status' => 'warning',
+            'message' => 'You have already checked in today.',
+        ]);
+    }
+
+    // ✅ Perform actual check-in
+    $this->checkIn($request);
+
+    return redirect()->route('attendance.qr-result', [
+        'status' => 'success',
+        'message' => 'Successfully checked in!',
+    ]);
+}
+
+public function qrCheckOut(Request $request, $token)
+{
+    $qrToken = QrToken::where('token', $token)
+        ->where('type', 'check_out')
+        ->first();
+
+    if (!$qrToken || !$qrToken->isValid()) {
+        return redirect()->route('attendance.qr-result', [
+            'status' => 'error',
+            'message' => 'Invalid or expired QR token.',
+        ]);
+    }
+
+    $user = auth()->user();
+
+    if (strtolower(optional($user->department)->name ?? '') !== 'faculty') {
+        return redirect()->route('attendance.qr-result', [
+            'status' => 'error',
+            'message' => 'Unauthorized department.',
+        ]);
+    }
+
+    // Check if already checked out today
+    $existing = Attendance::where('user_id', $user->id)
+        ->whereDate('created_at', today())
+        ->whereNotNull('check_out')
+        ->first();
+
+    if ($existing) {
+        return redirect()->route('attendance.qr-result', [
+            'status' => 'warning',
+            'message' => 'You have already checked out today.',
+        ]);
+    }
+
+    // ✅ Perform actual check-out
+    $this->checkOut();
+
+    return redirect()->route('attendance.qr-result', [
+        'status' => 'success',
+        'message' => 'Successfully checked out!',
+    ]);
+}
+
 
 }

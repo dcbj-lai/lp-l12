@@ -118,5 +118,11 @@ public function isManager()
     return $this->rank==='manager';
 }
 
+public function department()
+{
+    return $this->belongsTo(Department::class);
+}
+
+
 
 }

@@ -1,10 +1,6 @@
 <?php
 
-use App\Models\Step;
-use App\Models\Ripple;
 use Livewire\Volt\Volt;
-use App\Mail\RequestMade;
-use App\Livewire\RippleFeed;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StepController;
 use App\Http\Controllers\UserController;
@@ -19,6 +15,7 @@ use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\VisitorLogController;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -65,7 +62,22 @@ Route::middleware('auth')->group(function () {
     ->name('attendance.index');
     Route::get('/attendance/week', [AttendanceController::class, 'week'])->name('attendance.week');
 
+    // Scan check in/out
+    Route::get('/qr_check_in/{token}', [AttendanceController::class, 'qrCheckIn'])->name('attendance.qr_check_in');
+    Route::get('/qr_check_out/{token}', [AttendanceController::class, 'qrCheckOut'])->name('attendance.qr_check_out');
+
+    // Confirmation view
+    Route::get('/attendance/qr-result', function (Request $request) {
+        return view('attendance.qr-result', [
+            'status' => $request->get('status'),
+            'message' => $request->get('message'),
+        ]);
+    })->name('attendance.qr-result');
+
+
 });
+
+
 Route::get('/my-attendance',[AttendanceController::class, 'myAttendance'])
     ->middleware('auth')
     ->name('attendance.my_attendance');
@@ -77,6 +89,13 @@ Route::middleware(['auth','can:is-pnc'])->group(function () {
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}/payroll', [UserController::class, 'togglePayroll'])->name('users.togglePayroll');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update'); 
+});
+
+// Acad Admin
+
+Route::middleware(['auth', 'can:is-acad-admin'])->group(function () {
+    Route::get('/attendance/qr', [AttendanceController::class, 'showQr'])
+        ->name('attendance.show_qr');
 });
 
 
