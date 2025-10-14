@@ -167,7 +167,7 @@ public function frontdeskIndex(Request $request)
         $query->orderBy($sort, $direction);
     } else {
         // Default: most recent visitors first
-        $query->orderBy('visit_date', 'desc');
+        $query->orderBy('created_at', 'desc');
     }
 
     $visitors = $query->paginate(10)->withQueryString();
@@ -380,7 +380,7 @@ public function downloadCsv(Request $request): StreamedResponse
         $query->orderBy($sort, $direction);
     } else {
         // Default: most recent visit first
-        $query->orderBy('visit_date', 'desc');
+        $query->orderBy('created_at', 'desc');
     }
 
     $visitors = $query->get();
