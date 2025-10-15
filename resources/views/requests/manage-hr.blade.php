@@ -17,9 +17,21 @@
 
         <!-- 🔍 Filters -->
         <form method="GET" class="grid md:grid-cols-5 gap-3 mb-4 text-sm">
+            <!-- Employee Name -->
             <input type="text" name="employee" value="{{ request('employee') }}" placeholder="Employee name"
                 class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700">
 
+            <!-- Department Dropdown -->
+            <select name="department" class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700">
+                <option value="">All Departments</option>
+                @foreach(\App\Models\Department::orderBy('name')->get() as $dept)
+                    <option value="{{ $dept->id }}" @selected(request('department') == $dept->id)>
+                        {{ $dept->name }}
+                    </option>
+                @endforeach
+            </select>
+
+            <!-- Type -->
             <select name="type" class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700">
                 <option value="">All Types</option>
                 <option value="PTO" @selected(request('type') === 'PTO')>Leave</option>
@@ -27,6 +39,7 @@
                 <option value="LWOP" @selected(request('type') === 'LWOP')>Leave Without Pay</option>
             </select>
 
+            <!-- Status -->
             <select name="status" class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700">
                 <option value="">All Status</option>
                 @foreach(['pending', 'approved', 'rejected', 'cancelled'] as $status)
@@ -36,11 +49,22 @@
                 @endforeach
             </select>
 
-            <input type="date" name="date_from" value="{{ request('date_from') }}"
-                class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700">
-            <input type="date" name="date_to" value="{{ request('date_to') }}"
-                class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700">
+            <!-- Clustered Date Range with Labels -->
+            <div class="flex gap-2 md:col-span-5">
+                <div class="flex-1">
+                    <label for="date_from"
+                        class="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">From</label>
+                    <input type="date" id="date_from" name="date_from" value="{{ request('date_from') }}"
+                        class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700 w-full">
+                </div>
+                <div class="flex-1">
+                    <label for="date_to" class="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">To</label>
+                    <input type="date" id="date_to" name="date_to" value="{{ request('date_to') }}"
+                        class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700 w-full">
+                </div>
+            </div>
 
+            <!-- Filter & Reset Buttons -->
             <div class="md:col-span-5 flex gap-2">
                 <button type="submit"
                     class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold">
@@ -52,6 +76,10 @@
                 </a>
             </div>
         </form>
+
+
+
+
 
         <div class="overflow-hidden shadow-xl sm:rounded-lg p-6 bg-white dark:bg-neutral-900">
             <div class="overflow-x-auto">
@@ -69,6 +97,11 @@
 
                             <th class="border px-4 py-2">{!! sort_link('Employee', 'employee', $sort, $direction) !!}
                             </th>
+                            <th class="border px-4 py-2">
+                                {!! sort_link('Department', 'department', $sort, $direction) !!}
+                            </th>
+                            <th class="border px-4 py-2">{!! sort_link('Approver', 'approver', $sort, $direction) !!}
+                            </th>
                             <th class="border px-4 py-2">{!! sort_link('Type', 'type', $sort, $direction) !!}</th>
                             <th class="border px-4 py-2">{!! sort_link('Dates', 'start_date', $sort, $direction) !!}
                             </th>
@@ -78,12 +111,15 @@
                             <th class="border px-4 py-2">Balance</th>
                             <th class="border px-4 py-2">{!! sort_link('Status', 'status', $sort, $direction) !!}</th>
                             <th class="border px-4 py-2">Actions</th>
+
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($requests as $r)
                             <tr>
                                 <td class="border px-4 py-2">{{ $r->user->name }}</td>
+                                <td class="border px-4 py-2">{{ optional($r->user->department)->name ?? '—' }}</td>
+                                <td class="border px-4 py-2">{{ optional($r->approver)->name ?? '—' }}</td>
                                 <td class="border px-4 py-2">
                                     @if ($r->type === 'PTO')
                                         Leave
@@ -127,7 +163,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="border px-4 py-3 text-center text-neutral-500 dark:text-neutral-400">
+                                <td colspan="10"
+                                    class="border px-4 py-3 text-center text-neutral-500 dark:text-neutral-400">
                                     No requests found.
                                 </td>
                             </tr>

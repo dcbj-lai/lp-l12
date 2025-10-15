@@ -17,6 +17,9 @@
             <!-- Details -->
             <div class="space-y-3 text-sm text-neutral-800 dark:text-neutral-100">
                 <p><strong>Employee:</strong> {{ $request->user->name }}</p>
+                <p><strong>Department:</strong> {{ optional($request->user->department)->name ?? '—' }}</p>
+                <p><strong>Approver:</strong> {{ optional($request->approver)->name ?? '—' }}</p>
+
                 <p>
                     <strong>Type:</strong>
                     @if ($request->type === 'PTO')

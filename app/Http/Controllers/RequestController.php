@@ -479,13 +479,21 @@ public function manageHr(Request $request)
         abort(403, 'Unauthorized Access.');
     }
 
-    $query = StaffRequest::with(['user.requestCredit']);
+    // Eager-load user, department, request credits, and approver
+    $query = StaffRequest::with(['user.requestCredit', 'user.department', 'approver']);
 
     // 🔍 Filters
     if ($request->filled('employee')) {
         $employee = strtolower($request->employee);
         $query->whereHas('user', function ($q) use ($employee) {
             $q->whereRaw('LOWER(name) LIKE ?', ["%{$employee}%"]);
+        });
+    }
+
+    if ($request->filled('department')) {
+        // Filter by department_id (dropdown returns the ID)
+        $query->whereHas('user.department', function ($q) use ($request) {
+            $q->where('id', $request->department);
         });
     }
 
@@ -502,14 +510,23 @@ public function manageHr(Request $request)
     }
 
     // 🔽 Sorting
-    $sortable = ['employee', 'type', 'start_date', 'number_of_days', 'status'];
+    $sortable = ['employee', 'department', 'approver', 'type', 'start_date', 'number_of_days', 'status'];
     $sort = $request->get('sort', 'created_at');
     $direction = $request->get('direction', 'desc');
 
     if ($sort === 'employee') {
         $query->join('users', 'requests.user_id', '=', 'users.id')
-            ->select('requests.*')
-            ->orderByRaw('LOWER(users.name) ' . ($direction === 'asc' ? 'ASC' : 'DESC'));
+              ->select('requests.*')
+              ->orderByRaw('LOWER(users.name) ' . ($direction === 'asc' ? 'ASC' : 'DESC'));
+    } elseif ($sort === 'department') {
+        $query->join('users', 'requests.user_id', '=', 'users.id')
+              ->join('departments', 'users.department_id', '=', 'departments.id')
+              ->select('requests.*')
+              ->orderByRaw('LOWER(departments.name) ' . ($direction === 'asc' ? 'ASC' : 'DESC'));
+    } elseif ($sort === 'approver') {
+        $query->leftJoin('users as approvers', 'requests.approver_id', '=', 'approvers.id')
+              ->select('requests.*')
+              ->orderByRaw('LOWER(approvers.name) ' . ($direction === 'asc' ? 'ASC' : 'DESC'));
     } elseif (in_array($sort, $sortable)) {
         $query->orderBy($sort, $direction);
     } else {
@@ -520,6 +537,9 @@ public function manageHr(Request $request)
 
     return view('requests.manage-hr', compact('requests', 'sort', 'direction'));
 }
+
+
+
 
 
 public function showHr(Request $request, StaffRequest $requestModel)
