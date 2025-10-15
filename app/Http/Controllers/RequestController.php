@@ -9,6 +9,7 @@ use App\Mail\RequestMade;
 use App\Models\OrgSetting;
 use Illuminate\Http\Request;
 use App\Models\RequestCredit;
+use App\Mail\RequestCancelled;
 use App\Mail\ResponseReceived;
 use Spatie\GoogleCalendar\Event;
 use Illuminate\Support\Facades\Log;
@@ -40,127 +41,6 @@ public function create()
 
     return view('requests.create', compact('credits'));
 }
-
-// public function store(Request $request)
-// {
-//     try {
-//         $request->validate(
-//     [
-//         'type' => 'required|in:PTO,WFH,LWOP', 
-//         'start_date' => 'required|date|after_or_equal:today',
-//         'end_date' => 'required|date|after_or_equal:start_date',
-//         'end_date_type' => 'required|in:full,half',
-//         'reason' => 'required|string',
-//     ],
-//     [
-//         'type.required' => 'Please select a request type (Leave, Work from Home, or Leave Without Pay).',
-//         'type.in' => 'The request type must be PTO, WFH, or LWOP.',
-
-//         'start_date.required' => 'Start date is required.',
-//         'start_date.date' => 'Start date must be a valid date.',
-//         'start_date.after_or_equal:today' => 'Start date cannot be in the past.',
-
-//         'end_date.required' => 'End date is required.',
-//         'end_date.date' => 'End date must be a valid date.',
-//         'end_date.after_or_equal' => 'End date must be the same or after the start date.',
-
-//         'end_date_type.required' => 'Please specify if the last day is full or half.',
-//         'end_date_type.in' => 'End date type must be either full or half day.',
-
-//         'reason.required' => 'Please provide a reason for your request.',
-//         'reason.string' => 'Reason must be valid text.',
-//     ]);
-
-//         $user = Auth::user();
-//         $credits = $user->requestCredit;
-
-//         $start = Carbon::parse($request->start_date);
-//         $end = Carbon::parse($request->end_date);
-//         $days = $start->diffInDaysFiltered(function (Carbon $date) {
-//             return $date->isWeekday(); // Optional: skip weekends
-//         }, $end) + 1;
-
-//         if ($request->end_date_type === 'half') {
-//             $days -= 0.5;
-//         }
-//         $hasOverlap = StaffRequest::where('user_id', $user->id)
-//             ->where('status', '!=', 'cancelled')
-//             ->where('status', '!=', 'rejected')
-//             ->where(function ($query) use ($request) {
-//                 $query->whereBetween('start_date', [$request->start_date, $request->end_date])
-//                     ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
-//                     ->orWhere(function ($q) use ($request) {
-//                         $q->where('start_date', '<=', $request->start_date)
-//                             ->where('end_date', '>=', $request->end_date);
-//                     });
-//             })
-//             ->exists();
-
-//         if ($hasOverlap) {
-//             return back()->withErrors([
-//                 'start_date' => 'Your selected dates overlap with an existing request.',
-//                 'end_date' => 'Please choose a non-conflicting range.',
-//             ]);
-//         }
-
-
-//         $creditExceeded = false;
-
-//         if (!in_array($request->type, ['LWOP'])) {
-//             $outstanding = StaffRequest::where('user_id', $user->id)
-//                 ->where('type', $request->type)
-//                 ->whereIn('status', ['pending'])
-//                 ->sum('number_of_days');
-//             // dd($outstanding);
-//             switch ($request->type) {
-//                 case 'PTO':
-//                     if ($days > ($credits->pto - $outstanding)) $creditExceeded = true;
-//                     break;
-//                 case 'WFH':
-//                     if ($days > ($credits->wfh - $outstanding)) $creditExceeded = true;
-//                     break;
-//             }
-
-//             if ($creditExceeded) {
-//                 return back()->withErrors([
-//                     'type' => "Insufficient credits for selected request type. You requested {$days} day(s)."
-//                 ]);
-//             }
-//         }
-
-        
-
-//         $requestRecord = StaffRequest::create([
-//             'user_id' => $user->id,
-//             'type' => $request->type,
-//             'reason' => $request->reason,
-//             'start_date' => $request->start_date,
-//             'end_date' => $request->end_date,
-//             'end_date_type' => $request->end_date_type,
-//             'number_of_days' => $days,
-//             'status' => 'pending',
-//         ]);
-        
-//         // Notify supervisor
-//         $supervisor = $user->supervisor;
-//         if ($supervisor && $supervisor->email) {
-//             Mail::to($supervisor->email)
-//             ->cc(env('REQUESTS_HR_EMAIL'))
-//             ->queue(new RequestMade($requestRecord));
-//         }
-
-        
-
-//         return redirect()->route('my-requests')->with('success', 'Request submitted successfully.');
-//     } catch (\Exception $e) {
-//         // Log the actual error for debugging (optional)
-//         \Log::error('Request submission failed', ['error' => $e->getMessage()]);
-
-//         return back()->withErrors([
-//             'general' => 'Something went wrong while submitting the request. Please try again.',
-//         ]);
-//     }
-// }
 
 
 public function store(Request $request)
@@ -281,7 +161,7 @@ public function store(Request $request)
             ->queue(new RequestMade($requestRecord));
     }
 
-    return redirect()->route('my-requests')->with('success', 'Request submitted successfully.');
+    return redirect()->route('my-requests')->with('success', 'Request submitted.');
 }
 
 
@@ -388,6 +268,67 @@ public function process(Request $request, $id)
             Log::warning("No credit found to reverse for user", ['user_id' => $staffRequest->user_id]);
         }
     }
+    // Google Calendar
+     try {
+        if ($staffRequest->status === 'approved') {
+            $eventTitle = match ($staffRequest->type) {
+                'PTO' => "{$staffRequest->user->name} - On Leave",
+                'WFH' => "{$staffRequest->user->name} - Work From Home",
+                default => "{$staffRequest->user->name} - Approved Request",
+            };
+
+            // Update existing event if it already exists
+            if ($staffRequest->google_event_id) {
+                $event = Event::find($staffRequest->google_event_id);
+                if ($event) {
+                    $event->name = $eventTitle;
+                    $event->description = $staffRequest->remarks ?: ucfirst($staffRequest->type) . ' approved';
+                    $event->startDate = Carbon::parse($staffRequest->start_date)->startOfDay();
+                    $event->endDate = Carbon::parse($staffRequest->end_date)->endOfDay();
+                    $event->save();
+                }
+            } else {
+                // Create new calendar event
+                $event = new Event;
+                $event->name = $eventTitle;
+                $event->description = $staffRequest->remarks ?: ucfirst($staffRequest->type) . ' approved';
+                $event->startDate = Carbon::parse($staffRequest->start_date)->startOfDay();
+                $event->endDate = Carbon::parse($staffRequest->end_date)->endOfDay();
+                $event->addAttendee(['email' => $staffRequest->user->email]);
+                $newEvent = $event->save();
+                // Store the event ID
+                $staffRequest->google_event_id = $newEvent->id;
+                $staffRequest->save();
+
+            }
+
+            Log::info('Google Calendar event synced', [
+                'request_id' => $staffRequest->id,
+                'event_id' => $staffRequest->google_event_id,
+            ]);
+        }
+
+        // Delete event if request is rejected and event exists
+        if ($staffRequest->status === 'rejected' && $staffRequest->google_event_id) {
+            $event = Event::find($staffRequest->google_event_id);
+            if ($event) {
+                $event->delete();
+                Log::info('Google Calendar event deleted after rejection', [
+                    'request_id' => $staffRequest->id,
+                    'event_id' => $staffRequest->google_event_id,
+                ]);
+            }
+
+            $staffRequest->google_event_id = null;
+            $staffRequest->save();
+        }
+
+    } catch (\Throwable $e) {
+        Log::error('Google Calendar sync failed', [
+            'error' => $e->getMessage(),
+            'request_id' => $staffRequest->id,
+        ]);
+    }
 
     $ccRecipients = [env('REQUESTS_HR_EMAIL'),env('REQUESTS_OP_EMAIL')];
 
@@ -399,7 +340,7 @@ public function process(Request $request, $id)
     }
 
     return redirect()->route('requests.manage')
-        ->with('success', "Request {$staffRequest->status} successfully.");
+        ->with('info', "Request {$staffRequest->status}.");
 }
 
     
@@ -425,7 +366,7 @@ public function view(Request $request, StaffRequest $requestModel)
     }
     
     $canEdit = $requestModel->status === 'pending';
-    
+    // dd($requestModel);
     return view('requests.edit-view', [
         'request' => $requestModel,
         'canEdit' => $canEdit,
@@ -449,9 +390,17 @@ public function archive(Request $request, $id)
 
     $staffRequest->update(['status' => 'cancelled']);
 
+     // Notify supervisor + HR
+    $user = auth()->user();
+    $supervisor = $user->supervisor;
+
+    Mail::to($supervisor?->email)
+    ->cc(env('REQUESTS_HR_EMAIL'))
+    ->queue(new RequestCancelled($staffRequest));
+
     return redirect()
         ->route('my-requests')
-        ->with('success', 'Request has been cancelled.');
+        ->with('info', 'Request has been cancelled and notifications sent.');
 }
 
 
@@ -520,5 +469,81 @@ public function forceDestroy(StaffRequest $request)
     $request->delete();
     return redirect()->route('requests.manage')->with('success', 'Request permanently deleted.');
 }
+
+
+// Manage HR View
+
+public function manageHr(Request $request)
+{
+    if (!Gate::allows('is-pnc')) {
+        abort(403, 'Unauthorized Access.');
+    }
+
+    $query = StaffRequest::with(['user.requestCredit']);
+
+    // 🔍 Filters
+    if ($request->filled('employee')) {
+        $query->whereHas('user', function ($q) use ($request) {
+            $q->where('name', 'like', '%' . $request->employee . '%');
+        });
+    }
+
+    if ($request->filled('type')) {
+        $query->where('type', $request->type);
+    }
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('date_from') && $request->filled('date_to')) {
+        $query->whereBetween('start_date', [$request->date_from, $request->date_to]);
+    }
+
+    // 🔽 Sorting
+    $sortable = ['employee', 'type', 'start_date', 'number_of_days', 'status'];
+    $sort = $request->get('sort', 'created_at');
+    $direction = $request->get('direction', 'desc');
+
+    if ($sort === 'employee') {
+        $query->join('users', 'requests.user_id', '=', 'users.id')
+            ->select('requests.*')
+            ->orderBy('users.name', $direction);
+    } elseif (in_array($sort, $sortable)) {
+        $query->orderBy($sort, $direction);
+    } else {
+        $query->latest();
+    }
+
+    $requests = $query->paginate(15)->withQueryString();
+
+    return view('requests.manage-hr', compact('requests', 'sort', 'direction'));
+}
+
+public function showHr(Request $request, StaffRequest $requestModel)
+{
+    if (!Gate::allows('is-pnc')) {
+        abort(403, 'Unauthorized Access.');
+    }
+
+    // HR can view all requests, no restriction by user/supervisor
+    return view('requests.show-hr', [
+        'request' => $requestModel,
+    ]);
+}
+
+public function purgeCancelled()
+{
+    if (!Gate::allows('is-pnc')) {
+        abort(403, 'Unauthorized Access.');
+    }
+
+    $deletedCount = StaffRequest::where('status', 'cancelled')->delete();
+
+    return back()->with('info', "{$deletedCount} records deleted.");
+    }
+
+
+// Manage HR View
 
 }

@@ -30,5 +30,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('is-manager-or-hr', fn ($user) => $user->isManager() || $user->hasAnyRole(['pnc.admin', 'super.admin']));
         Gate::define('is-super-admin', fn($user) => $user->hasAnyRole(['super.admin']));
         Gate::define('is-frontdesk', fn($user) => $user->hasAnyRole(['frontdesk.staff','super.admin']));
+
+        try {
+        $path = \App\Helpers\GoogleCredentialHelper::ensureCredentialsFile();
+        config(['google-calendar.service_account_credentials_json' => $path]);
+    } catch (\Throwable $e) {
+        \Log::error('Failed to load Google Calendar credentials: ' . $e->getMessage());
+    }
     }
 }

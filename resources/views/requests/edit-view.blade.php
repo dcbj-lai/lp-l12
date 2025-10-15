@@ -20,10 +20,11 @@
                                 class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">Type</label>
                             <select name="type" id="type"
                                 class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500">
-                                <option value="PTO" @selected(old('type') === 'PTO')>Leave</option>
-                                <option value="WFH" @selected(old('type') === 'WFH')>Work from Home</option>
-                                <option value="LWOP" @selected(old('type') === 'LWOP')>Leave w/o Pay</option>
+                                <option value="PTO" @selected(old('type', $request->type ?? null) === 'PTO')>Leave</option>
+                                <option value="WFH" @selected(old('type', $request->type ?? null) === 'WFH')>Work from Home</option>
+                                <option value="LWOP" @selected(old('type', $request->type ?? null) === 'LWOP')>Leave w/o Pay</option>
                             </select>
+
                         </div>
 
                         <div>

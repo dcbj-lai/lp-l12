@@ -13,7 +13,7 @@ return [
             /*
              * Path to the json file containing the credentials.
              */
-            'credentials_json' => storage_path('app/private/google-calendar/google-service-account-key.json'),
+            'credentials_json' => storage_path('app/private/credentials.json'),
         ],
 
         /*

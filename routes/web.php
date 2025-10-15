@@ -139,6 +139,21 @@ Route::get('/steps', fn() => view('steps.index'))
 
 Route::get('/about', [UtilityController::class, 'about'])->name('about');
 
+
+// HR Admin for Leaves
+Route::middleware(['auth', 'can:is-pnc'])->group(function () {
+    Route::get('/requests/manage-hr', [RequestController::class, 'manageHr'])
+        ->name('requests.manage-hr');
+    Route::get('/requests/hr/{requestModel}', [RequestController::class, 'showHr'])->name('requests.show-hr');
+    Route::delete('/requests/purge-cancelled', [RequestController::class, 'purgeCancelled'])
+        ->name('requests.purgeCancelled');
+});
+
+
+
+// HR Admin for Leaves
+
+
 // Requests
 
 Route::middleware(['auth'])->group(function () {
@@ -179,7 +194,7 @@ Route::middleware(['auth', 'can:is-pnc'])->group(function () {
 
 });
 
-
+// Super Admin Clean up
 
 Route::get('/users/{user}/delete', [UserController::class, 'delete'])
     ->middleware(['auth', 'can:is-super-admin'])
@@ -270,12 +285,17 @@ Route::get('/phpinfo', function () {
     phpinfo();
 });
 
-Route::get('/test-qr', function () {
-    $data = 'https://lifeacademy.ph/visitors/checkin?id=12345'; // sample data
+// HR Admin for Leaves
+Route::middleware(['auth', 'can:is-pnc'])->group(function () {
+    Route::get('/requests/manage-hr', [RequestController::class, 'manageHr'])
+        ->name('requests.manage-hr');
 
-    $qr = base64_encode(QrCode::format('png')->size(200)->generate($data));
-
-    return view('test-qr', ['qr' => $qr, 'data' => $data]);
+    Route::delete('/requests/purge-cancelled', [RequestController::class, 'purgeCancelled'])
+        ->name('requests.purgeCancelled');
 });
+// HR Admin for Leaves
+
+
+
 
 require __DIR__.'/auth.php';

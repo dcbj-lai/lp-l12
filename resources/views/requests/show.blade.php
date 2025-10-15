@@ -32,6 +32,7 @@
                         'rejected' => 'bg-rose-100 text-rose-800 dark:bg-rose-800/20 dark:text-rose-300',
                         'cancelled' => 'bg-neutral-300 text-neutral-800 dark:bg-neutral-600 dark:text-neutral-200',
                     ];
+                     $isDisabled = strtolower($request->status) === 'cancelled';
                 @endphp
                 <p>
                     <strong>Status:</strong>
@@ -43,24 +44,36 @@
                 </p>
             </div>
 
-            <!-- Actions (only if not archived) -->
+            <!-- Actions -->
             <div class="mt-8">
                 <form action="{{ route('requests.process', $request->id) }}" method="POST" class="space-y-4">
                     @csrf
                     <textarea name="remarks" rows="2" placeholder="Remarks"
-                        class="w-full text-sm bg-neutral-100 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md">{{ old('remarks', $request->remarks) }}</textarea>
+                        class="w-full text-sm bg-neutral-100 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md p-2"
+                        {{ $isDisabled ? 'disabled' : '' }}>{{ old('remarks', $request->remarks) }}</textarea>
                     <input type="hidden" name="action_type" id="action_type" value="">
 
                     <div class="flex gap-3">
-                        <flux:button type="submit" size="sm"
-                            onclick="document.getElementById('action_type').value='reject';">
+                        <button type="submit"
+                                class="px-4 py-2 rounded-md text-sm font-medium bg-rose-600 text-white hover:bg-rose-700 disabled:bg-neutral-400 disabled:cursor-not-allowed"
+                                onclick="document.getElementById('action_type').value='reject';"
+                                {{ $isDisabled ? 'disabled' : '' }}>
                             Reject
-                        </flux:button>
-                        <flux:button variant="primary" type="submit" size="sm"
-                            onclick="document.getElementById('action_type').value='approve';">
+                        </button>
+
+                        <button type="submit"
+                                class="px-4 py-2 rounded-md text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-neutral-400 disabled:cursor-not-allowed"
+                                onclick="document.getElementById('action_type').value='approve';"
+                                {{ $isDisabled ? 'disabled' : '' }}>
                             Approve
-                        </flux:button>
+                        </button>
                     </div>
+
+                    @if ($isDisabled)
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                            Actions are disabled because this request has been cancelled.
+                        </p>
+                    @endif
                 </form>
             </div>
 
