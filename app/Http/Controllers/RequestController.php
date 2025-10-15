@@ -483,8 +483,9 @@ public function manageHr(Request $request)
 
     // 🔍 Filters
     if ($request->filled('employee')) {
-        $query->whereHas('user', function ($q) use ($request) {
-            $q->where('name', 'like', '%' . $request->employee . '%');
+        $employee = strtolower($request->employee);
+        $query->whereHas('user', function ($q) use ($employee) {
+            $q->whereRaw('LOWER(name) LIKE ?', ["%{$employee}%"]);
         });
     }
 
@@ -508,7 +509,7 @@ public function manageHr(Request $request)
     if ($sort === 'employee') {
         $query->join('users', 'requests.user_id', '=', 'users.id')
             ->select('requests.*')
-            ->orderBy('users.name', $direction);
+            ->orderByRaw('LOWER(users.name) ' . ($direction === 'asc' ? 'ASC' : 'DESC'));
     } elseif (in_array($sort, $sortable)) {
         $query->orderBy($sort, $direction);
     } else {
@@ -519,6 +520,7 @@ public function manageHr(Request $request)
 
     return view('requests.manage-hr', compact('requests', 'sort', 'direction'));
 }
+
 
 public function showHr(Request $request, StaffRequest $requestModel)
 {
