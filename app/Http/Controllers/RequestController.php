@@ -270,12 +270,17 @@ public function process(Request $request, $id)
     }
     
     $withHalfDay = '';
-    if ((strtolower($staffRequest->end_date_type) != 'full')) {
-        if ($staffRequest->number_of_days === 0.5)
-            $withHalfDay = (strtolower($staffRequest->end_date_type) === 'half-am-off') ? '1/2 Day: Morning Off' : '1/2 Day: Afternoon Off';
-        elseif($staffRequest->number_of_days > 0.5)
-            $withHalfDay = (strtolower($staffRequest->end_date_type) === 'half-am-off') ? 'Includes 1/2 Day: Morning Off' : 'Includes 1/2 Day: Afternoon Off';
-    };
+
+    $endType = strtolower($staffRequest->end_date_type ?? '');
+    $days = $staffRequest->number_of_days ?? 0;
+
+    if ($endType !== 'full' && $days > 0) {
+        $isMorning = $endType === 'half-am-off';
+        $halfDayLabel = $isMorning ? 'Morning Off' : 'Afternoon Off';
+        $withHalfDay = $days > 0.5
+            ? "Includes 1/2 Day: {$halfDayLabel}"
+            : "1/2 Day: {$halfDayLabel}";
+    }
      
     // Google Calendar
     try {
