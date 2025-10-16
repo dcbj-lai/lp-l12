@@ -8,17 +8,20 @@ return new class extends Migration
 {
     public function up(): void
 {
+    // Drop the old check constraint if it exists
+    DB::statement('ALTER TABLE requests DROP CONSTRAINT IF EXISTS requests_end_date_type_check');
+
+    // Rename old column
     Schema::table('requests', function (Blueprint $table) {
-        // Temporarily rename the old column
         $table->renameColumn('end_date_type', 'old_end_date_type');
     });
 
+    // Add new string column
     Schema::table('requests', function (Blueprint $table) {
-        // Add a new string column
         $table->string('end_date_type')->default('full');
     });
 
-    // Copy data from old to new column
+    // Copy over existing data
     DB::statement('UPDATE requests SET end_date_type = old_end_date_type');
 
     // Drop the old enum column
@@ -26,6 +29,7 @@ return new class extends Migration
         $table->dropColumn('old_end_date_type');
     });
 }
+
 
 
     public function down(): void
