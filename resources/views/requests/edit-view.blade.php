@@ -52,14 +52,24 @@
 
                         <div>
                             <label for="end_date_type"
-                                class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">End Date
-                                Type</label>
+                                class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">
+                                End Date Type
+                            </label>
                             <select name="end_date_type" id="end_date_type"
                                 class="mt-1 block w-full border-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500">
-                                <option value="full" @selected($request->end_date_type === 'full')>Full Day</option>
-                                <option value="half" @selected($request->end_date_type === 'half')>Half Day</option>
+                                
+                                <option value="full" @selected($request->end_date_type === 'full')>
+                                    Full Day
+                                </option>
+                                <option value="half-am-off" @selected($request->end_date_type === 'half-am-off')>
+                                    Half Day: Morning Off
+                                </option>
+                                <option value="half-pm-off" @selected($request->end_date_type === 'half-pm-off')>
+                                    Half Day: Afternoon Off
+                                </option>
                             </select>
                         </div>
+
                         @php
                             $status = strtolower($request->status);
                             $statusClasses = [

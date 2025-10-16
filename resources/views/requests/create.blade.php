@@ -56,7 +56,10 @@
                         <select name="end_date_type" id="end_date_type"
                             class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500">
                             <option value="full" @selected(old('end_date_type') === 'full')>Full Day</option>
-                            <option value="half" @selected(old('end_date_type') === 'half')>Half Day</option>
+                            <option value="half-am-off" @selected(old('end_date_type') === 'half')>Half Day: Morning Off
+                            </option>
+                            <option value="half-pm-off" @selected(old('end_date_type') === 'half')>Half Day: Afternoon Off
+                            </option>
                         </select>
                         {{-- @error('end_date_type') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                         --}}

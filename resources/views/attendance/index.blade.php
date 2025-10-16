@@ -1,205 +1,135 @@
-<x-layouts.app title="Admin Attendance">
+<x-layouts.app title="All Attendance (Admin)">
     <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <h1 class="text-xl md:text-2xl font-bold">Manage Attendance</h1>
-        <div class="overflow-hidden shadow-xl sm:rounded-lg p-6" x-data="attendanceData()">
-            <div class="flex flex-wrap items-center gap-4 mb-4">
-                <div class="flex flex-wrap gap-4 flex-grow">
-                    <input type="date"
-                        class="border rounded p-2 bg-white dark:bg-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600"
-                        x-model="filterDate">
 
-                    <select
-                        class="border rounded p-2 bg-white dark:bg-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600"
-                        x-model="filterUser">
-                        <option value="">All Users</option>
-                        @foreach ($users as $user)
-                            <option value="{{ $user['id'] }}">{{ $user['name'] }}</option>
-                        @endforeach
-                    </select>
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-xl md:text-2xl font-bold">All Attendance Records</h1>
+        </div>
 
-                    <select
-                        class="border rounded p-2 bg-white dark:bg-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600"
-                        x-model="filterStatus">
-                        <option value="">All Statuses</option>
-                        <option value="On Time">On Time</option>
-                        <option value="Late">Late</option>
-                        <option value="Absent">Absent</option>
-                        <option value="Present">Present</option>
-                    </select>
+        <!-- 🔍 Filters -->
+        <form method="GET" class="grid md:grid-cols-5 gap-3 mb-4 text-sm">
+            <!-- Employee Name -->
+            <input type="text" name="employee" value="{{ request('employee') }}" placeholder="Employee name"
+                class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700">
 
-                    <flux:button @click="resetFilters" variant="filled" class="uppercase">Reset</flux:button>
+            <!-- Department Dropdown -->
+            <select name="department" class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700">
+                <option value="">All Departments</option>
+                @foreach(\App\Models\Department::orderBy('name')->get() as $dept)
+                    <option value="{{ $dept->id }}" @selected(request('department') == $dept->id)>
+                        {{ $dept->name }}
+                    </option>
+                @endforeach
+            </select>
+
+            <!-- Status -->
+            <select name="status" class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700">
+                <option value="">All Status</option>
+                @foreach(['On Time', 'Late', 'Absent', 'Present'] as $status)
+                    <option value="{{ $status }}" @selected(request('status') === $status)>
+                        {{ $status }}
+                    </option>
+                @endforeach
+            </select>
+
+            <!-- Date Range -->
+            <div class="flex gap-2 md:col-span-5">
+                <div class="flex-1">
+                    <label for="date_from"
+                        class="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">From</label>
+                    <input type="date" id="date_from" name="date_from" value="{{ request('date_from') }}"
+                        class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700 w-full">
                 </div>
-
-                <!-- Download icon pushed to the far right -->
-                <div class="ml-auto">
-                    <flux:icon name="download" class="w-6 h-6 cursor-pointer text-gray-700 dark:text-gray-300"
-                        @click="downloadCSV" />
+                <div class="flex-1">
+                    <label for="date_to" class="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">To</label>
+                    <input type="date" id="date_to" name="date_to" value="{{ request('date_to') }}"
+                        class="border rounded p-2 dark:bg-neutral-800 dark:border-neutral-700 w-full">
                 </div>
             </div>
 
+            <!-- Buttons -->
+            <div class="md:col-span-5 flex gap-2">
+                <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold">
+                    Filter
+                </button>
+                <a href="{{ route('attendance.index') }}"
+                    class="bg-neutral-500 hover:bg-neutral-600 text-white px-4 py-2 rounded text-sm font-semibold">
+                    Reset
+                </a>
+            </div>
+        </form>
 
-            <!-- Attendance Table -->
+        <!-- 🧾 Attendance Table -->
+        <div class="overflow-hidden shadow-xl sm:rounded-lg p-6 bg-white dark:bg-neutral-900">
             <div class="overflow-x-auto">
-                <table class="w-full min-w-max border-collapse border border-gray-200 dark:border-gray-700 text-sm">
+                <table class="w-full text-sm border border-neutral-200 dark:border-neutral-700">
                     <thead>
-                        <tr class="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-200">
-                            <th class="border px-4 py-2 text-left">Employee</th>
-                            <th class="border px-4 py-2 text-left">Date</th>
-                            <th class="border px-4 py-2 text-left">Check-In</th>
-                            <th class="border px-4 py-2 text-left">Check-Out</th>
-                            <th class="border px-4 py-2 text-left">Status</th>
-                            <th class="border px-4 py-2 text-left">Remarks</th>
-                            <th class="border px-4 py-2 text-left">Hours Worked</th>
+                        <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
+                            @php
+                                function sort_link($label, $column, $sort, $direction)
+                                {
+                                    $newDir = ($sort === $column && $direction === 'asc') ? 'desc' : 'asc';
+                                    $arrow = $sort === $column ? ($direction === 'asc' ? '↑' : '↓') : '';
+                                    return '<a href="?sort=' . $column . '&direction=' . $newDir . '" class="hover:underline">' . $label . ' ' . $arrow . '</a>';
+                                }
+                            @endphp
+
+                            <th class="border px-4 py-2">{!! sort_link('Employee', 'employee', $sort, $direction) !!}
+                            </th>
+                            <th class="border px-4 py-2">
+                                {!! sort_link('Department', 'department', $sort, $direction) !!}
+                            </th>
+                            <th class="border px-4 py-2">{!! sort_link('Date', 'date', $sort, $direction) !!}</th>
+                            <th class="border px-4 py-2">{!! sort_link('Check-In', 'check_in', $sort, $direction) !!}
+                            </th>
+                            <th class="border px-4 py-2">{!! sort_link('Check-Out', 'check_out', $sort, $direction) !!}
+                            </th>
+                            <th class="border px-4 py-2">
+                                {!! sort_link('Hours Worked', 'hours_worked', $sort, $direction) !!}
+                            </th>
+                            <th class="border px-4 py-2">{!! sort_link('Status', 'status', $sort, $direction) !!}</th>
+                            <th class="border px-4 py-2">Remarks</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="attendance in paginatedAttendances()" :key="attendance.id">
-                            <tr class="border-b">
-                                <td class="border px-4 py-2" x-text="attendance.user.name"></td>
-                                <td class="border px-4 py-2" x-text="attendance.date"></td>
-                                <td class="border px-4 py-2" x-text="attendance.check_in"></td>
-                                <td class="border px-4 py-2" x-text="attendance.check_out"></td>
-                    
-                                <!-- Status with color coding -->
-                                <td class="border px-4 py-2 text-center"
-                                    :class="{
-                                        'text-green-600 font-semibold': attendance.status === 'On Time',
-                                        'text-yellow-500 font-semibold': attendance.status === 'Late',
-                                        'text-red-600 font-semibold': attendance.status === 'Absent',
-                                        'text-blue-600 font-semibold': attendance.status === 'Present'
-                                    }" 
-                                    x-text="attendance.status">
-                                </td>
-                    
-                                <!-- Remarks with color coding -->
-                                <td class="border px-4 py-2"
-                                    :class="{
-                                        'text-gray-600 italic': attendance.remarks === 'No Remarks',
-                                        'text-blue-500 font-medium': attendance.remarks.includes('Approved'),
-                                        'text-red-500 font-medium': attendance.remarks.includes('Pending')
-                                    }" 
-                                    x-text="attendance.remarks">
-                                </td>
-                    
-                                <td class="border px-4 py-2" x-text="attendance.hours_worked"></td>
-                            </tr>
-                        </template>
-                        <template x-if="filteredAttendances().length === 0">
+                        @forelse ($attendances as $a)
                             <tr>
-                                <td colspan="7" class="text-center text-gray-500 py-4 italic">
+                                <td class="border px-4 py-2">{{ $a->user->name }}</td>
+                                <td class="border px-4 py-2">{{ optional($a->user->department)->name ?? '—' }}</td>
+                                <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($a->date)->format('Y-m-d') }}</td>
+                                <td class="border px-4 py-2">{{ $a->check_in ?? '—' }}</td>
+                                <td class="border px-4 py-2">{{ $a->check_out ?? '—' }}</td>
+                                <td class="border px-4 py-2 text-center">{{ number_format($a->hours_worked, 2) }}</td>
+                                <td class="border px-4 py-2 text-center">
+                                    @php
+                                        $badgeColor = match ($a->status) {
+                                            'On Time' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800/20 dark:text-emerald-300',
+                                            'Late' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300',
+                                            'Absent' => 'bg-rose-100 text-rose-800 dark:bg-rose-800/20 dark:text-rose-300',
+                                            'Present' => 'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300',
+                                            default => 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700/20 dark:text-neutral-300'
+                                        };
+                                    @endphp
+                                    <span class="inline-block px-2 py-1 text-xs font-semibold rounded {{ $badgeColor }}">
+                                        {{ $a->status }}
+                                    </span>
+                                </td>
+                                <td class="border px-4 py-2">{{ $a->remarks ?? '—' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center text-neutral-500 py-4 italic">
                                     No attendance records found.
                                 </td>
                             </tr>
-                        </template>
-                        
+                        @endforelse
                     </tbody>
-                    
                 </table>
             </div>
 
-            <!-- Pagination Controls -->
-            <!-- Pagination Controls -->
-            <!-- Pagination Controls -->
-            <div class="flex justify-between items-center mt-4 text-sm">
-                <flux:button @click="prevPage" x-bind:disabled="page === 1">
-                    Previous
-                </flux:button>
-
-                <span class="text-gray-700 dark:text-gray-300">
-                    Page <span x-text="page"></span> of <span x-text="totalPages()"></span>
-                </span>
-
-                <flux:button @click="nextPage" x-bind:disabled="page >= totalPages()">
-                    Next
-                </flux:button>
+            <div class="mt-4">
+                {{ $attendances->links() }}
             </div>
-
-
         </div>
     </div>
-
-    <script>
-        function attendanceData() {
-            return {
-                filterDate: '',
-                filterUser: '',
-                filterStatus: '',
-                users: @json($users),
-                attendances: @json($attendances),
-                page: 1,
-                perPage: 10,
-
-                init() {
-                    this.$watch('filterDate', () => this.page = 1);
-                    this.$watch('filterUser', () => this.page = 1);
-                    this.$watch('filterStatus', () => this.page = 1);
-                },
-
-                filteredAttendances() {
-                    return this.attendances.filter(attendance => {
-                        return (!this.filterDate || attendance.date === this.filterDate) &&
-                            (!this.filterUser || attendance.user.id == this.filterUser) &&
-                            (!this.filterStatus || attendance.status === this.filterStatus);
-                    });
-                },
-
-                paginatedAttendances() {
-                    let start = (this.page - 1) * this.perPage;
-                    return this.filteredAttendances().slice(start, start + this.perPage);
-                },
-
-                totalPages() {
-                    return Math.ceil(this.filteredAttendances().length / this.perPage);
-                },
-
-                nextPage() {
-                    if (this.page < this.totalPages()) {
-                        this.page++;
-                    }
-                },
-
-                prevPage() {
-                    if (this.page > 1) {
-                        this.page--;
-                    }
-                },
-
-                resetFilters() {
-                    this.filterDate = '';
-                    this.filterUser = '';
-                    this.filterStatus = '';
-                    this.page = 1;
-                },
-
-                downloadCSV() {
-                    let csvContent = "data:text/csv;charset=utf-8,";
-                    let headers = ["Employee", "Date", "Check-In", "Check-Out", "Status", "Remarks", "Hours Worked"];
-                    csvContent += headers.join(",") + "\n";
-
-                    this.filteredAttendances().forEach(attendance => {
-                        let row = [
-                            `"${attendance.user.name}"`,
-                            `"${attendance.date}"`,
-                            `"${attendance.check_in}"`,
-                            `"${attendance.check_out}"`,
-                            `"${attendance.status}"`,
-                            `"${attendance.remarks}"`,
-                            `"${attendance.hours_worked}"`
-                        ];
-                        csvContent += row.join(",") + "\n";
-                    });
-
-                    let encodedUri = encodeURI(csvContent);
-                    let link = document.createElement("a");
-                    link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", "attendance_report.csv");
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-            };
-        }
-
-
-    </script>
 </x-layouts.app>

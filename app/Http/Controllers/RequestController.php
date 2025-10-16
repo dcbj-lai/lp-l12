@@ -77,7 +77,7 @@ public function store(Request $request)
         return $date->isWeekday();
     }, $end) + 1;
 
-    if ($request->end_date_type === 'half') {
+    if (($request->end_date_type === 'half-am-off') || ($request->end_date_type === 'half-pm-off'))  {
         $days -= 0.5;
     }
 
@@ -268,7 +268,15 @@ public function process(Request $request, $id)
             Log::warning("No credit found to reverse for user", ['user_id' => $staffRequest->user_id]);
         }
     }
-
+    
+    $withHalfDay = '';
+    if ((strtolower($staffRequest->end_date_type) != 'full')) {
+        if ($staffRequest->number_of_days === 0.5)
+            $withHalfDay = (strtolower($staffRequest->end_date_type) === 'half-am-off') ? '1/2 Day: Morning Off' : '1/2 Day: Afternoon Off';
+        elseif($staffRequest->number_of_days > 0.5)
+            $withHalfDay = (strtolower($staffRequest->end_date_type) === 'half-am-off') ? 'Includes 1/2 Day: Morning Off' : 'Includes 1/2 Day: Afternoon Off';
+    };
+     
     // Google Calendar
     try {
         if ($staffRequest->status === 'approved') {
@@ -279,17 +287,14 @@ public function process(Request $request, $id)
             };
 
             $startDate = Carbon::parse($staffRequest->start_date);
+            $endDate = Carbon::parse($staffRequest->end_date)->addDay();
 
-            // Compute end date: round up to next whole number if half-day exists
-            $days = ceil($staffRequest->number_of_days);
-            $endDate = $startDate->copy()->addDays($days);
 
-            // Google Calendar requires exclusive end date, so no need to subtract 1
             if ($staffRequest->google_event_id) {
                 $event = Event::find($staffRequest->google_event_id);
                 if ($event) {
                     $event->name = $eventTitle;
-                    $event->description = $staffRequest->remarks ?: ucfirst($staffRequest->type) . ' approved';
+                    $event->description = "Event created by Life Portal; {$withHalfDay}";
                     $event->startDate = $startDate;
                     $event->endDate = $endDate;
                     $event->save();
@@ -297,7 +302,7 @@ public function process(Request $request, $id)
             } else {
                 $event = new Event;
                 $event->name = $eventTitle;
-                $event->description = $staffRequest->remarks ?: ucfirst($staffRequest->type) . ' approved';
+                $event->description = "Event created by Life Portal; {$withHalfDay}";
                 $event->startDate = $startDate;
                 $event->endDate = $endDate;
                 $event->addAttendee(['email' => $staffRequest->user->email]);
@@ -334,6 +339,7 @@ public function process(Request $request, $id)
             'request_id' => $staffRequest->id,
         ]);
     }
+
 
 
     $ccRecipients = [env('REQUESTS_HR_EMAIL'),env('REQUESTS_OP_EMAIL')];
@@ -428,14 +434,14 @@ public function update(Request $request, StaffRequest $requestModel)
         'reason' => 'required|string|max:255',
         'start_date' => 'required|date',
         'end_date' => 'required|date|after_or_equal:start_date',
-        'end_date_type' => 'required|in:full,half',
+        'end_date_type' => 'required|in:full,half-am-off,half-pm-off',
     ]);
 
     // Compute number of days
     $start = Carbon::parse($validated['start_date']);
     $end = Carbon::parse($validated['end_date']);
     $days = $start->diffInDays($end) + 1;
-    if ($validated['end_date_type'] === 'half') {
+    if (($request->end_date_type === 'half-am-off') || ($request->end_date_type === 'half-pm-off'))  {
         $days -= 0.5;
     }
 

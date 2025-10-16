@@ -90,15 +90,61 @@ class AttendanceController extends Controller
         return back()->with('success', 'Checked out successfully.');
     }
 
-    public function index()
+ public function index(Request $request)
 {
-    $users = User::all();
-    $attendances = Attendance::with('user')
-    ->orderBy('created_at','desc')
-    ->get(); // Ensure user relationship is loaded
+    if (!Gate::allows('is-pnc')) {
+        abort(403, 'Unauthorized Access.');
+    }
 
-    return view('attendance.index', compact('users', 'attendances'));
+    $query = Attendance::with('user.department');
+
+    // 🔍 Filters
+    if ($request->filled('employee')) {
+        $employee = strtolower($request->employee);
+        $query->whereHas('user', function ($q) use ($employee) {
+            $q->whereRaw('LOWER(name) LIKE ?', ["%{$employee}%"]);
+        });
+    }
+
+    if ($request->filled('department')) {
+        $query->whereHas('user.department', function ($q) use ($request) {
+            $q->where('id', $request->department);
+        });
+    }
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('date_from') && $request->filled('date_to')) {
+        $query->whereBetween('date', [$request->date_from, $request->date_to]);
+    }
+
+    // 🔽 Sorting
+    $sortable = ['employee', 'department', 'date', 'check_in', 'check_out', 'hours_worked', 'status', 'created_at'];
+    $sort = $request->get('sort', 'date');
+    $direction = $request->get('direction', 'desc');
+
+    if ($sort === 'employee') {
+        $query->join('users', 'attendances.user_id', '=', 'users.id')
+              ->select('attendances.*')
+              ->orderByRaw('LOWER(users.name) ' . ($direction === 'asc' ? 'ASC' : 'DESC'));
+    } elseif ($sort === 'department') {
+        $query->join('users', 'attendances.user_id', '=', 'users.id')
+              ->join('departments', 'users.department_id', '=', 'departments.id')
+              ->select('attendances.*')
+              ->orderByRaw('LOWER(departments.name) ' . ($direction === 'asc' ? 'ASC' : 'DESC'));
+    } elseif (in_array($sort, $sortable)) {
+        $query->orderBy($sort, $direction);
+    } else {
+        $query->latest('date');
+    }
+
+    $attendances = $query->paginate(20)->withQueryString();
+
+    return view('attendance.index', compact('attendances', 'sort', 'direction'));
 }
+
 
 
 
