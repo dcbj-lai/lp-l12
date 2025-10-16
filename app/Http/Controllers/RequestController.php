@@ -268,8 +268,9 @@ public function process(Request $request, $id)
             Log::warning("No credit found to reverse for user", ['user_id' => $staffRequest->user_id]);
         }
     }
+
     // Google Calendar
-     try {
+    try {
         if ($staffRequest->status === 'approved') {
             $eventTitle = match ($staffRequest->type) {
                 'PTO' => "{$staffRequest->user->name} - On Leave",
@@ -277,29 +278,33 @@ public function process(Request $request, $id)
                 default => "{$staffRequest->user->name} - Approved Request",
             };
 
-            // Update existing event if it already exists
+            $startDate = Carbon::parse($staffRequest->start_date);
+
+            // Compute end date: round up to next whole number if half-day exists
+            $days = ceil($staffRequest->number_of_days);
+            $endDate = $startDate->copy()->addDays($days);
+
+            // Google Calendar requires exclusive end date, so no need to subtract 1
             if ($staffRequest->google_event_id) {
                 $event = Event::find($staffRequest->google_event_id);
                 if ($event) {
                     $event->name = $eventTitle;
                     $event->description = $staffRequest->remarks ?: ucfirst($staffRequest->type) . ' approved';
-                    $event->startDate = Carbon::parse($staffRequest->start_date)->startOfDay();
-                    $event->endDate = Carbon::parse($staffRequest->end_date)->endOfDay();
+                    $event->startDate = $startDate;
+                    $event->endDate = $endDate;
                     $event->save();
                 }
             } else {
-                // Create new calendar event
                 $event = new Event;
                 $event->name = $eventTitle;
                 $event->description = $staffRequest->remarks ?: ucfirst($staffRequest->type) . ' approved';
-                $event->startDate = Carbon::parse($staffRequest->start_date)->startOfDay();
-                $event->endDate = Carbon::parse($staffRequest->end_date)->endOfDay();
+                $event->startDate = $startDate;
+                $event->endDate = $endDate;
                 $event->addAttendee(['email' => $staffRequest->user->email]);
                 $newEvent = $event->save();
-                // Store the event ID
+
                 $staffRequest->google_event_id = $newEvent->id;
                 $staffRequest->save();
-
             }
 
             Log::info('Google Calendar event synced', [
@@ -308,7 +313,7 @@ public function process(Request $request, $id)
             ]);
         }
 
-        // Delete event if request is rejected and event exists
+        // Delete event if request is rejected
         if ($staffRequest->status === 'rejected' && $staffRequest->google_event_id) {
             $event = Event::find($staffRequest->google_event_id);
             if ($event) {
@@ -329,6 +334,7 @@ public function process(Request $request, $id)
             'request_id' => $staffRequest->id,
         ]);
     }
+
 
     $ccRecipients = [env('REQUESTS_HR_EMAIL'),env('REQUESTS_OP_EMAIL')];
 
