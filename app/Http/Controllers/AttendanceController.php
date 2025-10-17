@@ -346,7 +346,7 @@ public function store(Request $request)
         ->first();
 
     if ($existing) {
-        return back()->with('warning', 'An attendance record already exists.');
+        abort(409);
     }
 
     Attendance::create([
