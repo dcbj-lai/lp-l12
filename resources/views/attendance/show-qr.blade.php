@@ -57,9 +57,9 @@
 
             <img src="data:image/svg+xml;base64,{{ $qrImage }}" alt="QR Code" class="mx-auto mb-4 w-64 h-64">
 
-            {{-- <p class="text-sm text-neutral-500 break-all">
+            <p class="text-sm text-neutral-500 break-all">
                 URL: <a href="{{ $qrUrl }}" class="text-blue-500">{{ $qrUrl }}</a>
-            </p> --}}
+            </p>
         </div>
     </div>
 </x-layouts.app>

@@ -6,42 +6,46 @@
             <div class="flex flex-wrap justify-between items-center">
                 <!-- Buttons and Clock -->
                 @php
-                    $isFaculty = strtolower(optional(auth()->user()->department)->name ?? '') === 'faculty';
+                    $user = auth()->user();
+                    $checkInVirtual = strtolower($user->check_in_mode) === 'virtual';
+                    $isOnlineDay = App\Models\OnlineDay::where('date', today())->where('is_active', true)->exists();
+                    $CheckInVirtually = $checkInVirtual || $isOnlineDay;
                 @endphp
                 <div class="w-full md:w-auto flex flex-wrap items-center justify-center md:justify-start">
-                    @unless($isFaculty)
+                    @unless(!$CheckInVirtually)
                         <div x-data="{
-                                    checkedIn: {{ $hasCheckedIn ? 'true' : 'false' }},
-                                    checkedOut: {{ $hasCheckedOut ? 'true' : 'false' }},
-                                    checkInTime: {{ $hasCheckedIn && !$hasCheckedOut ? "'" . $lastCheckIn . "'" : 'null' }},
-                                    elapsed: '00:00:00',
-                                    interval: null,
-                                    startTimer() {
-                                        if (!this.checkInTime || this.checkedOut) return;
-                                        let checkInTimestamp = new Date(this.checkInTime).getTime();
+                                                                                                                    checkedIn: {{ $hasCheckedIn ? 'true' : 'false' }},
+                                                                                                                    checkedOut: {{ $hasCheckedOut ? 'true' : 'false' }},
+                                                                                                                    checkInTime: {{ $hasCheckedIn && !$hasCheckedOut ? "'" . $lastCheckIn . "'" : 'null' }},
+                                                                                                                    elapsed: '00:00:00',
+                                                                                                                    interval: null,
+                                                                                                                    startTimer() {
+                                                                                                                        if (!this.checkInTime || this.checkedOut) return;
+                                                                                                                        let checkInTimestamp = new Date(this.checkInTime).getTime();
 
-                                        this.interval = setInterval(() => {
-                                            let now = new Date().getTime();
-                                            let diff = now - checkInTimestamp;
+                                                                                                                        this.interval = setInterval(() => {
+                                                                                                                            let now = new Date().getTime();
+                                                                                                                            let diff = now - checkInTimestamp;
 
-                                            let hours = Math.floor(diff / (1000 * 60 * 60));
-                                            let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                                            let seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                                                                                                                            let hours = Math.floor(diff / (1000 * 60 * 60));
+                                                                                                                            let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                                                                                                            let seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-                                            this.elapsed = 
-                                                String(hours).padStart(2, '0') + ':' +
-                                                String(minutes).padStart(2, '0') + ':' +
-                                                String(seconds).padStart(2, '0');
+                                                                                                                            this.elapsed = 
+                                                                                                                                String(hours).padStart(2, '0') + ':' +
+                                                                                                                                String(minutes).padStart(2, '0') + ':' +
+                                                                                                                                String(seconds).padStart(2, '0');
 
-                                        }, 1000);
-                                    },
-                                    stopTimer() {
-                                        if (this.interval) {
-                                            clearInterval(this.interval);
-                                            this.elapsed = '00:00:00';
-                                        }
-                                    }
-                                }" x-init="if (checkedIn && !checkedOut) startTimer(); else stopTimer();"
+                                                                                                                        }, 1000);
+                                                                                                                    },
+                                                                                                                    stopTimer() {
+                                                                                                                        if (this.interval) {
+                                                                                                                            clearInterval(this.interval);
+                                                                                                                            this.elapsed = '00:00:00';
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                }"
+                            x-init="if (checkedIn && !checkedOut) startTimer(); else stopTimer();"
                             class="flex flex-wrap items-center justify-center md:justify-start gap-4">
                             {{-- {{ dd($hasCheckedIn) }} --}}
                             <flux:button @click="$dispatch('open-modal', 'checkInModal')"

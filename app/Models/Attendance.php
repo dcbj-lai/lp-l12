@@ -24,4 +24,11 @@ class Attendance extends Model
     {
         return $this->belongsTo(User::class);
     }
+    protected $casts = [
+    'date' => 'date:Y-m-d',
+    'check_in' => 'datetime:H:i',
+    'check_out' => 'datetime:H:i',
+];
+
+
 }

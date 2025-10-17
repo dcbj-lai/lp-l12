@@ -54,6 +54,7 @@ public function update(Request $request, User $user)
             'rank' => 'nullable|string|in:employee,manager',
             'position' => 'nullable|string',
             'monthly_rate' => 'nullable|string',
+            'check_in_mode'=>'required|string|in:virtual,onsite',
         ]);
 
         // Decode roles and ensure it's an array
@@ -84,6 +85,7 @@ public function update(Request $request, User $user)
             'rank' => $validated['rank'],
             'position' => $validated['position'],
             'monthly_rate' => $validated['monthly_rate'],
+            'check_in_mode' => $validated['check_in_mode'],
         ]);
 
         // Flash success and redirect

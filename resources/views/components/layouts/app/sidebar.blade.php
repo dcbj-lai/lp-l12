@@ -40,7 +40,7 @@
             @if ($isPNC || $isSuperAdmin)
                 <flux:navlist.group heading="P&C" expandable :expanded="false">
                     <flux:navlist.item href="{{route('users.index')}}" icon="users">Users</flux:navlist.item>
-                    <flux:navlist.item href="{{ route('attendance.index') }}" icon="user-check">Attendance
+                    <flux:navlist.item href="{{ route('attendance.index') }}" icon="user-check">View Staff Attendance
                     </flux:navlist.item>
                     <flux:navlist.item href="{{ route('requests.manage-hr') }}" icon="list-filter-plus">View Staff Requests
                     </flux:navlist.item>
@@ -67,6 +67,9 @@
                     <flux:navlist.item href="{{route('attendance.show_qr')}}" icon="qr-code">Attendance
                         QR Code
                     </flux:navlist.item>
+                    <flux:navlist.item href="{{route('onlinedays.index')}}" icon="airplay">
+                        Declare Online Days
+                    </flux:navlist.item>
                 </flux:navlist.group>
             @endif
             @if ($isManager)
@@ -85,8 +88,8 @@
                 {{ __('About Life Portal') }}
             </flux:navlist.item>
 
-            <flux:navlist.item icon="book-open-text" href="#">
-                {{ __('Knowledge Base') }}
+            <flux:navlist.item icon="book-open-text" href="https://knowledge.laicollege.edu.ph/">
+                {{ __('LAIC Knowledge Base') }}
             </flux:navlist.item>
             <flux:navlist.group heading="Team LIFE" expandable :expanded="false">
                 <flux:navlist.item href="#" icon="book-user">Directory

@@ -31,6 +31,7 @@ class User extends Authenticatable
         'package',
         'rank',
         'position',
+        'check_in_mode',
     ];
 
     /**

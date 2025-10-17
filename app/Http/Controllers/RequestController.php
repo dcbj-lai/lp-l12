@@ -298,16 +298,16 @@ public function process(Request $request, $id)
             if ($staffRequest->google_event_id) {
                 $event = Event::find($staffRequest->google_event_id);
                 if ($event) {
-                    $event->name = $eventTitle;
-                    $event->description = "Event created by Life Portal; {$withHalfDay}";
+                    $event->name = trim($eventTitle .'; '. $withHalfDay);
+                    $event->description = "Event created by Life Portal";
                     $event->startDate = $startDate;
                     $event->endDate = $endDate;
                     $event->save();
                 }
             } else {
                 $event = new Event;
-                $event->name = $eventTitle;
-                $event->description = "Event created by Life Portal; {$withHalfDay}";
+                $event->name = trim($eventTitle .'; '. $withHalfDay);
+                $event->description = "Event created by Life Portal";
                 $event->startDate = $startDate;
                 $event->endDate = $endDate;
                 $event->addAttendee(['email' => $staffRequest->user->email]);

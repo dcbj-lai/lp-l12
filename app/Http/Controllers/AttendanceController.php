@@ -82,8 +82,18 @@ class AttendanceController extends Controller
         $attendance->check_out = Carbon::now();
     
         // Calculate hours worked
-        $attendance->hours_worked = Carbon::parse($attendance->check_in)
-            ->diffInMinutes($attendance->check_out) / 60;
+        // $attendance->hours_worked = Carbon::parse($attendance->check_in)
+        //     ->diffInMinutes($attendance->check_out) / 60;
+
+        $checkIn = Carbon::parse($attendance->check_in);
+        $checkOut = Carbon::parse($attendance->check_out);
+
+        if ($checkOut->lessThan($checkIn)) {
+            // Overnight shift — add 1 day to check-out
+            $checkOut->addDay();
+        }
+
+        $attendance->hours_worked = $checkIn->diffInMinutes($checkOut) / 60;
     
         $attendance->save();
     
@@ -146,34 +156,6 @@ class AttendanceController extends Controller
 }
 
 
-
-
-public function week(Request $request)
-{
-    // Get current week offset from query (default to 0)
-    $weekOffset = $request->query('week', 0);
-    $weekOffset = (int) $weekOffset;
-
-    // Get the current date and adjust for week offset
-    $startOfWeek = Carbon::now()->startOfWeek()->addWeeks($weekOffset);
-    $endOfWeek = $startOfWeek->copy()->endOfWeek();
-
-    // Generate an array of weekdays (excluding Saturday & Sunday)
-    $weekDays = collect(range(0, 4))->map(function ($day) use ($startOfWeek) {
-    return Carbon::parse($startOfWeek)->addDays($day);
-});
-
-
-    // Get attendance records for the given week
-    $attendances = Attendance::whereBetween('date', [$startOfWeek, $endOfWeek])
-        ->get()
-        ->groupBy('user_id');
-    // dd($attendances);
-    // Fetch all employees
-    $employees = User::all();
-
-    return view('attendance.week', compact('weekDays', 'attendances', 'employees', 'weekOffset'));
-}
 
 public function showQr(Request $request)
 {
@@ -290,6 +272,101 @@ public function qrCheckOut(Request $request, $token)
         'message' => 'Successfully checked out!',
     ]);
 }
+
+// Modify by P&C
+
+    public function edit(Attendance $attendance)
+        {
+            $attendance->load('user.department');
+            return view('attendance.edit', compact('attendance'));
+        }
+
+
+public function update(Request $request, $id)
+{
+    $attendance = Attendance::findOrFail($id);
+
+    $validated = $request->validate([
+        'check_in'  => 'nullable|string',
+        'check_out' => 'nullable|string',
+    ]);
+
+    $date = $attendance->date instanceof Carbon
+        ? $attendance->date->format('Y-m-d')
+        : $attendance->date;
+
+    // Build timestamps from request input
+    $checkIn = $validated['check_in']
+        ? Carbon::parse("{$date} {$validated['check_in']}")
+        : null;
+
+    $checkOut = $validated['check_out']
+        ? Carbon::parse("{$date} {$validated['check_out']}")
+        : null;
+
+    // Compute hours worked only if both times exist
+    $hoursWorked = ($checkIn && $checkOut)
+        ? round($checkIn->diffInMinutes($checkOut) / 60, 2)
+        : $attendance->hours_worked;
+
+    // Compose remarks automatically
+    $remarks = 'Manual edit - ' . auth()->user()->name;
+
+    // Update record
+    $attendance->update([
+        'check_in'     => $checkIn,
+        'check_out'    => $checkOut,
+        'hours_worked' => $hoursWorked,
+        'remarks'      => $remarks,
+    ]);
+
+    return redirect()
+        ->route('attendance.index')
+        ->with('success', 'Attendance manually updated (P&C logged).');
+}
+
+public function create()
+{
+    $employees = User::orderBy('name')->get(['id', 'name']);
+    return view('attendance.create', compact('employees'));
+}
+
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'user_id'    => 'required|exists:users,id',
+        'date'       => 'required|date',
+        'check_in'   => 'required|date_format:H:i',
+        'check_out'  => 'nullable|date_format:H:i|after:check_in',
+        'remarks'    => 'nullable|string|max:255',
+    ]);
+
+    $date = Carbon::parse($validated['date'])->format('Y-m-d');
+
+    $checkIn = Carbon::parse($request->check_in);
+    $checkOut = Carbon::parse($request->check_out);
+
+    if ($checkOut->lessThan($checkIn)) {
+        // Overnight shift — add 1 day to check-out
+        $checkOut->addDay();
+    }
+
+    $hoursWorked = $checkIn->diffInMinutes($checkOut) / 60;
+
+
+    Attendance::create([
+        'user_id'      => $validated['user_id'],
+        'date'         => $date,
+        'check_in'     => $checkIn,
+        'check_out'    => $checkOut,
+        'hours_worked' => $hoursWorked,
+        'status'       => 'Present',
+        'remarks'      => ($validated['remarks'] ?? 'Manual entry') . ' - ' . auth()->user()->name,
+    ]);
+
+    return redirect()->route('attendance.index')->with('success', 'Attendance record added successfully.');
+}
+
 
 
 }

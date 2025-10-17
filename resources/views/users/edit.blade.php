@@ -55,6 +55,16 @@
                         @endforeach
                     </select>
                 </div>
+                <!-- Check-in Mode -->
+                <div>
+                    <label for="check_in_mode" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Check-in Mode</label>
+                    <select name="check_in_mode" id="check_in_mode"
+                        class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full">
+                        <option value="virtual" {{ old('check_in_mode', $user->check_in_mode) === 'virtual' ? 'selected' : '' }}>Virtual</option>
+                        <option value="onsite" {{ old('check_in_mode', $user->check_in_mode) === 'onsite' ? 'selected' : '' }}>Onsite</option>
+                    </select>
+                </div>
+
             </div>
         
             <!-- Right Column: Roles, Payroll, and Rank -->

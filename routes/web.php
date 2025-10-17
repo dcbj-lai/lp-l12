@@ -1,6 +1,7 @@
 <?php
 
 use Livewire\Volt\Volt;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StepController;
 use App\Http\Controllers\UserController;
@@ -11,11 +12,11 @@ use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UtilityController;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Http\Controllers\OnlineDayController;
 use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\VisitorLogController;
-use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -57,10 +58,20 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])
         ->name('attendance.check_out');
-    Route::get('/attendance', [AttendanceController::class, 'index'])
-    ->middleware('can:is-pnc')
-    ->name('attendance.index');
-    Route::get('/attendance/week', [AttendanceController::class, 'week'])->name('attendance.week');
+
+
+    Route::middleware(['can:is-pnc'])
+    ->prefix('attendance')
+    ->name('attendance.')
+    ->controller(AttendanceController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');    
+        Route::post('/', 'store')->name('store');             
+        Route::get('/{attendance}/edit', 'edit')->name('edit');
+        Route::put('/{attendance}', 'update')->name('update');
+    });
+   
 
     // Scan check in/out
     Route::get('/qr_check_in/{token}', [AttendanceController::class, 'qrCheckIn'])->name('attendance.qr_check_in');
@@ -97,6 +108,22 @@ Route::middleware(['auth', 'can:is-acad-admin'])->group(function () {
     Route::get('/attendance/qr', [AttendanceController::class, 'showQr'])
         ->name('attendance.show_qr');
 });
+
+// For declaring online days to allow teachers to check-in virtually
+
+Route::middleware(['auth', 'can:is-acad-admin'])
+    ->prefix('onlinedays')
+    ->name('onlinedays.')
+    ->controller(OnlineDayController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{onlineday}/edit', 'edit')->name('edit');
+        Route::put('/{onlineday}', 'update')->name('update');
+        Route::delete('/{onlineday}', 'destroy')->name('destroy');
+    });
+
 
 
 // Finance Routes
