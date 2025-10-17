@@ -22,6 +22,7 @@ class OnlineDayController extends Controller
     {
         $request->validate([
             'date' => 'required|date|unique:online_days,date',
+            'declared_by' => 'required|string|max:255',
             'is_active' => 'boolean',
             'remarks' => 'nullable|string',
         ]);
@@ -29,7 +30,7 @@ class OnlineDayController extends Controller
         OnlineDay::create([
             'date' => $request->date,
             'is_active' => $request->boolean('is_active', true),
-            'declared_by' => auth()->user()->name ?? 'System',
+            'declared_by' => $request->declared_by,
             'remarks' => $request->remarks,
         ]);
 

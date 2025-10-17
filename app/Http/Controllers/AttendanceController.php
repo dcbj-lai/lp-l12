@@ -200,12 +200,12 @@ public function qrCheckIn(Request $request, $token)
 
     $user = auth()->user();
 
-    if (strtolower(optional($user->department)->name ?? '') !== 'faculty') {
-        return redirect()->route('attendance.qr-result', [
-            'status' => 'error',
-            'message' => 'Unauthorized department.',
-        ]);
-    }
+    // if (strtolower(optional($user->department)->name ?? '') !== 'faculty') {
+    //     return redirect()->route('attendance.qr-result', [
+    //         'status' => 'error',
+    //         'message' => 'Unauthorized department.',
+    //     ]);
+    // }
 
     // 🧠 Check if already checked in today
     $existing = Attendance::where('user_id', $user->id)
@@ -244,12 +244,12 @@ public function qrCheckOut(Request $request, $token)
 
     $user = auth()->user();
 
-    if (strtolower(optional($user->department)->name ?? '') !== 'faculty') {
-        return redirect()->route('attendance.qr-result', [
-            'status' => 'error',
-            'message' => 'Unauthorized department.',
-        ]);
-    }
+    // if (strtolower(optional($user->department)->name ?? '') !== 'faculty') {
+    //     return redirect()->route('attendance.qr-result', [
+    //         'status' => 'error',
+    //         'message' => 'Unauthorized department.',
+    //     ]);
+    // }
 
     // Check if already checked out today
     $existing = Attendance::where('user_id', $user->id)
