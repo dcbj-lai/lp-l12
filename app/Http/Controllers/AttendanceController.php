@@ -339,16 +339,7 @@ public function store(Request $request)
 
     $hoursWorked = $checkIn->diffInMinutes($checkOut) / 60;
 
-    $user = auth()->user();
-
-    $existing = Attendance::where('user_id', $user->id)
-        ->whereDate('created_at', today())
-        ->first();
-
-    if ($existing) {
-        abort(409);
-    }
-
+    try {
     Attendance::create([
         'user_id'      => $validated['user_id'],
         'date'         => $date,
@@ -358,6 +349,18 @@ public function store(Request $request)
         'status'       => 'Present',
         'remarks'      => ($validated['remarks'] ?? 'Manual entry') . ' - ' . auth()->user()->name,
     ]);
+    } catch (\Illuminate\Database\QueryException $e) {
+        $sqlState = $e->errorInfo[0] ?? null;
+
+        if (in_array($sqlState, ['23000', '23505'])) {
+            // 23000 = MySQL, 23505 = PostgreSQL
+            abort(409, 'Duplicate attendance record.');
+        }
+
+        throw $e; // rethrow unexpected errors
+    }
+
+
 
     return redirect()->route('attendance.index')->with('success', 'Attendance record added successfully.');
 }

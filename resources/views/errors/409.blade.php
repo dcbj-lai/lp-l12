@@ -73,7 +73,8 @@
     <div class="container">
         <h1>409</h1>
         <p>Your request cannot be processed due to conflicts with other records or resources.</p>
-        <p><a href="{{ route('dashboard') }}">Back to Dashboard</a></p>
+        <p><a href="{{ url()->previous() ?: route('dashboard') }}">Back</a></p>
+
     </div>
 </body>
 
