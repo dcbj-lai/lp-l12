@@ -150,7 +150,7 @@ class AttendanceController extends Controller
         $query->latest('date');
     }
 
-    $attendances = $query->paginate(20)->withQueryString();
+    $attendances = $query->paginate(10)->withQueryString();
 
     return view('attendance.index', compact('attendances', 'sort', 'direction'));
 }

@@ -550,7 +550,7 @@ public function manageHr(Request $request)
         $query->latest();
     }
 
-    $requests = $query->paginate(15)->withQueryString();
+    $requests = $query->paginate(10)->withQueryString();
 
     return view('requests.manage-hr', compact('requests', 'sort', 'direction'));
 }
