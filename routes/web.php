@@ -238,6 +238,10 @@ Route::get('/frontdesk/visitors/{visitor}/delete', [VisitorLogController::class,
 Route::get('/frontdesk/visitors/clean-up', [VisitorLogController::class, 'cleanUp'])
     ->middleware(['auth', 'can:is-super-admin']);
 
+Route::get('/attendance/{attendance}/delete', [AttendanceController::class, 'forceDestroy'])
+    ->middleware('can:is-super-admin')
+    ->name('attendance.forceDestroy.get');
+
 
 /**Visitor */
 

@@ -365,6 +365,15 @@ public function store(Request $request)
     return redirect()->route('attendance.index')->with('success', 'Attendance record added successfully.');
 }
 
+// Bad and dangerous area!
+public function forceDestroy(Attendance $attendance)
+{
+    $attendance->delete();
+
+    return redirect()
+        ->route('attendance.index')
+        ->with('success', 'Attendance record permanently deleted.');
+}
 
 
 }

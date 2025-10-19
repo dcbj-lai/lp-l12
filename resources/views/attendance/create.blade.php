@@ -59,13 +59,20 @@
             {{-- Remarks --}}
             <div>
                 <label for="remarks" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Remarks</label>
-                <input type="text" name="remarks" id="remarks" value="{{ old('remarks') }}"
-                    placeholder="Optional (e.g., Manual entry by HR)"
-                    class="w-full border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white">
+
+                {{-- Read-only visible input for display --}}
+                <input type="text" id="remarks_display" value="Manual entry by {{ auth()->user()->name ?? 'P&C' }}"
+                    readonly
+                    class="w-full border rounded-md px-3 py-2 bg-zinc-100 dark:bg-zinc-700 dark:text-white cursor-not-allowed">
+
+                {{-- Hidden input for actual form submission --}}
+                <input type="hidden" name="remarks" value="Manual entry by {{ auth()->user()->name ?? 'P&C' }}">
+
                 @error('remarks')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
+
 
             {{-- Buttons --}}
             <div class="flex justify-end gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-700">
