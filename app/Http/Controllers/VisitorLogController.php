@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\VisitorLog;
 use Illuminate\Http\Request;
 use App\Mail\VisitorApprovedMail;
@@ -417,7 +418,7 @@ public function downloadCsv(Request $request): StreamedResponse
                 optional($v->visitedUser)->name ?? '-',
                 $v->purpose ?? '-',
                 ucfirst($v->status ?? '-'),
-                $v->visit_date ? \Carbon\Carbon::parse($v->visit_date)->format('Y-m-d H:i') : '-',
+                $v->visit_date ? Carbon::parse($v->visit_date)->format('Y-m-d H:i') : '-',
                 $v->check_in_at ? $v->check_in_at->format('Y-m-d H:i') : '-',
                 $v->check_out_at ? $v->check_out_at->format('Y-m-d H:i') : '-',
             ]);
@@ -471,26 +472,21 @@ public function cancelBatch($batchId)
         ->with('success', "Cancelled {$count} pre-approved visit(s).");
 }
 
-public function showValidQr($visitor_id, $batch_id)
-{
-    $visitor = VisitorLog::where('id', $visitor_id)
-        ->where('batch_id', $batch_id)
-        ->first();
+    public function showValidQr($visitor_id, $batch_id)
+    {
+        $visitor = VisitorLog::where('id', $visitor_id)
+            ->where('batch_id', $batch_id)
+            ->first();
 
-    // if (! $visitor || $visitor->status !== 'approved' || \Carbon\Carbon::parse($visitor->visit_date)->isPast()) {
-    //     return view('frontdesk.visitors.qr-invalid');
-    // }
-    if ( ! $visitor
-        // ! $visitor ||
-        // ! in_array($visitor->status, ['approved', 'checked_in', 'checked_out']) ||
-        // \Carbon\Carbon::parse($visitor->visit_date)->isPast()
-) {
-    return view('frontdesk.visitors.qr-invalid');
-}
+        if (
+        ! $visitor || 
+        Carbon::parse($visitor->visit_date)->lt(Carbon::now()->subDay())
+        ) {
+        // Visitor does not exist or visit_date is more than 24 hours old
+        return view('frontdesk.visitors.qr-invalid');
+        }
 
-    return view('frontdesk.visitors.qr-valid', compact('visitor'));
-}
+        return view('frontdesk.visitors.qr-valid', compact('visitor'));
 
-
-
+    }
 }

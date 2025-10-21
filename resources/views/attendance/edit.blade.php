@@ -26,7 +26,7 @@
             <div>
                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Check In</label>
                 <input type="time" name="check_in"
-                    value="{{ \Carbon\Carbon::parse($attendance->check_in)->format('H:i') }}"
+                    value="{{ $attendance->check_in ? \Carbon\Carbon::parse($attendance->check_in)->format('H:i') : '' }}"
                     class="w-full border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white">
             </div>
 
@@ -34,9 +34,10 @@
             <div>
                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Check Out</label>
                 <input type="time" name="check_out"
-                    value="{{ \Carbon\Carbon::parse($attendance->check_out)->format('H:i') }}"
+                    value="{{ $attendance->check_out ? \Carbon\Carbon::parse($attendance->check_out)->format('H:i') : '' }}"
                     class="w-full border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white">
             </div>
+
 
 
             {{-- Hours Worked (computed) --}}
