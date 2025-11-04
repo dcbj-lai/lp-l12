@@ -78,10 +78,11 @@
     {{-- CSV Upload + Submit --}}
     <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mt-6">
         {{-- CSV Upload --}}
-        <div class="flex-1 flex gap-2">
+        <div class="flex-1 flex gap-2 text-sm text-neutral-500">
             <input type="file" wire:model="csvFile" accept=".csv"
                 class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white flex-1">
-            <flux:button type="button" size="sm" wire:click="uploadCsv">Upload CSV</flux:button>
+            <flux:button type="button" variant="filled" icon="paperclip" size="sm" wire:click="uploadCsv">Upload CSV
+            </flux:button>
         </div>
         @error('csvFile') <p class="text-red-500 text-sm mt-1 w-full md:w-auto">{{ $message }}</p> @enderror
 
