@@ -74,51 +74,46 @@ new #[Layout('components.layouts.auth')] class extends Component {
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Life Portal')" :description="__('Enter your LAIC credentials or login via Google')" />
+    <x-auth-header :title="__('')" :description="__('')" />
+    {{-- Brand Header --}}
+    <div class="flex flex-col items-center gap-2 mb-6">
+        <img src="{{ asset('images/life-badge.png') }}" alt="LifeSecure Logo"
+            class="h-24 w-24 sm:h-14 sm:w-14 object-contain">
+
+        <h1 class="text-2xl sm:text-3xl font-semibold text-zinc-800 dark:text-zinc-100 tracking-tight">
+            LifeSecure<span class="align-super text-[10px] sm:text-xs ml-0.5">™</span>
+        </h1>
+
+        {{-- Approved Badge --}}
+        <span class="text-[9px] sm:text-[10px] font-medium px-2.5 py-0.5 rounded-full
+                     border border-zinc-300 dark:border-zinc-700
+                     text-zinc-600 dark:text-zinc-400
+                     bg-zinc-50 dark:bg-zinc-800/40">
+            Authentication for LAIC Systems
+        </span>
+    </div>
 
     <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
 
     <form wire:submit="login" class="flex flex-col gap-6">
-        <!-- Email Address -->
-        <flux:input wire:model="email" :label="__('Email address')" type="email" required autofocus autocomplete="email"
-            placeholder="email@example.com" />
-
-        <!-- Password -->
-        <div class="relative">
-            <flux:input wire:model="password" :label="__('Password')" type="password" required
-                autocomplete="current-password" :placeholder="__('Password')" />
-
-            @if (Route::has('password.request'))
-                <flux:link class="absolute right-0 top-0 text-sm" :href="route('password.request')" wire:navigate>
-                    {{ __('Forgot your password?') }}
-                </flux:link>
-            @endif
-        </div>
-
-        <!-- Remember Me -->
-        <flux:checkbox wire:model="remember" :label="__('Remember me')" />
-
-        <div class="flex items-center justify-end">
-            <flux:button variant="primary" type="submit" class="w-full">{{ __('Log in') }}</flux:button>
-        </div>
-
-        <div class="flex items-center justify-end">
-            <a href="{{ route('auth.google') }}"
-                class="w-full bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded flex items-center justify-center space-x-2">
+        {{-- Google Only Login --}}
+        <div class="w-full max-w-sm">
+            <a href="{{ route('auth.google') }}" class="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700
+                  hover:bg-zinc-50 dark:hover:bg-zinc-800
+                  text-zinc-800 dark:text-zinc-200 font-medium py-3 px-4 rounded-xl
+                  flex items-center justify-center gap-2 sm:gap-3 shadow-sm transition-all">
                 <img src="{{ asset('images/google-logo.svg') }}" class="h-5 w-5" alt="Google Logo">
-                <span>{{ __('Log in with Google') }}</span>
+                <span class="text-sm sm:text-base">Continue with Google</span>
             </a>
         </div>
 
-        <div style="display:flex;justify-content:center;align-items:center">
-            <span class="text-xs" style="color:#ED9122;"
-                title="In the same way, let your light shine before others, that they may see your good deeds and glorify your Father in heaven.">
-                Matthew 5:16
-            </span>
+        {{-- Trust Footer --}}
+        <div
+            class="flex flex-col items-center gap-0.5 mt-6 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">
+            <span>Secure access enforced by LifeSecure™</span>
+            <span class="text-[9px] sm:text-[10px]">Powered by Google authentication</span>
         </div>
-
-
 
     </form>
 
