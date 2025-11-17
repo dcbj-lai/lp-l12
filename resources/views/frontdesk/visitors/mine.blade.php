@@ -11,7 +11,7 @@
             Create Pre-Approved Visit
         </a>
 
-        <div class="overflow-hidden shadow-xl sm:rounded-lg p-6 bg-white dark:bg-neutral-900">
+        <div class="mt-4 overflow-hidden shadow-xl sm:rounded-lg p-6 bg-white dark:bg-neutral-900">
             <div class="mb-4">
                 <form method="GET" action="{{ route('visitors.mine') }}" class="flex flex-col sm:flex-row gap-2">
                     <input type="text" name="search" value="{{ request('search') }}"
