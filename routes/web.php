@@ -28,8 +28,8 @@ Route::get('/', function () {
 Route::get('dashboard', function () {
     return view('dashboard');
 })
-->middleware(['auth', 'verified'])
-->name('dashboard');
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 
 Route::middleware(['auth'])->group(function () {
@@ -41,7 +41,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Google Routes
-Route::controller(GoogleController::class)->group(function() {
+Route::controller(GoogleController::class)->group(function () {
     Route::get('auth/google', 'googleLogin')->name('auth.google');
     Route::get('auth/google-callback', 'googleAuthenticate')->name('auth.google-callback');
 });
@@ -61,17 +61,17 @@ Route::middleware('auth')->group(function () {
 
 
     Route::middleware(['can:is-pnc'])
-    ->prefix('attendance')
-    ->name('attendance.')
-    ->controller(AttendanceController::class)
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/create', 'create')->name('create');    
-        Route::post('/', 'store')->name('store');             
-        Route::get('/{attendance}/edit', 'edit')->name('edit');
-        Route::put('/{attendance}', 'update')->name('update');
-    });
-   
+        ->prefix('attendance')
+        ->name('attendance.')
+        ->controller(AttendanceController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{attendance}/edit', 'edit')->name('edit');
+            Route::put('/{attendance}', 'update')->name('update');
+        });
+
 
     // Scan check in/out
     Route::get('/qr_check_in/{token}', [AttendanceController::class, 'qrCheckIn'])->name('attendance.qr_check_in');
@@ -89,17 +89,17 @@ Route::middleware('auth')->group(function () {
 });
 
 
-Route::get('/my-attendance',[AttendanceController::class, 'myAttendance'])
+Route::get('/my-attendance', [AttendanceController::class, 'myAttendance'])
     ->middleware('auth')
     ->name('attendance.my_attendance');
 
 
- // HR-Only Routes
-Route::middleware(['auth','can:is-pnc'])->group(function () {
+// HR-Only Routes
+Route::middleware(['auth', 'can:is-pnc'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}/payroll', [UserController::class, 'togglePayroll'])->name('users.togglePayroll');
-    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update'); 
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
 });
 
 // Acad Admin
@@ -145,7 +145,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/payslips', [PayrollController::class, 'userPayslips'])->name('payslips.index');
     Route::get('/payslips/{payslip}', [PayrollController::class, 'showPayslip'])->name('payslips.show');
     Route::get('/payslips/{payslip}/download', [PayrollController::class, 'downloadPayslip'])->name('payslips.download');
-    
+
 });
 
 
@@ -217,7 +217,7 @@ Route::middleware(['auth', 'can:is-pnc'])->group(function () {
         ->name('org-settings.update');
 
     Route::put('/users/{user}/leave-credits', [UserController::class, 'updateLeaveCredits'])
-    ->name('users.leave-credits.update');
+        ->name('users.leave-credits.update');
 
 });
 
@@ -230,7 +230,7 @@ Route::get('/users/{user}/delete', [UserController::class, 'delete'])
 Route::get('/requests/{request}/delete', [RequestController::class, 'forceDestroy'])
     ->middleware('can:is-super-admin')
     ->name('requests.forceDestroy.get');
-    
+
 Route::get('/frontdesk/visitors/{visitor}/delete', [VisitorLogController::class, 'visitorDestroy'])
     ->middleware('can:is-super-admin')
     ->name('requests.visitorDestroy.get');
@@ -261,14 +261,14 @@ Route::middleware(['auth', 'can:is-frontdesk'])->group(function () {
     // Route::get('/visitors/verify/{batch_id}', [VisitorLogController::class, 'showValidQr'])
     // ->name('visitors.verify');
     Route::get('/visitors/{visitor_id}/verify/{batch_id}', [VisitorLogController::class, 'showValidQr'])
-    ->name('visitors.verify');
+        ->name('visitors.verify');
     Route::get('frontdesk/visitors', [VisitorLogController::class, 'frontdeskIndex'])->name('frontdesk.visitors');
     Route::post('frontdesk/visitors/{visitor}/endorse', [VisitorLogController::class, 'endorse'])->name('frontdesk.endorse');
     Route::post('frontdesk/visitors/{visitor}/checkin', [VisitorLogController::class, 'checkIn'])->name('frontdesk.checkin');
     Route::post('frontdesk/visitors/{visitor}/checkout', [VisitorLogController::class, 'checkOut'])->name('frontdesk.checkout');
     Route::get('/frontdesk/visitors/csv', [VisitorLogController::class, 'downloadCsv'])
-    ->name('frontdesk.visitors.csv')
-    ->middleware('auth');
+        ->name('frontdesk.visitors.csv')
+        ->middleware('auth');
 
 });
 
@@ -290,7 +290,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('visitors.show');
 
     Route::get('/visitors/preapproved/create', [VisitorLogController::class, 'createPreapproved'])
-    ->name('visitors.create-preapproved');
+        ->name('visitors.create-preapproved');
 
 });
 
@@ -326,7 +326,5 @@ Route::middleware(['auth', 'can:is-pnc'])->group(function () {
 });
 // HR Admin for Leaves
 
+require __DIR__ . '/auth.php';
 
-
-
-require __DIR__.'/auth.php';
