@@ -64,17 +64,24 @@
                                         }
                                     }
                                 @endphp
-                                <td class="border px-4 py-2 flex items-center gap-2">
-                                    @if ($visitor->batch_id)
-                                        <span
-                                            class="inline-flex items-center justify-center text-[10px] font-semibold rounded-full px-2 py-0.5 border border-neutral-300/50 dark:border-neutral-700/50"
-                                            title="Batch: {{ $visitor->batch_id }}"
-                                            style="background-color: {{ batchColor($visitor->batch_id) }};">
-                                            {{ Str::upper(Str::substr($visitor->batch_id, 0, 3)) }}
+                                <td class="border px-4 py-0">
+                                    <div class="flex items-center gap-2 h-full py-2">
+                                        @if ($visitor->batch_id)
+                                            <span
+                                                class="inline-flex items-center justify-center text-[10px] font-semibold rounded-full px-2 py-0.5"
+                                                style="background-color: {{ batchColor($visitor->batch_id) }};"
+                                                title="Batch: {{ $visitor->batch_id }}">
+                                                {{ Str::upper(Str::substr($visitor->batch_id, 0, 3)) }}
+                                            </span>
+                                        @endif
+
+                                        <span class="leading-none">
+                                            {{ $visitor->full_name ?? '-' }}
                                         </span>
-                                    @endif
-                                    <span>{{ $visitor->full_name ?? '-' }}</span>
+                                    </div>
                                 </td>
+
+
                                 <td class="border px-4 py-2">{{ $visitor->company ?? '-' }}</td>
                                 <td class="border px-4 py-2">
                                     @if($visitor->visit_date)
