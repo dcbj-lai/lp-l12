@@ -17,6 +17,7 @@ use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\VisitorLogController;
+use App\Http\Controllers\PasswordLoginController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -325,6 +326,10 @@ Route::middleware(['auth', 'can:is-pnc'])->group(function () {
         ->name('requests.purgeCancelled');
 });
 // HR Admin for Leaves
+
+// Password login routes
+Route::get('/pwd/login', [PasswordLoginController::class, 'create'])->name('pwd.login');
+Route::post('/pwd/login', [PasswordLoginController::class, 'store'])->name('pwd.login.store');
 
 require __DIR__ . '/auth.php';
 
