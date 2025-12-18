@@ -13,6 +13,7 @@ class Request extends Model
         'user_id',
         'approver_id',
         'type',
+        'is_offset',
         'reason',
         'start_date',
         'end_date',

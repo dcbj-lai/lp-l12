@@ -16,10 +16,23 @@
             <!-- Details -->
             <div class="space-y-3 text-sm text-neutral-800 dark:text-neutral-100">
                 <p><strong>Employee:</strong> {{ $request->user->name }}</p>
-                <p>
+                <p class="flex items-center gap-2">
                     <strong>Type:</strong>
-                    {{ $request->type === 'PTO' ? 'Leave' : ($request->type === 'WFH' ? 'Work from Home' : $request->type) }}
+
+                    <span>
+                        {{ $request->type === 'PTO' ? 'Leave' : ($request->type === 'WFH' ? 'Work from Home' : $request->type) }}
+                    </span>
+
+                    @if ($request->is_offset)
+                        <span title="Does not deduct leave credits"
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium
+                   bg-sky-100 text-sky-700
+                   dark:bg-sky-800/30 dark:text-sky-300 cursor-help">
+                            Offset
+                        </span>
+                    @endif
                 </p>
+
                 <p><strong>Start Date:</strong> {{ $request->start_date }}</p>
                 <p><strong>End Date:</strong> {{ $request->end_date }}</p>
                 <p><strong>Number of Days:</strong> {{ $request->number_of_days }}</p>
@@ -32,7 +45,7 @@
                         'rejected' => 'bg-rose-100 text-rose-800 dark:bg-rose-800/20 dark:text-rose-300',
                         'cancelled' => 'bg-neutral-300 text-neutral-800 dark:bg-neutral-600 dark:text-neutral-200',
                     ];
-                     $isDisabled = strtolower($request->status) === 'cancelled';
+                    $isDisabled = strtolower($request->status) === 'cancelled';
                 @endphp
                 <p>
                     <strong>Status:</strong>
@@ -55,16 +68,16 @@
 
                     <div class="flex gap-3">
                         <button type="submit"
-                                class="px-4 py-2 rounded-md text-sm font-medium bg-rose-600 text-white hover:bg-rose-700 disabled:bg-neutral-400 disabled:cursor-not-allowed"
-                                onclick="document.getElementById('action_type').value='reject';"
-                                {{ $isDisabled ? 'disabled' : '' }}>
+                            class="px-4 py-2 rounded-md text-sm font-medium bg-rose-600 text-white hover:bg-rose-700 disabled:bg-neutral-400 disabled:cursor-not-allowed"
+                            onclick="document.getElementById('action_type').value='reject';"
+                            {{ $isDisabled ? 'disabled' : '' }}>
                             Reject
                         </button>
 
                         <button type="submit"
-                                class="px-4 py-2 rounded-md text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-neutral-400 disabled:cursor-not-allowed"
-                                onclick="document.getElementById('action_type').value='approve';"
-                                {{ $isDisabled ? 'disabled' : '' }}>
+                            class="px-4 py-2 rounded-md text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-neutral-400 disabled:cursor-not-allowed"
+                            onclick="document.getElementById('action_type').value='approve';"
+                            {{ $isDisabled ? 'disabled' : '' }}>
                             Approve
                         </button>
                     </div>

@@ -20,16 +20,29 @@
                 <p><strong>Department:</strong> {{ optional($request->user->department)->name ?? '—' }}</p>
                 <p><strong>Approver:</strong> {{ optional($request->approver)->name ?? '—' }}</p>
 
-                <p>
+                <p class="flex items-center gap-2">
                     <strong>Type:</strong>
-                    @if ($request->type === 'PTO')
-                        Leave
-                    @elseif ($request->type === 'WFH')
-                        Work From Home
-                    @else
-                        {{ ucfirst($request->type) }}
+
+                    <span>
+                        @if ($request->type === 'PTO')
+                            Leave
+                        @elseif ($request->type === 'WFH')
+                            Work From Home
+                        @else
+                            {{ ucfirst($request->type) }}
+                        @endif
+                    </span>
+
+                    @if ($request->is_offset)
+                        <span title="Does not deduct leave credits"
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium
+                   bg-sky-100 text-sky-700
+                   dark:bg-sky-800/30 dark:text-sky-300 cursor-help">
+                            Offset
+                        </span>
                     @endif
                 </p>
+
                 <p><strong>Start Date:</strong> {{ $request->start_date }}</p>
                 <p><strong>End Date:</strong> {{ $request->end_date }}</p>
                 <p><strong>Number of Days:</strong> {{ $request->number_of_days }}</p>

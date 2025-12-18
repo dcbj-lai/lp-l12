@@ -28,14 +28,28 @@
                 @forelse ($requests as $request)
                     <tr class="border-b">
                         <td class="border px-4 py-2">
-                            @if ($request->type === 'PTO')
-                                Leave
-                            @elseif ($request->type === 'WFH')
-                                Work From Home
-                            @else
-                                {{ ucfirst($request->type) }}
-                            @endif
+                            <div class="flex items-center gap-2">
+                                <span>
+                                    @if ($request->type === 'PTO')
+                                        Leave
+                                    @elseif ($request->type === 'WFH')
+                                        Work From Home
+                                    @else
+                                        {{ ucfirst($request->type) }}
+                                    @endif
+                                </span>
+
+                                @if ($request->is_offset)
+                                    <span
+                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium
+                       bg-sky-100 text-sky-700
+                       dark:bg-sky-800/30 dark:text-sky-300">
+                                        Offset
+                                    </span>
+                                @endif
+                            </div>
                         </td>
+
                         <td class="border px-4 py-2 whitespace-nowrap text-xs">
                             {{ \Carbon\Carbon::parse($request->start_date)->format('Y-m-d') }} —
                             {{ \Carbon\Carbon::parse($request->end_date)->format('Y-m-d') }}
@@ -49,10 +63,13 @@
                         <td class="border px-4 py-2 whitespace-nowrap">
                             @php
                                 $statusColors = [
-                                    'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300',
-                                    'approved' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800/20 dark:text-emerald-300',
+                                    'pending' =>
+                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300',
+                                    'approved' =>
+                                        'bg-emerald-100 text-emerald-800 dark:bg-emerald-800/20 dark:text-emerald-300',
                                     'rejected' => 'bg-rose-100 text-rose-800 dark:bg-rose-800/20 dark:text-rose-300',
-                                    'cancelled' => 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700/20 dark:text-neutral-300',
+                                    'cancelled' =>
+                                        'bg-neutral-100 text-neutral-700 dark:bg-neutral-700/20 dark:text-neutral-300',
                                 ];
                                 $status = strtolower($request->status);
                             @endphp

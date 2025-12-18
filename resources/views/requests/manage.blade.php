@@ -22,17 +22,43 @@
                             <tr class="border-b border-neutral-200 dark:border-neutral-700">
                                 <td class="border px-4 py-2">{{ $r->user->name }}</td>
                                 <td class="border px-4 py-2">
-                                    @if ($r->type === 'PTO')
-                                        Leave
-                                    @elseif ($r->type === 'WFH')
-                                        Work From Home
-                                    @else
-                                        {{ ucfirst($r->type) }}
-                                    @endif
+                                    <div class="flex items-center gap-2">
+                                        <span>
+                                            @if ($r->type === 'PTO')
+                                                Leave
+                                            @elseif ($r->type === 'WFH')
+                                                Work From Home
+                                            @else
+                                                {{ ucfirst($r->type) }}
+                                            @endif
+                                        </span>
+
+                                        @if ($r->is_offset)
+                                            <span class="relative group">
+                                                <span
+                                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium
+               bg-sky-100 text-sky-700
+               dark:bg-sky-800/30 dark:text-sky-300 cursor-help">
+                                                    Offset
+                                                </span>
+
+                                                <span
+                                                    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1
+               hidden group-hover:block whitespace-nowrap
+               rounded bg-neutral-900 text-white text-[10px]
+               px-2 py-1 shadow-lg
+               dark:bg-neutral-700">
+                                                    Does not deduct leave credits
+                                                </span>
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
 
+
                                 <td class="border px-4 py-2 text-xs">{{ $r->start_date }} to {{ $r->end_date }}
-                                    ({{ $r->number_of_days }}d)</td>
+                                    ({{ $r->number_of_days }}d)
+                                </td>
                                 <td class="border px-4 py-2">{{ $r->number_of_days }}</td>
                                 <td class="border px-4 py-2">{{ $r->reason }}</td>
                                 <td class="border px-4 py-2">
@@ -48,13 +74,18 @@
                                 <td class="border px-4 py-2">
                                     @php
                                         $badgeColor = match ($r->status) {
-                                            'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300',
-                                            'approved' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800/20 dark:text-emerald-300',
-                                            'rejected' => 'bg-rose-100 text-rose-800 dark:bg-rose-800/20 dark:text-rose-300',
-                                            'cancelled' => 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700/20 dark:text-neutral-300',
+                                            'pending'
+                                                => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300',
+                                            'approved'
+                                                => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800/20 dark:text-emerald-300',
+                                            'rejected'
+                                                => 'bg-rose-100 text-rose-800 dark:bg-rose-800/20 dark:text-rose-300',
+                                            'cancelled'
+                                                => 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700/20 dark:text-neutral-300',
                                         };
                                     @endphp
-                                    <span class="inline-block px-2 py-1 text-xs font-semibold rounded {{ $badgeColor }}">
+                                    <span
+                                        class="inline-block px-2 py-1 text-xs font-semibold rounded {{ $badgeColor }}">
                                         {{ ucfirst($r->status) }}
                                     </span>
                                 </td>
@@ -69,7 +100,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-neutral-500 dark:text-neutral-400 py-4 italic">
+                                <td colspan="7"
+                                    class="text-center text-neutral-500 dark:text-neutral-400 py-4 italic">
                                     No requests found.
                                 </td>
                             </tr>
