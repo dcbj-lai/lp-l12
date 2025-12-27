@@ -41,6 +41,50 @@
                             Offset
                         </span>
                     @endif
+                    @if ($request->is_offset)
+                        <div
+                            class="mt-4 rounded-lg border border-sky-200
+               bg-sky-50 p-4
+               dark:border-sky-800/40 dark:bg-sky-900/20">
+
+                            <div class="flex items-center justify-between">
+                                <span
+                                    class="inline-flex items-center gap-1.5
+                       text-xs font-semibold uppercase tracking-wide
+                       text-sky-700 dark:text-sky-300">
+                                    Offset Proof
+                                </span>
+
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full
+                       text-[10px] font-medium
+                       bg-sky-100 text-sky-700
+                       dark:bg-sky-800/40 dark:text-sky-300">
+                                    No credit deduction
+                                </span>
+                            </div>
+
+                            @if ($request->offset_proof_path)
+                                <div class="mt-3 flex items-center gap-2">
+                                    <a href="{{ route('requests.documents.show', $request->offset_proof_path) }}"
+                                        target="_blank"
+                                        class="inline-flex items-center gap-2 px-3 py-1.5
+                          rounded-full text-xs
+                          bg-white text-sky-700 shadow-sm
+                          hover:bg-sky-100 hover:underline
+                          dark:bg-neutral-900 dark:text-sky-300 dark:hover:bg-sky-800/40">
+
+                                        📎 {{ basename($request->offset_proof_path) }}
+                                    </a>
+                                </div>
+                            @else
+                                <p class="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                                    No proof document uploaded.
+                                </p>
+                            @endif
+                        </div>
+                    @endif
+
                 </p>
 
                 <p><strong>Start Date:</strong> {{ $request->start_date }}</p>

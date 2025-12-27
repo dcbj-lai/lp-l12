@@ -18,6 +18,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\VisitorLogController;
 use App\Http\Controllers\PasswordLoginController;
+use App\Http\Controllers\PrivateRequestDocumentController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -332,4 +333,21 @@ Route::get('/pwd/login', [PasswordLoginController::class, 'create'])->name('pwd.
 Route::post('/pwd/login', [PasswordLoginController::class, 'store'])->name('pwd.login.store');
 
 require __DIR__ . '/auth.php';
+
+// Document Controller
+
+Route::get('/requests/private/{path}', [PrivateRequestDocumentController::class, 'show'])
+    ->where('path', '.*')
+    ->middleware(['auth'])
+    ->name('requests.private');
+
+Route::get(
+    '/requests/offset-proof/{request}',
+    [RequestController::class, 'previewOffsetProof']
+)->middleware(['auth'])->name('requests.offset-proof');
+
+Route::get('/requests/documents/{path}', [PrivateRequestDocumentController::class, 'show'])
+    ->where('path', '.*')
+    ->middleware('auth')
+    ->name('requests.documents.show');
 

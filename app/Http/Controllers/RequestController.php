@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\RequestStatusNotification;
 use App\Models\Request as StaffRequest;
+use Illuminate\Support\Facades\Storage;
 
 
 class RequestController extends Controller
@@ -45,72 +46,79 @@ class RequestController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(
+        $validated = $request->validate(
             [
+                'type' => 'required|in:PTO,WFH,LWOP',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
+                'end_date_type' => 'required|in:full,half-am-off,half-pm-off',
                 'reason' => 'required|string',
                 'is_offset' => 'nullable|boolean',
+
+                'offset_proof' => [
+                    'nullable', // ✅ FIX
+                    'exclude_unless:is_offset,1',
+                    'file',
+                    'mimes:pdf,jpg,jpeg,png',
+                    'max:5120',
+                ],
             ],
             [
-                'start_date.required' => 'Start date is required.',
-                'start_date.date' => 'Start date must be a valid date.',
-                'start_date.after_or_equal:today' => 'Start date cannot be in the past.',
-
-
-                'end_date.required' => 'End date is required.',
-                'end_date.date' => 'End date must be a valid date.',
-                'end_date.after_or_equal:today' => 'End date must be the same or after the start date.',
-
                 'reason.required' => 'Please provide a reason for your request.',
-                'reason.string' => 'Reason must be valid text.',
             ]
         );
 
         $user = Auth::user();
         $credits = $user->requestCredit;
 
-        $start = Carbon::parse($request->start_date);
-        $end = Carbon::parse($request->end_date);
+        /*
+         |-------------------------------------------------
+         | Compute number of days (weekdays only)
+         |-------------------------------------------------
+         */
+        $start = Carbon::parse($validated['start_date']);
+        $end = Carbon::parse($validated['end_date']);
 
-        // Count weekdays only
-        $days = $start->diffInDaysFiltered(function (Carbon $date) {
-            return $date->isWeekday();
-        }, $end) + 1;
+        $days = $start->diffInDaysFiltered(
+            fn(Carbon $date) => $date->isWeekday(),
+            $end
+        ) + 1;
 
-        if (($request->end_date_type === 'half-am-off') || ($request->end_date_type === 'half-pm-off')) {
+        if (in_array($validated['end_date_type'], ['half-am-off', 'half-pm-off'])) {
             $days -= 0.5;
         }
 
-        // If 1 or 2 day request
+        /*
+         |-------------------------------------------------
+         | Weekend-only guard (1–2 days)
+         |-------------------------------------------------
+         */
         if ($days <= 2) {
-            // Build a date period for the requested days
             $period = CarbonPeriod::create($start, $end);
 
-            $allWeekend = true;
-            foreach ($period as $date) {
-                if (!$date->isWeekend()) {
-                    $allWeekend = false;
-                    break;
-                }
-            }
+            $allWeekend = collect($period)->every(fn($d) => $d->isWeekend());
 
             if ($allWeekend) {
                 return back()->withErrors([
-                    'date' => 'Leave requests of 1–2 days cannot fall entirely on weekends.'
+                    'date' => 'Leave requests of 1–2 days cannot fall entirely on weekends.',
                 ]);
             }
         }
 
-        // Check overlapping requests
+        /*
+         |-------------------------------------------------
+         | Overlap check
+         |-------------------------------------------------
+         */
         $hasOverlap = StaffRequest::where('user_id', $user->id)
             ->whereNotIn('status', ['cancelled', 'rejected'])
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('start_date', [$request->start_date, $request->end_date])
-                    ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
-                    ->orWhere(function ($q) use ($request) {
-                        $q->where('start_date', '<=', $request->start_date)
-                            ->where('end_date', '>=', $request->end_date);
+            ->where(function ($query) use ($validated) {
+                $query
+                    ->whereBetween('start_date', [$validated['start_date'], $validated['end_date']])
+                    ->orWhereBetween('end_date', [$validated['start_date'], $validated['end_date']])
+                    ->orWhere(function ($q) use ($validated) {
+                        $q->where('start_date', '<=', $validated['start_date'])
+                            ->where('end_date', '>=', $validated['end_date']);
                     });
             })
             ->exists();
@@ -122,14 +130,18 @@ class RequestController extends Controller
             ]);
         }
 
-        // Check credit availability
-        if ($request->type !== 'LWOP' && !$request->boolean('is_offset')) {
+        /*
+         |-------------------------------------------------
+         | Credit availability (skip if offset)
+         |-------------------------------------------------
+         */
+        if ($validated['type'] !== 'LWOP' && !$request->boolean('is_offset')) {
             $outstanding = StaffRequest::where('user_id', $user->id)
-                ->where('type', $request->type)
+                ->where('type', $validated['type'])
                 ->where('status', 'pending')
                 ->sum('number_of_days');
 
-            $creditExceeded = match ($request->type) {
+            $creditExceeded = match ($validated['type']) {
                 'PTO' => $days > ($credits->pto - $outstanding),
                 'WFH' => $days > ($credits->wfh - $outstanding),
                 default => false,
@@ -137,34 +149,77 @@ class RequestController extends Controller
 
             if ($creditExceeded) {
                 return back()->withErrors([
-                    'type' => "Insufficient credits for selected request type. You requested {$days} day(s)."
+                    'type' => "Insufficient credits. You requested {$days} day(s).",
                 ]);
             }
         }
 
-        // Create the request
+        /*
+         |-------------------------------------------------
+         | Handle offset proof upload (WORKING PATTERN)
+         |-------------------------------------------------
+         */
+        $offsetProofPath = null;
+
+        if ($request->boolean('is_offset') && $request->hasFile('offset_proof')) {
+            $file = $request->file('offset_proof');
+
+            $safeName = StaffRequest::sanitizeFilename(
+                $file->getClientOriginalName()
+            );
+
+            $username = preg_replace(
+                '/[^A-Za-z0-9_-]/',
+                '',
+                str_replace(' ', '_', $user->name)
+            );
+
+            $folder = "requests/{$user->id}-{$username}";
+
+            $offsetProofPath = $file->storeAs(
+                $folder,
+                $safeName,
+                'private_s3'
+            );
+        }
+
+        /*
+         |-------------------------------------------------
+         | Create request
+         |-------------------------------------------------
+         */
         $requestRecord = StaffRequest::create([
             'user_id' => $user->id,
-            'type' => $request->type,
+            'type' => $validated['type'],
             'is_offset' => $request->boolean('is_offset'),
-            'reason' => $request->reason,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'end_date_type' => $request->end_date_type,
+            'offset_proof_path' => $offsetProofPath,
+            'reason' => $validated['reason'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'end_date_type' => $validated['end_date_type'],
             'number_of_days' => $days,
             'status' => 'pending',
         ]);
 
-        // Notify supervisor
+
+
+        /*
+         |-------------------------------------------------
+         | Notify supervisor
+         |-------------------------------------------------
+         */
         $supervisor = $user->supervisor;
-        if ($supervisor && $supervisor->email) {
+        if ($supervisor?->email) {
             Mail::to($supervisor->email)
                 ->cc(env('REQUESTS_HR_EMAIL'))
                 ->queue(new RequestMade($requestRecord));
         }
 
-        return redirect()->route('my-requests')->with('success', 'Request submitted.');
+        return redirect()
+            ->route('my-requests')
+            ->with('success', 'Request submitted.');
     }
+
 
 
     public function manage()
@@ -443,23 +498,106 @@ class RequestController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:PTO,WFH,LWOP',
             'is_offset' => 'nullable|boolean',
+            'offset_proof' => [
+                'nullable',
+                'exclude_unless:is_offset,1',
+                'file',
+                'mimes:pdf,jpg,jpeg,png',
+                'max:5120',
+            ],
             'reason' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'end_date_type' => 'required|in:full,half-am-off,half-pm-off',
         ]);
 
-        // Compute number of days
+        /*
+        |-------------------------------------------------
+        | Recompute number of days
+        |-------------------------------------------------
+        */
         $start = Carbon::parse($validated['start_date']);
         $end = Carbon::parse($validated['end_date']);
-        $days = $start->diffInDays($end) + 1;
-        if (($request->end_date_type === 'half-am-off') || ($request->end_date_type === 'half-pm-off')) {
+
+        $days = $start->diffInDaysFiltered(
+            fn(Carbon $date) => $date->isWeekday(),
+            $end
+        ) + 1;
+
+        if (in_array($validated['end_date_type'], ['half-am-off', 'half-pm-off'])) {
             $days -= 0.5;
         }
 
-        $requestModel->update([
+        /*
+        |-------------------------------------------------
+        | Offset proof logic (FIXED)
+        |-------------------------------------------------
+        */
+        $isOffset = $request->boolean('is_offset');
+        $removeProof = $request->boolean('remove_offset_proof');
+
+        // Offset OFF → delete proof
+        if (!$isOffset && $requestModel->offset_proof_path) {
+            $requestModel->deleteOffsetProof();
+            $requestModel->offset_proof_path = null;
+        }
+
+        $isOffset = $request->boolean('is_offset');
+        $hasNewFile = $request->hasFile('offset_proof');
+        $removeProof = $request->input('remove_offset_proof') === '1';
+
+        /*
+        |-------------------------------------------------
+        | Offset OFF → wipe everything
+        |-------------------------------------------------
+        */
+        if (!$isOffset) {
+            $requestModel->deleteOffsetProof();
+            $requestModel->offset_proof_path = null;
+        }
+
+        /*
+        |-------------------------------------------------
+        | Offset ON
+        |-------------------------------------------------
+        */
+        if ($isOffset) {
+
+            // New file ALWAYS wins
+            if ($hasNewFile) {
+
+                $requestModel->deleteOffsetProof();
+
+                $file = $request->file('offset_proof');
+
+                $filename = uniqid('offset_', true) . '_' .
+                    StaffRequest::sanitizeFilename(
+                        $file->getClientOriginalName()
+                    );
+
+                $requestModel->offset_proof_path = $file->storeAs(
+                    $requestModel->offsetProofFolder(),
+                    $filename,
+                    'private_s3'
+                );
+
+            }
+            // Remove only if NO new file
+            elseif ($removeProof) {
+                $requestModel->deleteOffsetProof();
+                $requestModel->offset_proof_path = null;
+            }
+        }
+
+
+        /*
+        |-------------------------------------------------
+        | Update non-file fields
+        |-------------------------------------------------
+        */
+        $requestModel->fill([
             'type' => $validated['type'],
-            'is_offset' => $request->boolean('is_offset'),
+            'is_offset' => $isOffset,
             'reason' => $validated['reason'],
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'],
@@ -467,8 +605,20 @@ class RequestController extends Controller
             'number_of_days' => $days,
         ]);
 
-        return redirect()->route('my-requests', $requestModel)->with('success', 'Request updated.');
+        $requestModel->save();
+
+        Log::info('OFFSET UPDATE OK', [
+            'path' => $requestModel->offset_proof_path,
+        ]);
+
+        return redirect()
+            ->route('my-requests')
+            ->with('success', 'Request updated.');
     }
+
+
+
+
     public function initiateLeave()
     {
         $settings = OrgSetting::firstOrFail();
@@ -590,7 +740,37 @@ class RequestController extends Controller
         return back()->with('info', "{$deletedCount} records deleted.");
     }
 
+    //Offset and File upload
 
-    // Manage HR View
+    public function previewOffsetProof(StaffRequest $request)
+    {
+        // Owner OR HR/PNC
+        if (
+            auth()->id() !== $request->user_id &&
+            !Gate::allows('is-pnc')
+        ) {
+            abort(403);
+        }
+
+        abort_unless($request->offset_proof_path, 404);
+
+        $disk = Storage::disk('private_s3');
+
+        abort_unless($disk->exists($request->offset_proof_path), 404);
+
+        $stream = $disk->readStream($request->offset_proof_path);
+
+        return response()->stream(
+            fn() => fpassthru($stream),
+            200,
+            [
+                'Content-Type' => Storage::mimeType($request->offset_proof_path)
+                    ?? 'application/octet-stream',
+                'Content-Disposition' => 'inline; filename="' . basename($request->offset_proof_path) . '"',
+            ]
+        );
+    }
+
+
 
 }
