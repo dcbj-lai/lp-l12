@@ -36,48 +36,107 @@
 
                         {{-- Type --}}
                         <div>
-                            <label class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">
+                            <label class="block font-medium text-sm text-gray-700 dark:text-gray-300">
                                 Type
                             </label>
+
                             <select name="type"
-                                class="mt-1 block w-full border-neutral-300 dark:border-neutral-600
-                                           dark:bg-neutral-800 dark:text-neutral-100 rounded-md">
-                                <option value="PTO" @selected($request->type === 'PTO')>Leave</option>
-                                <option value="WFH" @selected($request->type === 'WFH')>Work from Home</option>
-                                <option value="LWOP" @selected($request->type === 'LWOP')>Leave w/o Pay</option>
+                                class="mt-1 block w-full rounded-md shadow-sm
+                   border-gray-300 dark:border-gray-600
+                   dark:bg-gray-800 dark:text-gray-100
+                   focus:border-sky-500 focus:ring-sky-500">
+                                <option value="PTO" @selected(old('type', $request->type) === 'PTO')>Leave</option>
+                                <option value="WFH" @selected(old('type', $request->type) === 'WFH')>Work from Home</option>
+                                <option value="LWOP" @selected(old('type', $request->type) === 'LWOP')>Leave w/o Pay</option>
                             </select>
+
+                            @error('type')
+                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         {{-- Reason --}}
                         <div>
-                            <label class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">
+                            <label class="block font-medium text-sm text-gray-700 dark:text-gray-300">
                                 Reason
                             </label>
+
                             <input type="text" name="reason" value="{{ old('reason', $request->reason) }}"
-                                class="mt-1 block w-full border-neutral-300 dark:border-neutral-600
-                                          dark:bg-neutral-800 dark:text-neutral-100 rounded-md">
+                                class="mt-1 block w-full rounded-md shadow-sm
+                   border-gray-300 dark:border-gray-600
+                   dark:bg-gray-800 dark:text-gray-100
+                   focus:border-sky-500 focus:ring-sky-500">
+
+                            @error('reason')
+                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         {{-- Start Date --}}
                         <div>
-                            <label class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">
+                            <label class="block font-medium text-sm text-gray-700 dark:text-gray-300">
                                 Start Date
                             </label>
-                            <input type="date" name="start_date" value="{{ $request->start_date }}"
-                                class="mt-1 block w-full border-neutral-300 dark:border-neutral-600
-                                          dark:bg-neutral-800 dark:text-neutral-100 rounded-md">
+
+                            <input type="date" name="start_date"
+                                value="{{ old('start_date', $request->start_date) }}"
+                                class="mt-1 block w-full rounded-md shadow-sm
+                   border-gray-300 dark:border-gray-600
+                   dark:bg-gray-800 dark:text-gray-100
+                   focus:border-sky-500 focus:ring-sky-500">
+
+                            @error('start_date')
+                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         {{-- End Date --}}
                         <div>
-                            <label class="block font-medium text-sm text-neutral-700 dark:text-neutral-300">
+                            <label class="block font-medium text-sm text-gray-700 dark:text-gray-300">
                                 End Date
                             </label>
-                            <input type="date" name="end_date" value="{{ $request->end_date }}"
-                                class="mt-1 block w-full border-neutral-300 dark:border-neutral-600
-                                          dark:bg-neutral-800 dark:text-neutral-100 rounded-md">
+
+                            <input type="date" name="end_date" value="{{ old('end_date', $request->end_date) }}"
+                                class="mt-1 block w-full rounded-md shadow-sm
+                   border-gray-300 dark:border-gray-600
+                   dark:bg-gray-800 dark:text-gray-100
+                   focus:border-sky-500 focus:ring-sky-500">
+
+                            @error('end_date')
+                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
+
+                        {{-- End Date Type --}}
+                        <div>
+                            <label class="block font-medium text-sm text-gray-700 dark:text-gray-300">
+                                End Date Type
+                            </label>
+
+                            <select name="end_date_type"
+                                class="mt-1 block w-full rounded-md shadow-sm
+                   border-gray-300 dark:border-gray-600
+                   dark:bg-gray-800 dark:text-gray-100
+                   focus:border-sky-500 focus:ring-sky-500">
+                                <option value="full" @selected(old('end_date_type', $request->end_date_type) === 'full')>
+                                    Full Day
+                                </option>
+                                <option value="half-am-off" @selected(old('end_date_type', $request->end_date_type) === 'half-am-off')>
+                                    Half Day – Morning Off
+                                </option>
+                                <option value="half-pm-off" @selected(old('end_date_type', $request->end_date_type) === 'half-pm-off')>
+                                    Half Day – Afternoon Off
+                                </option>
+                            </select>
+
+                            @error('end_date_type')
+                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                     </div>
+
+
 
                     {{-- Actions --}}
                     <div class="mt-6 flex items-center justify-between">
@@ -95,14 +154,13 @@
                 @if ($request->status === 'pending')
                     <div class="mt-4">
                         <form method="POST" action="{{ route('requests.archive', $request->id) }}">
-                            <form method="POST" action="{{ route('requests.archive', $request->id) }}">
-                                @csrf
-                                @method('PUT')
+                            @csrf
+                            @method('PUT')
 
-                                <flux:button type="submit" size="sm">
-                                    Cancel Request
-                                </flux:button>
-                            </form>
+                            <flux:button type="submit" size="sm">
+                                Cancel Request
+                            </flux:button>
+                        </form>
                     </div>
                 @endif
         </div>
@@ -133,7 +191,6 @@
             <p><strong>Status:</strong> {{ ucfirst($request->status) }}</p>
         </div>
         @endif
-
     </div>
     </div>
 </x-layouts.app>

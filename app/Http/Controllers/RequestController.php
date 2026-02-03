@@ -495,6 +495,7 @@ class RequestController extends Controller
             return back()->with('error', 'Only pending requests can be updated.');
         }
 
+
         $validated = $request->validate([
             'type' => 'required|in:PTO,WFH,LWOP',
             'is_offset' => 'nullable|boolean',
@@ -510,6 +511,7 @@ class RequestController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'end_date_type' => 'required|in:full,half-am-off,half-pm-off',
         ]);
+
 
         /*
         |-------------------------------------------------
@@ -527,6 +529,33 @@ class RequestController extends Controller
         if (in_array($validated['end_date_type'], ['half-am-off', 'half-pm-off'])) {
             $days -= 0.5;
         }
+
+        /*
+        |-------------------------------------------------
+        | Overlap check (EXCLUDE current request)
+        |-------------------------------------------------
+        */
+        $hasOverlap = StaffRequest::where('user_id', $user->id)
+            ->where('id', '!=', $requestModel->id) // 👈 critical difference from store()
+            ->whereNotIn('status', ['cancelled', 'rejected'])
+            ->where(function ($query) use ($validated) {
+                $query
+                    ->whereBetween('start_date', [$validated['start_date'], $validated['end_date']])
+                    ->orWhereBetween('end_date', [$validated['start_date'], $validated['end_date']])
+                    ->orWhere(function ($q) use ($validated) {
+                        $q->where('start_date', '<=', $validated['start_date'])
+                            ->where('end_date', '>=', $validated['end_date']);
+                    });
+            })
+            ->exists();
+
+        if ($hasOverlap) {
+            return back()->withErrors([
+                'start_date' => 'Your selected dates overlap with an existing request.',
+                'end_date' => 'Please choose a non-conflicting range.',
+            ]);
+        }
+
 
         /*
         |-------------------------------------------------
