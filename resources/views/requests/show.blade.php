@@ -140,11 +140,10 @@
 
                     <textarea name="remarks" rows="2" placeholder="Remarks"
                         class="w-full text-sm bg-neutral-100 border-neutral-300
-                                     dark:border-neutral-600 dark:bg-neutral-700 dark:text-white
-                                     rounded-md p-2"
-                        {{ $isDisabled ? 'disabled' : '' }}>
-                        {{ old('remarks', $request->remarks) }}
-                    </textarea>
+           dark:border-neutral-600 dark:bg-neutral-700 dark:text-white
+           rounded-md p-2"
+                        {{ $request->status === 'cancelled' ? 'disabled' : '' }}>{{ old('remarks', $request->remarks) }}</textarea>
+
 
                     <input type="hidden" name="action_type" id="action_type" value="">
 
