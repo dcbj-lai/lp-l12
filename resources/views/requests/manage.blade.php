@@ -12,7 +12,7 @@
                             <th class="border px-4 py-2 text-left">Dates</th>
                             <th class="border px-4 py-2 text-left">Number of Days</th>
                             <th class="border px-4 py-2 text-left">Reason</th>
-                            <th class="border px-4 py-2 text-left">Balance</th>
+                            {{-- <th class="border px-4 py-2 text-left">Balance</th> --}}
                             <th class="border px-4 py-2 text-left">Status</th>
                             <th class="border px-4 py-2 text-left">Actions</th>
                         </tr>
@@ -61,7 +61,7 @@
                                 </td>
                                 <td class="border px-4 py-2">{{ $r->number_of_days }}</td>
                                 <td class="border px-4 py-2">{{ $r->reason }}</td>
-                                <td class="border px-4 py-2">
+                                {{-- <td class="border px-4 py-2">
                                     @if ($r->type === 'PTO')
                                         {{ optional($r->user->requestCredit)->pto ?? 'N/A' }}
                                     @elseif ($r->type === 'WFH')
@@ -69,7 +69,7 @@
                                     @else
                                         N/A
                                     @endif
-                                </td>
+                                </td> --}}
 
                                 <td class="border px-4 py-2">
                                     @php
