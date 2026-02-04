@@ -166,30 +166,95 @@
         </div>
     @else
         {{-- ================= READ-ONLY ================= --}}
-        <div class="space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
-            <p><strong>Type:</strong> {{ ucfirst($request->type) }}</p>
-            <p><strong>Offset:</strong> {{ $request->is_offset ? 'Yes' : 'No' }}</p>
+        <div class="space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
+
+            <p>
+                <strong>Type:</strong>
+                {{ ucfirst($request->type) }}
+            </p>
+
+            <p>
+                <strong>Offset:</strong>
+                {{ $request->is_offset ? 'Yes' : 'No' }}
+            </p>
+
+            {{-- Reason --}}
+            <div>
+                <p class="font-medium text-neutral-800 dark:text-neutral-200 mb-1">
+                    Reason
+                </p>
+                <div
+                    class="rounded-md border border-gray-300 dark:border-gray-600
+                   bg-gray-50 dark:bg-gray-800
+                   px-3 py-2 text-sm">
+                    {{ $request->reason }}
+                </div>
+            </div>
+
+            {{-- Remarks (if any) --}}
+            <div>
+                <p class="font-medium text-neutral-800 dark:text-neutral-200 mb-1">
+                    Remarks
+                </p>
+                <div @class([
+                    'rounded-md border px-3 py-2 text-sm',
+                    'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800',
+                    'text-neutral-800 dark:text-neutral-100' => $request->remarks,
+                    'text-neutral-400 dark:text-neutral-500 italic' => !$request->remarks,
+                ])>
+                    {{ $request->remarks ?: 'No remarks provided.' }}
+                </div>
+
+            </div>
 
             {{-- Offset Proof (ONLY if offset) --}}
             @if ($request->is_offset && $request->offset_proof_path)
-                <div class="border border-sky-200 dark:border-sky-800 rounded-lg p-3 bg-sky-50/50 dark:bg-sky-900/10">
+                <div
+                    class="border border-sky-200 dark:border-sky-800
+                   rounded-lg p-3 bg-sky-50/50 dark:bg-sky-900/10">
                     <p class="font-medium text-sky-700 dark:text-sky-300 mb-1">
                         Offset Proof
                     </p>
 
                     <a href="{{ route('requests.documents.show', $request->offset_proof_path) }}" target="_blank"
                         class="inline-flex items-center px-3 py-1 rounded-full
-                                      bg-sky-100 text-sky-700 text-xs hover:underline
-                                      dark:bg-sky-800/30 dark:text-sky-300">
+                      bg-sky-100 text-sky-700 text-xs hover:underline
+                      dark:bg-sky-800/30 dark:text-sky-300">
                         {{ basename($request->offset_proof_path) }}
                     </a>
                 </div>
             @endif
 
-            <p><strong>Date Range:</strong> {{ $request->start_date }} → {{ $request->end_date }}</p>
-            <p><strong>Days:</strong> {{ $request->number_of_days }}</p>
-            <p><strong>Status:</strong> {{ ucfirst($request->status) }}</p>
+            <p>
+                <strong>Date Range:</strong>
+                {{ $request->start_date }} → {{ $request->end_date }}
+            </p>
+
+            <p>
+                <strong>Days:</strong>
+                {{ $request->number_of_days }}
+            </p>
+
+            <p class="flex items-center gap-2">
+                <strong>Status:</strong>
+
+                <span @class([
+                    'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' =>
+                        $request->status === 'pending',
+                    'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' =>
+                        $request->status === 'approved',
+                    'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300' =>
+                        $request->status === 'rejected',
+                    'bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200' =>
+                        $request->status === 'cancelled',
+                ])>
+                    {{ ucfirst($request->status) }}
+                </span>
+            </p>
+
         </div>
+
         @endif
     </div>
     </div>
