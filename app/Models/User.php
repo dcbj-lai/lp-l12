@@ -124,6 +124,9 @@ public function department()
     return $this->belongsTo(Department::class);
 }
 
-
+public function isGuidance(): bool
+{
+    return in_array('guidance.admin', $this->roles ?? []);
+}
 
 }

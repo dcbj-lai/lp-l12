@@ -98,6 +98,7 @@
                             <option value="sys.admin">System Admin</option>
                             <option value="frontdesk.staff">Front Desk</option>
                             <option value="acad.admin">Acad Admin</option>
+                            <option value="guidance.admin">Guidance Admin</option>
                         </select>
                         <flux:button type="button" size="sm" variant="primary" onclick="addRole()">Add Role</flux:button>
                     </div>

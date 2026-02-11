@@ -78,6 +78,17 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
+        @if (auth()->user()->isGuidance())
+            {{-- Health & Wellness section heading (non-clickable) --}}
+            <flux:navlist.group heading="Health and Wellness" expandable="false">
+                {{-- Guidance sub-group --}}
+                <flux:navlist.group heading="Guidance" expandable :expanded="false">
+                    <flux:navlist.item icon="users">
+                        Clients
+                    </flux:navlist.item>
+                </flux:navlist.group>
+            </flux:navlist.group>
+        @endif
 
         </flux:navlist>
         <!-- Navigation -->
