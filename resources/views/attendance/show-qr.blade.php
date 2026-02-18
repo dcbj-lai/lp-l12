@@ -1,27 +1,56 @@
 <x-layouts.app title="Faculty Attendance QR">
     <div x-data="{
-            expiresAtMs: {{ $token->expires_at->getTimestamp() * 1000 }},
-            remaining: 0,
-            timer: null,
-            getRemaining() {
-                const secs = Math.ceil((this.expiresAtMs - Date.now()) / 1000);
-                return Math.max(0, secs);
-            },
-            start() {
+        expiresAtMs: {{ $token->expires_at->getTimestamp() * 1000 }},
+        tokenId: {{ $token->id }},
+        remaining: 0,
+        timer: null,
+        stopped: false,
+    
+        getRemaining() {
+            const secs = Math.ceil((this.expiresAtMs - Date.now()) / 1000);
+            return Math.max(0, secs);
+        },
+    
+        start() {
+            this.remaining = this.getRemaining();
+    
+            if (this.remaining <= 0) {
+                window.location.reload();
+                return;
+            }
+    
+            this.timer = setInterval(() => {
+                if (this.stopped) return;
+    
                 this.remaining = this.getRemaining();
                 if (this.remaining <= 0) {
-                    window.location.reload();
-                    return;
+                    clearInterval(this.timer);
+                    setTimeout(() => window.location.reload(), 250);
                 }
-                this.timer = setInterval(() => {
-                    this.remaining = this.getRemaining();
-                    if (this.remaining <= 0) {
-                        clearInterval(this.timer);
-                        setTimeout(() => window.location.reload(), 250);
-                    }
-                }, 1000);
+            }, 1000);
+        },
+    
+        async stop() {
+            if (this.timer) {
+                clearInterval(this.timer);
+                this.timer = null;
             }
-        }" x-init="start()" class="max-w-2xl mx-auto py-10 text-center">
+    
+            this.stopped = true;
+    
+            await fetch('{{ route('attendance.qr.stop') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({
+                    token_id: this.tokenId
+                })
+            });
+        }
+    }" x-init="start()" class="max-w-2xl mx-auto py-10 text-center">
+
 
         <h1 class="text-2xl font-bold mb-6">Faculty Attendance QR Code</h1>
 
@@ -32,6 +61,16 @@
                 Switch to {{ $type === 'check_in' ? 'Check Out' : 'Check In' }}
             </a>
         </div>
+        <div class="mb-6 flex justify-center">
+            <button @click="stop" :disabled="stopped" class="px-4 py-2 rounded-lg text-white"
+                :class="stopped
+                    ?
+                    'bg-gray-400 cursor-not-allowed' :
+                    'bg-red-600 hover:bg-red-700'">
+                ⛔ Stop QR
+            </button>
+        </div>
+
 
         {{-- 🌈 Type Indicator --}}
         <div class="mb-6 flex justify-center">

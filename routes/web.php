@@ -79,6 +79,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/qr_check_in/{token}', [AttendanceController::class, 'qrCheckIn'])->name('attendance.qr_check_in');
     Route::get('/qr_check_out/{token}', [AttendanceController::class, 'qrCheckOut'])->name('attendance.qr_check_out');
 
+    Route::post('/attendance/qr/stop', [AttendanceController::class, 'stopQr'])
+        ->name('attendance.qr.stop');
+
+
     // Confirmation view
     Route::get('/attendance/qr-result', function (Request $request) {
         return view('attendance.qr-result', [
