@@ -359,3 +359,15 @@ Route::get('/requests/documents/{path}', [PrivateRequestDocumentController::clas
     ->middleware('auth')
     ->name('requests.documents.show');
 
+// Guidance
+// Clients and Consultations
+
+Route::middleware(['auth', 'can:guidance'])->group(function () {
+    Route::view('/guidance/clients', 'guidance.clients.index')->name('guidance.clients.index');
+    Route::view('/guidance/consultations', 'guidance.consultations.index')->name('guidance.consultations.index');
+});
+
+//Import Csv
+Route::middleware(['auth', 'can:guidance-admin'])->group(function () {
+    Route::view('/guidance/import-csv', 'guidance.import-csv.index')->name('guidance.import-csv.index');
+});

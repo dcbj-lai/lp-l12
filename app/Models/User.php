@@ -124,9 +124,13 @@ public function department()
     return $this->belongsTo(Department::class);
 }
 
-public function isGuidance(): bool
+public function isGuidanceAdmin(): bool
 {
     return in_array('guidance.admin', $this->roles ?? []);
 }
 
+public function isGuidanceStaff(): bool
+{
+    return in_array('guidance.staff', $this->roles ?? []);
+}
 }
