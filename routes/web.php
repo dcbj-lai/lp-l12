@@ -20,6 +20,9 @@ use App\Http\Controllers\VisitorLogController;
 use App\Http\Controllers\PasswordLoginController;
 use App\Http\Controllers\PrivateRequestDocumentController;
 use App\Http\Controllers\ImportCsvController;
+use App\Http\Controllers\ClientsController;
+use App\Http\Controllers\ConsultationsController;
+
 
 
 Route::get('/', function () {
@@ -365,8 +368,17 @@ Route::get('/requests/documents/{path}', [PrivateRequestDocumentController::clas
 // Clients and Consultations
 
 Route::middleware(['auth', 'can:guidance'])->group(function () {
-    Route::view('/guidance/clients', 'guidance.clients.index')->name('guidance.clients.index');
+        Route::get('/guidance/clients', [ClientsController::class, 'index'])
+        ->name('guidance.clients.index');
+
+    Route::get('/guidance/clients/{client}', [ClientsController::class, 'show'])
+        ->name('guidance.clients.show');
+
     Route::view('/guidance/consultations', 'guidance.consultations.index')->name('guidance.consultations.index');
+
+    Route::get('/guidance/clients/{client}/consultations/create', [ConsultationsController::class, 'create'])
+    ->name('guidance.consultations.create');
+
 });
 
 //Import Csv
