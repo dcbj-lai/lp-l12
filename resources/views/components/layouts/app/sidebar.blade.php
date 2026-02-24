@@ -80,7 +80,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
-       @if ($isGuidanceAdmin || $isGuidanceStaff)
+       @if ($isGuidanceAdmin || $isGuidanceStaff || $isSuperAdmin)
         <flux:navlist.group heading="Health and Wellness" expandable="false">
             <flux:navlist.group heading="Guidance" expandable :expanded="false">
                 <flux:navlist.item href="{{ route('guidance.clients.index') }}" icon="users">
@@ -90,7 +90,7 @@
                 <flux:navlist.item href="{{ route('guidance.consultations.index') }}" icon="clipboard-document-list">
                     Consultations
                 </flux:navlist.item>
-                @if ($isGuidanceAdmin && !$isGuidanceStaff)
+                @if ($isGuidanceAdmin || $isSuperAdmin && !$isGuidanceStaff)
                     <flux:navlist.item href="{{ route('guidance.import-csv.index') }}" icon="arrow-up-tray">
                         Import CSV
                     </flux:navlist.item>
