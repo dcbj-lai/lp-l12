@@ -19,6 +19,8 @@ use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\VisitorLogController;
 use App\Http\Controllers\PasswordLoginController;
 use App\Http\Controllers\PrivateRequestDocumentController;
+use App\Http\Controllers\ImportCsvController;
+
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -370,4 +372,6 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
 //Import Csv
 Route::middleware(['auth', 'can:guidance-admin'])->group(function () {
     Route::view('/guidance/import-csv', 'guidance.import-csv.index')->name('guidance.import-csv.index');
+
+    Route::post('/guidance/import-csv', [ImportCsvController::class, 'store'])->name('guidance.import-csv.store');
 });
