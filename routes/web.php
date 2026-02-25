@@ -384,6 +384,10 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
 
     Route::get('/guidance/consultations/{consultation}', [ConsultationsController::class, 'show'])
     ->name('guidance.consultations.show');
+
+    Route::get('/guidance/consultations', [ConsultationsController::class, 'index'])
+    ->name('guidance.consultations.index');
+
 });
 
 //Import Csv

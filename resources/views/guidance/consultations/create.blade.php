@@ -1,9 +1,11 @@
 <x-layouts.app>
     <div class="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen"
-         x-data="{
-            teacher: '',
+        x-data="{
+            teacher: @js(old('current_teacher','')),
             checkedIn: false,
-            timeIn: '',
+
+            timeInISO: '',
+            timeInDisplay: '',
 
             decision: '',          // resume | go_home
             goHomeMethod: '',      // fetcher | self
@@ -24,12 +26,27 @@
             },
 
             checkIn() {
-            if (!this.teacher) return;
-            const now = new Date();
-            this.timeIn = now.toISOString(); // ✅ Laravel can parse this
-            this.checkedIn = true;
+                if (!this.teacher) return;
+
+                const now = new Date();
+
+                // machine value (optional if you still submit time_in)
+                this.timeInISO = now.toISOString();
+
+                // display value (local PH time)
+                this.timeInDisplay = now.toLocaleString('en-PH', {
+                    timeZone: 'Asia/Manila',
+                    year: 'numeric',
+                    month: 'short',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                });
+
+                this.checkedIn = true;
             }
-         }">
+        }">
 
         <!-- Breadcrumb -->
         <div class="mb-3 text-sm text-gray-600 dark:text-gray-400">
@@ -86,6 +103,7 @@
                         Select Current Teacher <span class="text-red-600">*</span>
                     </label>
                     <select
+                        name="current_teacher"
                         x-model="teacher"
                         class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
@@ -93,7 +111,7 @@
                     >
                         <option value="">-- Select teacher --</option>
                         <option>Prof. Maria Santos</option>
-                        <option>Prof. Juan Dela Cruz</option>
+                        <option>Prof. Juan Dela Cruz</option>   
                         <option>Prof. James Johnson</option>
                         <option value="none">No teacher available</option>
                     </select>
@@ -105,7 +123,7 @@
                 <div class="grid grid-cols-1 gap-4">
                     <div class="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
                         <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Time In</div>
-                        <div class="mt-1 text-sm text-gray-900 dark:text-gray-100" x-text="timeIn || '—'"></div>
+                        <div class="mt-1 text-sm text-gray-900 dark:text-gray-100" x-text="timeInDisplay || '—'"></div>
                     </div>
 
                     <div class="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">

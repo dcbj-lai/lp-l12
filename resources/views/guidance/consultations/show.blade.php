@@ -1,0 +1,146 @@
+<x-layouts.app>
+    <div class="p-6 max-w-5xl mx-auto text-gray-900 dark:text-white">
+        <div class="flex items-start justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Consultation Details</h1>
+
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                    Student:
+                    <span class="font-medium text-gray-900 dark:text-white">
+                        {{ optional($consultation->client)->first_name }}
+                        {{ optional($consultation->client)->last_name }}
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-300">
+                        ({{ optional($consultation->client)->email ?? 'No email' }})
+                    </span>
+                </p>
+            </div>
+
+            <div class="flex gap-2">
+                <a href="{{ route('guidance.consultations.index') }}"
+                   class="bg-gray-200 text-gray-800 hover:bg-gray-300 border border-gray-200
+                          dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:border-gray-700
+                          rounded px-4 py-2">
+                    Back to List
+                </a>
+            </div>
+        </div>
+
+        {{-- Summary cards --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">CURRENT TEACHER</div>
+                <div class="mt-1 font-semibold text-gray-900 dark:text-white">
+                    {{ $consultation->current_teacher ?? '—' }}
+                </div>
+            </div>
+
+            <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">TIME IN</div>
+                <div class="mt-1 font-semibold text-gray-900 dark:text-white">
+                    {{ $consultation->time_in ? \Carbon\Carbon::parse($consultation->time_in)->format('Y-m-d h:i A') : '—' }}
+                </div>
+            </div>
+
+            <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">TIME OUT</div>
+                <div class="mt-1 font-semibold text-gray-900 dark:text-white">
+                    {{ $consultation->time_out ? \Carbon\Carbon::parse($consultation->time_out)->format('Y-m-d h:i A') : '—' }}
+                </div>
+            </div>
+        </div>
+
+        {{-- Main details --}}
+        <div class="border border-gray-200 dark:border-gray-700 rounded overflow-hidden bg-white dark:bg-gray-900">
+            <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 font-semibold text-gray-800 dark:text-white border-b border-gray-200 dark:border-gray-700">
+                Session Information
+            </div>
+
+            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">TYPE OF SESSION</div>
+                    <div class="mt-1 text-gray-900 dark:text-white">
+                        {{ $consultation->type_of_session ?? '—' }}
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">RISK ASSESSMENT</div>
+                    <div class="mt-1 text-gray-900 dark:text-white">
+                        {{ $consultation->risk_assessment ?? '—' }}
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 md:col-span-2 bg-white dark:bg-gray-900">
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">ISSUE / CONCERN</div>
+                    <div class="mt-1 text-gray-900 dark:text-white whitespace-pre-line">
+                        {{ $consultation->issue_concern ?? '—' }}
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 md:col-span-2 bg-white dark:bg-gray-900">
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">INTERVENTION</div>
+                    <div class="mt-1 text-gray-900 dark:text-white whitespace-pre-line">
+                        {{ $consultation->intervention ?? '—' }}
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 md:col-span-2 bg-white dark:bg-gray-900">
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">REMARKS</div>
+                    <div class="mt-1 text-gray-900 dark:text-white whitespace-pre-line">
+                        {{ $consultation->remarks ?? '—' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- After consultation --}}
+        <div class="border border-gray-200 dark:border-gray-700 rounded overflow-hidden mt-6 bg-white dark:bg-gray-900">
+            <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 font-semibold text-gray-800 dark:text-white border-b border-gray-200 dark:border-gray-700">
+                After Consultation
+            </div>
+
+            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">DECISION</div>
+                    <div class="mt-1 font-semibold text-gray-900 dark:text-white">
+                        {{ $consultation->after_consultation
+                            ? \Illuminate\Support\Str::of($consultation->after_consultation)->replace('_', ' ')->title()
+                            : '—'
+                        }}
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">GOING HOME METHOD</div>
+                    <div class="mt-1 text-gray-900 dark:text-white">
+                        {{ $consultation->going_home_method
+                            ? \Illuminate\Support\Str::of($consultation->going_home_method)->replace('_', ' ')->title()
+                            : '—'
+                        }}
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">FETCHER NAME</div>
+                    <div class="mt-1 text-gray-900 dark:text-white">
+                        {{ $consultation->fetcher_name ?? '—' }}
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">SELF APPROVED BY</div>
+                    <div class="mt-1 text-gray-900 dark:text-white">
+                        {{ $consultation->self_approved_by ?? '—' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Audit --}}
+        <div class="mt-6 text-xs text-gray-500 dark:text-gray-400">
+            Created: {{ $consultation->created_at ? $consultation->created_at->format('Y-m-d h:i A') : '—' }}
+            · Updated: {{ $consultation->updated_at ? $consultation->updated_at->format('Y-m-d h:i A') : '—' }}
+        </div>
+    </div>
+</x-layouts.app>
