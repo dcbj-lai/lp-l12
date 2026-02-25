@@ -37,7 +37,7 @@ class ImportCsvController extends Controller
             return Str::of($h)->trim()->lower()->toString();
         }, $rawHeader);
 
-        $requiredHeaders = ['first_name', 'last_name', 'email'];
+        $requiredHeaders = ['first_name', 'last_name', 'email', 'course', 'section'];
         $missing = array_values(array_diff($requiredHeaders, $header));
         if (! empty($missing)) {
             fclose($handle);
@@ -62,9 +62,11 @@ class ImportCsvController extends Controller
                 $firstName = trim((string) ($row[$idx['first_name']] ?? ''));
                 $lastName  = trim((string) ($row[$idx['last_name']] ?? ''));
                 $email     = trim((string) ($row[$idx['email']] ?? ''));
+                $course    = trim((string) ($row[$idx['course']] ?? ''));
+                $section   = trim((string) ($row[$idx['section']] ?? ''));
 
                 // Required fields
-                if ($firstName === '' || $lastName === '' || $email === '') {
+                if ($firstName === '' || $lastName === '' || $email === '' || $course === '' || $section === '') {
                     $skipped++;
                     continue;
                 }
@@ -79,6 +81,8 @@ class ImportCsvController extends Controller
                     'first_name' => $firstName,
                     'last_name'  => $lastName,
                     'email'      => $email,
+                    'course'     => $course,
+                    'section'    => $section,
                 ]);
 
                 $inserted++;

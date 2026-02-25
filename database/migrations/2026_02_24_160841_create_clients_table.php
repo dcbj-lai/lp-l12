@@ -15,10 +15,14 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('email')->unique();
 
+            $table->string('course')->nullable();
+            $table->string('section')->nullable();
+
             $table->timestamps();
 
-            // Optional: for faster sorting/searching
+            // for faster sorting/searching
             $table->index(['last_name', 'first_name']);
+            $table->index('email');
         });
     }
 

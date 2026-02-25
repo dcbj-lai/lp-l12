@@ -11,12 +11,21 @@ return new class extends Migration
         Schema::create('consultations', function (Blueprint $table) {
             $table->id();
 
-            // Student reference (this is the ONLY ID you need)
+            // Student reference
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
 
             // Time tracking
             $table->dateTime('time_in')->nullable();
             $table->dateTime('time_out')->nullable();
+
+            // Teacher + post-consultation outcome
+            $table->string('current_teacher')->nullable();
+            $table->string('after_consultation')->nullable();   // resume | go_home (or any string you decide)
+
+            // Going home details
+            $table->string('going_home_method')->nullable();    // fetcher | self
+            $table->string('fetcher_name')->nullable();
+            $table->string('self_approved_by')->nullable();
 
             // Consultation details
             $table->string('type_of_session')->nullable();

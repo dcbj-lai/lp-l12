@@ -4,25 +4,32 @@
             teacher: '',
             checkedIn: false,
             timeIn: '',
+
             decision: '',          // resume | go_home
             goHomeMethod: '',      // fetcher | self
             approvedBy: '',
+            fetcherName: '',
+
             canSubmit() {
                 if (!this.checkedIn) return false;
                 if (!this.decision) return false;
+
                 if (this.decision === 'go_home') {
-                if (!this.goHomeMethod) return false;
-                if (this.goHomeMethod === 'self' && !this.approvedBy.trim()) return false;
+                    if (!this.goHomeMethod) return false;
+                    if (this.goHomeMethod === 'self' && !this.approvedBy.trim()) return false;
+                    if (this.goHomeMethod === 'fetcher' && !this.fetcherName.trim()) return false;
                 }
+
                 return true;
             },
+
             checkIn() {
-                if (!this.teacher) return;
-                const now = new Date();
-                this.timeIn = now.toLocaleString();
-                this.checkedIn = true;
+            if (!this.teacher) return;
+            const now = new Date();
+            this.timeIn = now.toISOString(); // ✅ Laravel can parse this
+            this.checkedIn = true;
             }
-            }">
+         }">
 
         <!-- Breadcrumb -->
         <div class="mb-3 text-sm text-gray-600 dark:text-gray-400">
@@ -88,6 +95,7 @@
                         <option>Prof. Maria Santos</option>
                         <option>Prof. Juan Dela Cruz</option>
                         <option>Prof. James Johnson</option>
+                        <option value="none">No teacher available</option>
                     </select>
                     <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                         Teacher selection is required before check-in and before the form is enabled.
@@ -118,9 +126,15 @@
             </div>
 
             <div class="p-6">
-                <form method="POST" action="#" class="space-y-5">
+                <form method="POST" action="{{ route('guidance.consultations.store', $client) }}" class="space-y-5">
                     @csrf
+                    <input type="hidden" name="current_teacher" :value="teacher">
+                    <input type="hidden" name="time_in" :value="timeIn">
 
+                    <input type="hidden" name="after_consultation" :value="decision">
+                    <input type="hidden" name="going_home_method" :value="goHomeMethod">
+                    <input type="hidden" name="fetcher_name" :value="fetcherName">
+                    <input type="hidden" name="self_approved_by" :value="approvedBy">
                     <fieldset :disabled="!checkedIn" class="space-y-5">
                         <!-- Student Name (dynamic) -->
                         <div>
@@ -139,7 +153,7 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                     Type of Session
                                 </label>
-                                <select class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                <select name="type_of_session" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
                                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
                                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     <option value="">-- Select --</option>
@@ -149,7 +163,6 @@
                                     <option>Walk-In</option>
                                     <option>Follow up</option>
                                     <option>Group</option>
-
                                 </select>
                             </div>
 
@@ -157,7 +170,7 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                     Risk Assessment
                                 </label>
-                                <select class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                <select name="risk_assessment" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
                                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
                                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     <option value="">-- Select --</option>
@@ -172,7 +185,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                 Issue/Concern
                             </label>
-                            <textarea rows="3"
+                            <textarea name="issue_concern" rows="3"
                                       class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
                                              dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
                                              focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -183,7 +196,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                 Brief Info on the Intervention
                             </label>
-                            <textarea rows="3"
+                            <textarea name="intervention" rows="3"
                                       class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
                                              dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
                                              focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -191,10 +204,10 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                            <label name="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                 Remarks
                             </label>
-                            <textarea rows="3"
+                            <textarea name="remarks" rows="3"
                                       class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
                                              dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
                                              focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -202,29 +215,27 @@
                         </div>
 
                         <!-- Decision: Resume class or Go home -->
-<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
-        After Consultation <span class="text-red-600">*</span>
-    </label>
+                        <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
+                                After Consultation <span class="text-red-600">*</span>
+                            </label>
 
-    <div class="space-y-2">
-        <label class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
-            <input type="radio" x-model="decision" value="resume" class="text-indigo-600">
-            Resume class
-        </label>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+                                    <input type="radio" x-model="decision" value="resume" class="text-indigo-600">
+                                    Resume class
+                                </label>
 
-        <label class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
-            <input type="radio" x-model="decision" value="go_home" class="text-indigo-600">
-            Go home
-        </label>
-    </div>
+                                <label class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+                                    <input type="radio" x-model="decision" value="go_home" class="text-indigo-600">
+                                    Go home
+                                </label>
+                            </div>
 
-                            <!-- Resume class note -->
                             <div x-show="decision === 'resume'" class="mt-3 text-sm text-gray-700 dark:text-gray-300">
                                 On submit, the selected teacher will be notified that the student is resuming class.
                             </div>
 
-                            <!-- Go home options -->
                             <div x-show="decision === 'go_home'" class="mt-4 space-y-3">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
@@ -244,6 +255,27 @@
                                     </div>
                                 </div>
 
+                                <!-- Fetcher name -->
+                                <div x-show="goHomeMethod === 'fetcher'">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                        Fetcher Name <span class="text-red-600">*</span>
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        x-model="fetcherName"
+                                        placeholder="Name of fetcher"
+                                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                               dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                               focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    />
+
+                                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                        Required when the student goes home with a fetcher.
+                                    </p>
+                                </div>
+
+                                <!-- Approved by -->
                                 <div x-show="goHomeMethod === 'self'">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                         Approved by <span class="text-red-600">*</span>
@@ -254,8 +286,8 @@
                                         x-model="approvedBy"
                                         placeholder="Name of approving person"
                                         class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
-                                            dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
-                                            focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                               dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                               focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     />
 
                                     <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">

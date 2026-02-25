@@ -29,6 +29,11 @@ class ClientsController extends Controller
 
     public function show(Client $client)
     {
-        return view('guidance.clients.show', compact('client'));
+        $consultations = $client->consultations()
+            ->orderByDesc('time_in')   // newest first by check-in time
+            ->limit(5)
+            ->get();
+
+        return view('guidance.clients.show', compact('client', 'consultations'));
     }
 }

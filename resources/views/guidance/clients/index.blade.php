@@ -43,56 +43,68 @@
         <div class="overflow-x-auto rounded-lg shadow bg-white dark:bg-gray-800">
             <table class="min-w-full border-collapse">
 
-                <!-- Head -->
-                <thead class="bg-gray-100 dark:bg-gray-700">
-                    <tr>
-                        <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                            Name
-                        </th>
-                        <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                            Email
-                        </th>
-                        <th class="text-center px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                            Action
-                        </th>
+              <!-- Head -->
+            <thead class="bg-gray-100 dark:bg-gray-700">
+                <tr>
+                    <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                        Name
+                    </th>
+                    <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                        Email
+                    </th>
+                    <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                        Course
+                    </th>
+                    <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                        Section
+                    </th>
+                    <th class="text-center px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                        Action
+                    </th>
+                </tr>
+            </thead>
+
+            <!-- Body -->
+            <tbody class="text-gray-800 dark:text-gray-200">
+                @forelse ($clients as $client)
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
+                            {{ $client->first_name }} {{ $client->last_name }}
+                        </td>
+
+                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
+                            {{ $client->email }}
+                        </td>
+
+                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
+                            {{ $client->course ?? '—' }}
+                        </td>
+
+                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
+                            {{ $client->section ?? '—' }}
+                        </td>
+
+                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600 text-center">
+                            <a
+                                href="{{ route('guidance.clients.show', $client) }}"
+                                class="px-3 py-1 rounded-md text-sm font-medium
+                                    bg-indigo-600 text-white
+                                    hover:bg-indigo-700
+                                    dark:bg-indigo-500 dark:hover:bg-indigo-600
+                                    transition"
+                            >
+                                View Details
+                            </a>
+                        </td>
                     </tr>
-                </thead>
-
-                <!-- Body -->
-                <tbody class="text-gray-800 dark:text-gray-200">
-                    @forelse ($clients as $client)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-
-
-                            <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
-                                {{ $client->first_name }} {{ $client->last_name }}
-                            </td>
-
-                            <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
-                                {{ $client->email }}
-                            </td>
-
-                            <td class="px-4 py-2 border border-gray-200 dark:border-gray-600 text-center">
-                                <a
-                                    href="{{ route('guidance.clients.show', $client) }}"
-                                    class="px-3 py-1 rounded-md text-sm font-medium
-                                           bg-indigo-600 text-white
-                                           hover:bg-indigo-700
-                                           dark:bg-indigo-500 dark:hover:bg-indigo-600
-                                           transition"
-                                >
-                                    View Details
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="text-center py-4 text-gray-500 dark:text-gray-400">
-                                No students found.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
+                @empty
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-gray-500 dark:text-gray-400">
+                            No students found.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
 
             </table>
         </div>

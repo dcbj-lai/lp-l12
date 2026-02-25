@@ -37,7 +37,7 @@
                 <h2 class="text-lg font-medium">Upload CSV</h2>
                 <p class="text-sm text-gray-600">
                     Headers must be exactly:
-                    <span class="font-mono">first_name,last_name,email</span>
+                    <span class="font-mono">first_name,last_name,email,course,section</span>
                 </p>
             </div>
 

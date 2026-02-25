@@ -8,8 +8,19 @@ class Consultation extends Model
 {
     protected $fillable = [
         'client_id',
+
+        // time tracking
         'time_in',
         'time_out',
+
+        // teacher + outcome
+        'current_teacher',
+        'after_consultation',
+        'going_home_method',
+        'fetcher_name',
+        'self_approved_by',
+
+        // consultation details
         'type_of_session',
         'risk_assessment',
         'issue_concern',

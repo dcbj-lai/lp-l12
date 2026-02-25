@@ -379,6 +379,11 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
     Route::get('/guidance/clients/{client}/consultations/create', [ConsultationsController::class, 'create'])
     ->name('guidance.consultations.create');
 
+    Route::post('/guidance/clients/{client}/consultations', [ConsultationsController::class, 'store'])
+    ->name('guidance.consultations.store');
+
+    Route::get('/guidance/consultations/{consultation}', [ConsultationsController::class, 'show'])
+    ->name('guidance.consultations.show');
 });
 
 //Import Csv

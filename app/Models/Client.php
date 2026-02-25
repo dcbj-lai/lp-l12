@@ -9,10 +9,12 @@ class Client extends Model
     protected $table = 'clients';
 
     protected $fillable = [
-        'student_id',
+        'id',
         'first_name',
         'last_name',
         'email',
+        'course',
+        'section',
     ];
 
     // Optional convenience accessor
@@ -20,4 +22,9 @@ class Client extends Model
     {
         return "{$this->first_name} {$this->last_name}";
     }
+
+    public function consultations()
+{
+    return $this->hasMany(\App\Models\Consultation::class);
+}
 }
