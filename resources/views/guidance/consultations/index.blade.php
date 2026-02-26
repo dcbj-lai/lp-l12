@@ -105,9 +105,8 @@
                             </td>
 
                             <td class="px-4 py-3">
-                                <a
-                                    href="{{ route('guidance.consultations.show', ['consultation' => $consultation->getKey()]) }}"
-                                    class="inline-flex items-center px-3 py-1.5 rounded bg-gray-800 text-white hover:bg-gray-700">
+                                <a href="{{ route('guidance.consultations.show', ['consultation' => $consultation->id, 'return' => 'consultations']) }}"
+                                class="inline-flex items-center px-3 py-1.5 rounded bg-gray-800 text-white hover:bg-gray-700">
                                     View
                                 </a>
                             </td>

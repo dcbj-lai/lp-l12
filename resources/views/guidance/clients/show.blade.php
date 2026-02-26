@@ -121,7 +121,7 @@
                                 Teacher
                             </th>
                             <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                                Outcome
+                                After Class
                             </th>
                             <th class="text-center px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
                                 Action
@@ -153,12 +153,12 @@
                                         —
                                     @endif
                                 </td>
-
                                 <td class="px-4 py-2 border border-gray-200 dark:border-gray-600 text-center">
-                                    <a href="{{ route('guidance.consultations.show', $log) }}"
-                                       class="px-3 py-1 rounded-md text-sm font-medium
-                                              bg-indigo-600 text-white hover:bg-indigo-700
-                                              dark:bg-indigo-500 dark:hover:bg-indigo-600 transition">
+                                    <a href="{{ route('guidance.consultations.show', [
+                                            'consultation' => $log->id,
+                                            'return_url'   => url()->full(),   // ✅ goes back to this profile page exactly
+                                        ]) }}"
+                                    class="px-3 py-1 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700">
                                         View
                                     </a>
                                 </td>

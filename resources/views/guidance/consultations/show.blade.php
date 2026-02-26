@@ -4,24 +4,37 @@
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Consultation Details</h1>
 
-                <p class="text-sm text-gray-600 dark:text-gray-300">
-                    Student:
-                    <span class="font-medium text-gray-900 dark:text-white">
+                {{-- Student block --}}
+                <div class="mt-3">
+                    <a href="{{ route('guidance.clients.show', ['client' => $consultation->client_id]) }}"
+                       class="inline-flex items-center gap-1 text-xl md:text-2xl font-semibold
+                              text-indigo-700 hover:underline dark:text-indigo-300"
+                       title="Open student profile">
                         {{ optional($consultation->client)->first_name }}
                         {{ optional($consultation->client)->last_name }}
-                    </span>
-                    <span class="text-gray-500 dark:text-gray-300">
-                        ({{ optional($consultation->client)->email ?? 'No email' }})
-                    </span>
-                </p>
+                        <span class="text-sm align-super opacity-80">↗</span>
+                    </a>
+
+                    <div class="mt-1 text-xs md:text-sm text-gray-500 dark:text-gray-300">
+                        {{ optional($consultation->client)->email ?? 'No email' }}
+                    </div>
+                </div>
             </div>
 
+            @php
+                $returnUrl = request('return_url');
+
+                $backUrl = (is_string($returnUrl) && filter_var($returnUrl, FILTER_VALIDATE_URL))
+                    ? $returnUrl
+                    : route('guidance.consultations.index');
+            @endphp
+
             <div class="flex gap-2">
-                <a href="{{ route('guidance.consultations.index') }}"
+                <a href="{{ $backUrl }}"
                    class="bg-gray-200 text-gray-800 hover:bg-gray-300 border border-gray-200
                           dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:border-gray-700
                           rounded px-4 py-2">
-                    Back to List
+                    Back
                 </a>
             </div>
         </div>
