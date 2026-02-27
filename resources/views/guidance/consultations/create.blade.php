@@ -1,3 +1,5 @@
+it works but it should stay in the form after checking in and it will just disable the form
+below
 <x-layouts.app>
     <div class="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen"
         x-data="{
@@ -80,59 +82,101 @@
         </div>
 
         <!-- Teacher Selection + Check-in Card -->
-        <div class="rounded-lg shadow bg-white dark:bg-gray-800 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Teacher Selection & Check-in</h2>
+        <form method="POST" action="{{ route('guidance.consultations.checkin', $client) }}"
+            x-data="{
+                teacherName: '',
+                teacherEmail: '',
+                checkedIn: false,
+                timeInDisplay: '',
+                pickTeacher(e) {
+                const opt = e.target.selectedOptions[0];
+                this.teacherEmail = e.target.value || '';
+                this.teacherName  = opt?.dataset?.name || '';
+                },
+                checkIn() {
+                if (!this.teacherEmail || !this.teacherName || this.checkedIn) return;
 
-                <button
-                    type="button"
-                    @click="checkIn()"
-                    :disabled="!teacher || checkedIn"
-                    class="inline-flex items-center rounded px-4 py-2 text-sm font-medium text-white transition"
-                    :class="(!teacher || checkedIn)
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600'"
-                >
-                    Check-in / Send Notification
-                </button>
-            </div>
+                const now = new Date();
+                this.timeInDisplay = now.toLocaleString('en-PH', {
+                    timeZone: 'Asia/Manila',
+                    year: 'numeric',
+                    month: 'short',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                });
 
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                        Select Current Teacher <span class="text-red-600">*</span>
-                    </label>
-                    <select
-                        name="current_teacher"
-                        x-model="teacher"
-                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
-                               dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
-                               focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                this.checkedIn = true;
+                $el.submit(); // ✅ sends to Laravel controller (email happens there)
+                }
+            }"
+        >
+            @csrf
+
+            {{-- Hidden fields sent to controller --}}
+            <input type="hidden" name="current_teacher" :value="teacherName">
+            <input type="hidden" name="current_teacher_email" :value="teacherEmail">
+
+            <div class="rounded-lg shadow bg-white dark:bg-gray-800 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Teacher Selection & Check-in</h2>
+
+                    <button
+                        type="button"
+                        @click="checkIn()"
+                        :disabled="!teacherEmail || checkedIn"
+                        class="inline-flex items-center rounded px-4 py-2 text-sm font-medium text-white transition"
+                        :class="(!teacherEmail || checkedIn)
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600'"
                     >
-                        <option value="">-- Select teacher --</option>
-                        <option>Prof. Maria Santos</option>
-                        <option>Prof. Juan Dela Cruz</option>   
-                        <option>Prof. James Johnson</option>
-                        <option value="none">No teacher available</option>
-                    </select>
-                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        Teacher selection is required before check-in and before the form is enabled.
-                    </p>
+                        Check-in / Send Notification
+                    </button>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Time In</div>
-                        <div class="mt-1 text-sm text-gray-900 dark:text-gray-100" x-text="timeInDisplay || '—'"></div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                            Select Current Teacher <span class="text-red-600">*</span>
+                        </label>
+
+                        <select
+                            name="teacher_pick"
+                            @change="pickTeacher($event)"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="">-- Select teacher --</option>
+
+                            {{-- value=email, data-name=display name --}}
+                            <option value="maria@school.edu" data-name="Prof. Maria Santos">Prof. Maria Santos</option>
+                            <option value="juan@school.edu"  data-name="Prof. Juan Dela Cruz">Prof. Juan Dela Cruz</option>
+                            <option value="james@school.edu" data-name="Prof. James Johnson">Prof. James Johnson</option>
+
+                            <option value="" data-name="">No teacher available</option>
+                        </select>
+
+                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                            Teacher selection is required before check-in and before the form is enabled.
+                        </p>
                     </div>
 
-                    <div class="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Time Out</div>
-                        <div class="mt-1 text-sm text-gray-900 dark:text-gray-100">—</div>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
+                            <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Time In</div>
+                            <div class="mt-1 text-sm text-gray-900 dark:text-gray-100" x-text="timeInDisplay || '—'"></div>
+                        </div>
+
+                        <div class="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
+                            <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Time Out</div>
+                            <div class="mt-1 text-sm text-gray-900 dark:text-gray-100">—</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </form>
 
         <!-- Consultation Form Card -->
         <div class="mt-6 rounded-lg shadow bg-white dark:bg-gray-800 overflow-hidden">

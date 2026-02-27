@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Consultation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class ConsultationsController extends Controller
 {
@@ -104,7 +105,7 @@ class ConsultationsController extends Controller
             $data['self_approved_by'] = null;
         }
 
-        Consultation::create([
+        $consultation = Consultation::create([
             'client_id'          => $client->id,
             'current_teacher'    => $data['current_teacher'],
             'time_in'            => now(),     // ✅ force server time-in
@@ -132,5 +133,44 @@ class ConsultationsController extends Controller
         $consultation->load('client:id,first_name,last_name,email');
         return view('guidance.consultations.show', compact('consultation'));
     }
+
+    public function checkIn(Request $request, Client $client)
+        {
+            $data = $request->validate([
+                'current_teacher'       => ['required', 'string'],
+                'current_teacher_email' => ['required', 'email'],
+            ]);
+
+            $consultation = Consultation::create([
+                'client_id'       => $client->id,
+                'current_teacher' => $data['current_teacher'],
+                'time_in'         => now(),
+                'time_out'        => null,
+                // if after_consultation is required in DB, set a default:
+                'after_consultation' => 'resume',
+            ]);
+
+            $to = [$data['current_teacher_email']];
+            $cc = ['lem.fajarda@laicollege.edu.ph', 'lcfajarda@gmail.com'];
+
+            $studentName = "{$client->first_name} {$client->last_name}";
+            $timeIn = $consultation->time_in->format('M d, Y h:i A');
+
+            Mail::raw(
+                "Student checked in.\n\nStudent: {$studentName}\nTime In: {$timeIn}\nTeacher: {$data['current_teacher']}\n",
+                function ($m) use ($to, $cc, $studentName) {
+                    $m->to($to)->cc($cc)->subject("Student Check-in: {$studentName}");
+                }
+            );
+
+            return response()->json([
+                'ok' => true,
+                'time_in_display' => $timeIn,
+                'time_in_iso' => $consultation->time_in->toISOString(),
+                'current_teacher' => $data['current_teacher'],
+            ]);
+            
+            
+        }
 
 }
