@@ -161,6 +161,10 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/my-steps', [StepController::class, 'index'])->name('my-steps.index');
     Route::post('/my-steps', [StepController::class, 'store'])->name('my-steps.store');
+    Route::get('/my-steps/{step}/edit', [StepController::class, 'edit'])->name('my-steps.edit');
+    Route::put('/my-steps/{step}', [StepController::class, 'update'])->name('my-steps.update');
+    Route::delete('/my-steps/{step}', [StepController::class, 'destroy'])
+        ->name('my-steps.destroy');
 });
 
 
