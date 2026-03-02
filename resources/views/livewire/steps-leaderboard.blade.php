@@ -31,14 +31,17 @@
                     @foreach ($leaders as $index => $entry)
                         <li class="flex justify-between items-center text-sm">
 
-                            <span class="text-gray-700 dark:text-gray-200">
+                            {{-- Name --}}
+                            <span class="text-gray-400 font-medium tracking-wide">
                                 {{ $index + 1 }}. {{ $entry->user->name }}
                             </span>
 
-                            <span class="text-blue-600 font-bold dark:text-blue-400">
+                            {{-- Steps --}}
+                            <span class="text-blue-600 font-semibold dark:text-blue-400">
                                 {{ number_format($entry->total_steps) }}
                             </span>
 
+                            {{-- Badge --}}
                             <span>
                                 @if ($index === 0)
                                     <flux:icon name="trophy" class="text-yellow-500 h-5 w-5" />
