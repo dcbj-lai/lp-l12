@@ -390,7 +390,7 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
 
     Route::post('/guidance/clients/{client}/consultations/check-in', [ConsultationsController::class, 'checkIn'])
     ->name('guidance.consultations.checkin');
-    
+
 });
 
 //Import Csv
