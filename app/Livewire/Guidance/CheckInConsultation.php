@@ -5,6 +5,7 @@ namespace App\Livewire\Guidance;
 use Livewire\Component;
 use App\Models\Client;
 use App\Models\Consultation;
+use App\Mail\StudentCheckedInMail;
 use Illuminate\Support\Facades\Mail;
 
 class CheckInConsultation extends Component
@@ -37,8 +38,6 @@ class CheckInConsultation extends Component
             'current_teacher' => $this->teacherName,
             'time_in'         => now(),
             'time_out'        => null,
-
-            // If your DB requires this field, keep a safe default:
             'after_consultation' => 'resume',
         ]);
 
@@ -46,24 +45,23 @@ class CheckInConsultation extends Component
         $timeInDisplay = $consultation->time_in->format('M d, Y h:i A');
         $timeInIso = $consultation->time_in->toISOString();
 
-        // hard-coded CC list (edit)
+        // 🔥 Send using Mailable
         $ccList = ['lem.fajarda@laicollege.edu.ph', 'lcfajarda@gmail.com'];
 
-        Mail::raw(
-            "Student checked in.\n\nStudent: {$studentName}\nTime In: {$timeInDisplay}\nTeacher: {$this->teacherName}\n",
-            function ($m) use ($studentName, $ccList) {
-                $m->to($this->teacherEmail)
-                  ->cc($ccList)
-                  ->subject("Student Check-in: {$studentName}");
-            }
-        );
+        Mail::to($this->teacherEmail)
+            ->cc($ccList)
+            ->send(new StudentCheckedInMail(
+                $studentName,
+                $this->teacherName,
+                $timeInDisplay
+            ));
 
         $this->checkedIn = true;
         $this->timeInIso = $timeInIso;
         $this->timeInDisplay = $timeInDisplay;
 
-        // send to Alpine (parent page)
-        $this->dispatch('guidance-checked-in',
+        $this->dispatch(
+            'guidance-checked-in',
             teacherName: $this->teacherName,
             teacherEmail: $this->teacherEmail,
             timeInIso: $timeInIso,
