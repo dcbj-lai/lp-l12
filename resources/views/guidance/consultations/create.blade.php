@@ -1,5 +1,5 @@
 <x-layouts.app>
-    <div class="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen"
+   <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8"
         x-data="{
             teacher: @js(old('current_teacher','')),
             checkedIn: false,

@@ -1,133 +1,108 @@
-<x-layouts.app>
-    <div class="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+<x-layouts.app title="Guidance – Student Clients">
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
 
-        <!-- Breadcrumb -->
-        <div class="mb-3 text-sm text-gray-600 dark:text-gray-400">
-            Health & Wellness
-            <span class="mx-1">›</span>
-            Guidance
-            <span class="mx-1">›</span>
-            <span class="font-semibold text-gray-900 dark:text-gray-100">
-                Clients
-            </span>
-        </div>
-
-        <!-- Header -->
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <!-- Header Row -->
+        <div class="flex flex-wrap items-center justify-between mb-4">
+            <h1 class="text-xl md:text-2xl font-bold">
                 Guidance – Student Clients
             </h1>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Official list of students under the Guidance Office.
-            </p>
         </div>
 
-        <div class="mb-4">
-            <form id="clientsSearchForm" method="GET" action="{{ route('guidance.clients.index') }}" class="w-full md:w-1/3">
+        <!-- Filters -->
+        <form method="GET"
+              action="{{ route('guidance.clients.index') }}"
+              class="mb-4 flex flex-wrap gap-2 items-end">
+
+            <div>
+                <label class="text-sm font-medium">Search Student</label>
                 <input
-                    id="clientsSearchInput"
                     type="text"
                     name="q"
-                    value="{{ $q ?? '' }}"
-                    placeholder="Search students..."
-                    autocomplete="off"
-                    class="w-full px-4 py-2 rounded-lg border
-                        bg-white text-gray-900 border-gray-300
-                        dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600
-                        focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value="{{ request('q') }}"
+                    placeholder="Search by name or email"
+                    class="border px-2 py-1 rounded-md
+                           dark:bg-zinc-700 dark:text-white
+                           bg-white text-zinc-900"
                 >
-            </form>
-        </div>
+            </div>
 
-        <!-- Table -->
-        <div class="overflow-x-auto rounded-lg shadow bg-white dark:bg-gray-800">
-            <table class="min-w-full border-collapse">
+            <div class="flex gap-2">
+                <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm">
+                    Filter
+                </button>
 
-              <!-- Head -->
-            <thead class="bg-gray-100 dark:bg-gray-700">
-                <tr>
-                    <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                        Name
-                    </th>
-                    <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                        Email
-                    </th>
-                    <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                        Course
-                    </th>
-                    <th class="text-left px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                        Section
-                    </th>
-                    <th class="text-center px-4 py-3 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                        Action
-                    </th>
-                </tr>
-            </thead>
+                <a href="{{ route('guidance.clients.index') }}"
+                   class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md text-sm">
+                    Reset
+                </a>
+            </div>
+        </form>
 
-            <!-- Body -->
-            <tbody class="text-gray-800 dark:text-gray-200">
-                @forelse ($clients as $client)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
-                            {{ $client->first_name }} {{ $client->last_name }}
-                        </td>
+        <!-- Table Card -->
+        <div class="overflow-hidden shadow-xl sm:rounded-lg p-6">
+            <div class="overflow-x-auto">
 
-                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
-                            {{ $client->email }}
-                        </td>
+                <table
+                    class="w-full min-w-max border-collapse border border-neutral-200 dark:border-neutral-700 text-sm">
 
-                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
-                            {{ $client->course ?? '—' }}
-                        </td>
+                    <!-- Header -->
+                    <thead>
+                        <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
+                            <th class="border px-4 py-2 text-left">Name</th>
+                            <th class="border px-4 py-2 text-left">Email</th>
+                            <th class="border px-4 py-2 text-left">Course</th>
+                            <th class="border px-4 py-2 text-left">Section</th>
+                            <th class="border px-4 py-2 text-center">Action</th>
+                        </tr>
+                    </thead>
 
-                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
-                            {{ $client->section ?? '—' }}
-                        </td>
+                    <!-- Body -->
+                    <tbody class="text-neutral-800 dark:text-neutral-300">
+                        @forelse ($clients as $client)
+                            <tr class="border-b hover:bg-neutral-50 dark:hover:bg-neutral-700 transition">
+                                <td class="border px-4 py-2 whitespace-nowrap">
+                                    {{ $client->first_name }} {{ $client->last_name }}
+                                </td>
 
-                        <td class="px-4 py-2 border border-gray-200 dark:border-gray-600 text-center">
-                            <a
-                                href="{{ route('guidance.clients.show', $client) }}"
-                                class="px-3 py-1 rounded-md text-sm font-medium
-                                    bg-indigo-600 text-white
-                                    hover:bg-indigo-700
-                                    dark:bg-indigo-500 dark:hover:bg-indigo-600
-                                    transition"
-                            >
-                                View Details
-                            </a>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="text-center py-4 text-gray-500 dark:text-gray-400">
-                            No students found.
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
+                                <td class="border px-4 py-2 whitespace-nowrap">
+                                    {{ $client->email }}
+                                </td>
 
-            </table>
-        </div>
+                                <td class="border px-4 py-2 whitespace-nowrap">
+                                    {{ $client->course ?? '—' }}
+                                </td>
 
-        <!-- Pagination -->
-        <div class="mt-4">
-            {{ $clients->links() }}
+                                <td class="border px-4 py-2 whitespace-nowrap">
+                                    {{ $client->section ?? '—' }}
+                                </td>
+
+                                <td class="border px-4 py-2 whitespace-nowrap text-center">
+                                    <a href="{{ route('guidance.clients.show', $client) }}"
+                                       class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-md shadow-sm transition-all duration-150">
+                                        View Details
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5"
+                                    class="text-center px-4 py-6 text-neutral-500 dark:text-neutral-400">
+                                    No students found.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+
+                </table>
+
+                <!-- Pagination -->
+                <div class="mt-4">
+                    {{ $clients->withQueryString()->links() }}
+                </div>
+
+            </div>
         </div>
 
     </div>
 </x-layouts.app>
-
-<script>
-(function () {
-  const form = document.getElementById('clientsSearchForm');
-  const input = document.getElementById('clientsSearchInput');
-  if (!form || !input) return;
-
-  let t = null;
-
-  input.addEventListener('input', function () {
-    clearTimeout(t);
-    t = setTimeout(() => form.submit(), 400); // debounce delay
-  });
-})();
-</script>

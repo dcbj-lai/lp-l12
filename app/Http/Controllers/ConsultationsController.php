@@ -35,7 +35,7 @@ class ConsultationsController extends Controller
                 'consultations.updated_at',
             ])
             ->with(['client:id,first_name,last_name,email'])
-            ->orderBy('consultations.id', 'asc');
+            ->orderByDesc('consultations.created_at');
 
         // Date filter (inclusive) using time_in
         if (!empty($dateFrom)) {
