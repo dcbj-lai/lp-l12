@@ -39,10 +39,19 @@ return new class extends Migration
             $table->index(['client_id', 'time_in']);
             $table->index(['time_in']);
         });
+        
+        Schema::table('consultations', function (Blueprint $table) {
+        $table->softDeletes();
+    });
+
     }
 
     public function down(): void
     {
         Schema::dropIfExists('consultations');
+
+        Schema::table('consultations', function (Blueprint $table) {
+        $table->dropSoftDeletes();
+    });
     }
 };

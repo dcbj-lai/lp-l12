@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Consultation extends Model
 {
@@ -37,4 +38,8 @@ class Consultation extends Model
     {
         return $this->belongsTo(Client::class);
     }
+
+        use SoftDeletes;
+        protected $dates = ['deleted_at'];
+
 }

@@ -63,7 +63,12 @@
         </form>
 
         <!-- Table Card -->
-        <div class="overflow-hidden shadow-xl sm:rounded-lg p-6">
+        <div 
+            x-data="{
+                showArchiveModal: false,
+                archiveId: null
+            }"
+            class="overflow-hidden shadow-xl sm:rounded-lg p-6">
             <div>
 
                 <table
@@ -102,15 +107,14 @@
                                 </td>
 
                                 <td class="border px-3 py-2 text-xs whitespace-nowrap">
-                                    {{ optional($consultation->time_in)->format('M d, Y h:i A') ?? '—' }}
+                                    {{ optional($consultation->time_in)?->format('M d, Y h:i A') ?? '—' }}
                                 </td>
 
                                 <td class="border px-3 py-2 text-xs whitespace-nowrap">
-                                    @if($consultation->time_out)
-                                        {{ \Carbon\Carbon::parse($consultation->time_out)->format('M d, Y h:i A') }}
-                                    @else
-                                        —
-                                    @endif
+                                    {{ $consultation->time_out
+                                        ? \Carbon\Carbon::parse($consultation->time_out)->format('M d, Y h:i A')
+                                        : '—'
+                                    }}
                                 </td>
 
                                 <td class="border px-3 py-2 whitespace-normal break-words">
@@ -124,14 +128,31 @@
                                     {{ \Illuminate\Support\Str::limit($consultation->remarks ?? '', 60) ?: '—' }}
                                 </td>
 
+                                <!-- ✅ Single Action Column -->
                                 <td class="border px-3 py-2 whitespace-nowrap">
-                                    <a href="{{ route('guidance.consultations.show', [
-                                            'consultation' => $consultation->id,
-                                            'return' => 'consultations'
-                                        ]) }}"
-                                       class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-md shadow-sm transition-all duration-150">
-                                        View
-                                    </a>
+                                    <div class="flex items-center gap-2">
+
+                                        <!-- View -->
+                                        <a href="{{ route('guidance.consultations.show', [
+                                                'consultation' => $consultation->id,
+                                                'return' => 'consultations'
+                                            ]) }}"
+                                        class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                            View
+                                        </a>
+
+                                        <!-- Archive -->
+                                        <button
+                                            type="button"
+                                            @click="
+                                                archiveId = {{ $consultation->id }};
+                                                showArchiveModal = true;
+                                            "
+                                            class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                            Archive
+                                        </button>
+
+                                    </div>
                                 </td>
 
                             </tr>
@@ -143,13 +164,57 @@
                                 </td>
                             </tr>
                         @endforelse
-                    </tbody>
+                        </tbody>
 
                 </table>
 
                 <!-- Pagination -->
                 <div class="mt-4">
                     {{ $consultations->withQueryString()->links() }}
+                </div>
+
+                <!-- Archive Confirmation Modal -->
+                <div
+                    x-show="showArchiveModal"
+                    x-transition
+                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+                    style="display: none;"
+                >
+
+                    <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-xl w-full max-w-md p-6">
+
+                        <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-3">
+                            Archive Consultation
+                        </h2>
+
+                        <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-6">
+                            Are you sure you want to archive this consultation?
+                            This can be restored later.
+                        </p>
+
+                        <div class="flex justify-end gap-3">
+
+                            <button
+                                type="button"
+                                @click="showArchiveModal = false"
+                                class="px-4 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition">
+                                Cancel
+                            </button>
+
+                            <form method="POST"
+                                :action="`/guidance/consultations/${archiveId}/archive`">
+                                @csrf
+                                @method('DELETE')
+
+                                <button type="submit"
+                                    class="px-4 py-2 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white transition">
+                                    Yes, Archive
+                                </button>
+                            </form>
+
+                        </div>
+
+                    </div>
                 </div>
 
             </div>

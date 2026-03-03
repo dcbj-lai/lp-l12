@@ -148,4 +148,10 @@ class ConsultationsController extends Controller
         $consultation->load('client:id,first_name,last_name,email');
         return view('guidance.consultations.show', compact('consultation'));
     }
+
+    public function archive(Consultation $consultation)
+    {
+    $consultation->delete(); // soft delete
+    return back()->with('success', 'Consultation archived successfully.');
+    }
 }

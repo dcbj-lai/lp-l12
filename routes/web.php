@@ -391,6 +391,10 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
     Route::post('/guidance/clients/{client}/consultations/check-in', [ConsultationsController::class, 'checkIn'])
     ->name('guidance.consultations.checkin');
 
+    Route::delete(
+    '/guidance/consultations/{consultation}/archive', [ConsultationsController::class, 'archive'])
+    ->name('guidance.consultations.archive');
+
 });
 
 //Import Csv
