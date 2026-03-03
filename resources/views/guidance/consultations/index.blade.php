@@ -78,7 +78,6 @@
                     <thead>
                         <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
                             <th class="border px-3 py-2 text-left">Student</th>
-                            <th class="border px-3 py-2 text-left">Email</th>
                             <th class="border px-3 py-2 text-left">Current Teacher</th>
                             <th class="border px-3 py-2 text-left">Time In</th>
                             <th class="border px-3 py-2 text-left">Time Out</th>
@@ -98,9 +97,6 @@
                                     {{ optional($consultation->client)->last_name }}
                                 </td>
 
-                                <td class="border px-3 py-2 whitespace-normal break-words">
-                                    {{ optional($consultation->client)->email ?? '—' }}
-                                </td>
 
                                 <td class="border px-3 py-2 whitespace-normal break-words">
                                     {{ $consultation->current_teacher ?? '—' }}
@@ -189,7 +185,6 @@
 
                         <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-6">
                             Are you sure you want to archive this consultation?
-                            This can be restored later.
                         </p>
 
                         <div class="flex justify-end gap-3">
