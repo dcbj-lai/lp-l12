@@ -21,6 +21,7 @@
             <div class="flex flex-col justify-center items-center flex-grow px-4 text-center">
 
                 @if ($leaders->isEmpty())
+
                     <p class="text-gray-600 dark:text-gray-300 text-xs">
                         No steps logged this month yet.
                     </p>
@@ -41,9 +42,9 @@
                                 <span>
                                     @if ($index === 0)
                                         <flux:icon name="trophy" class="text-yellow-500 h-4 w-4" />
-                                    @elseif($index === 1)
+                                    @elseif ($index === 1)
                                         <flux:icon name="medal" class="text-gray-400 h-4 w-4" />
-                                    @elseif($index === 2)
+                                    @elseif ($index === 2)
                                         <flux:icon name="award" class="text-orange-500 h-4 w-4" />
                                     @endif
                                 </span>
@@ -117,7 +118,7 @@
                                 <th class="text-left p-2">Rank</th>
                                 <th class="text-left p-2">Name</th>
                                 <th class="text-left p-2">Total Steps</th>
-                                <th class="text-left p-2">Days Logged</th>
+                                <th class="text-left p-2">Days</th>
                             </tr>
                         </thead>
 
@@ -125,10 +126,13 @@
 
                             @php
                                 $topSteps = $leaders->pluck('total_steps')->unique()->take(3)->values();
-                                $days =
+
+                                $rangeDays =
                                     \Carbon\Carbon::parse($appliedStartDate)->diffInDays(
                                         \Carbon\Carbon::parse($appliedEndDate),
                                     ) + 1;
+
+                                $consistencyThreshold = max($rangeDays - 1, 1);
                             @endphp
 
                             @foreach ($leaders as $index => $entry)
@@ -143,6 +147,10 @@
                                         <div class="flex items-center gap-2">
 
                                             <span>{{ $entry->user->name }}</span>
+
+                                            @if ($entry->days_logged >= $consistencyThreshold)
+                                                <span class="text-xs" title="Consistent logging">🔥</span>
+                                            @endif
 
                                             @if ($entry->total_steps == ($topSteps[0] ?? null))
                                                 <flux:icon name="trophy" class="text-yellow-500 h-4 w-4" />
