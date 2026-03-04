@@ -78,7 +78,7 @@
 
                 <div>
                     <label class="block text-sm font-medium mb-1">From</label>
-                    <input type="date" wire:model.defer="startDate" class="border rounded p-2 w-full">
+                    <input type="date" wire:model.change="startDate" class="border rounded p-2 w-full">
                 </div>
 
                 <div>
