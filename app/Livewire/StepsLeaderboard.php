@@ -56,7 +56,7 @@ class StepsLeaderboard extends Component
         }
 
         $query = Step::with('user')
-            ->selectRaw('user_id, SUM(steps) as total_steps')
+            ->selectRaw('user_id, SUM(steps) as total_steps, COUNT(*) as days_logged')
             ->whereBetween('date', [$this->appliedStartDate, $this->appliedEndDate])
             ->groupBy('user_id')
             ->orderByDesc('total_steps');
