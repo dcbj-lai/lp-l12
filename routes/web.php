@@ -395,6 +395,13 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
     '/guidance/consultations/{consultation}/archive', [ConsultationsController::class, 'archive'])
     ->name('guidance.consultations.archive');
 
+    Route::get(
+    '/guidance/consultations/{consultation}/edit', [ConsultationsController::class, 'edit'])
+    ->name('guidance.consultations.edit');
+
+    Route::put('/guidance/consultations/{consultation}', [ConsultationsController::class, 'update'])
+    ->name('guidance.consultations.update');
+
 });
 
 //Import Csv

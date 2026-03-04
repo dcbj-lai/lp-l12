@@ -78,10 +78,17 @@
 
             {{-- Buttons --}}
             <div class="flex justify-end gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                <a href="{{ route('attendance.index') }}"
-                    class="px-3 py-2 text-sm rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-zinc-700 dark:hover:bg-zinc-600">
-                    Cancel
-                </a>
+                @if(request('return') === 'profile')
+                <a href="{{ route('guidance.clients.show', $consultation->client_id) }}"
+                class="px-4 py-2 border border-neutral-600 text-white rounded">
+                            Cancel
+                        </a>
+                    @else
+                        <a href="{{ route('guidance.consultations.index') }}"
+                        class="px-4 py-2 border border-neutral-600 text-white rounded">
+                            Cancel
+                        </a>
+                    @endif
                 <button type="submit" class="px-3 py-2 text-sm rounded-md bg-blue-600 hover:bg-blue-700 text-white">
                     Save Changes
                 </button>

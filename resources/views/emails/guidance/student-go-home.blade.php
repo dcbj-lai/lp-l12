@@ -1,4 +1,4 @@
-Dear Professor {{ $teacherName }},
+Dear {{ $teacherName ?: 'Acad Core' }},
 
 Good day.
 

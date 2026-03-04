@@ -12,18 +12,21 @@ return new class extends Migration
             $table->id();
 
             // Student reference
-            $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
+            $table->foreignId('client_id')
+                  ->constrained('clients')
+                  ->cascadeOnDelete();
 
             // Time tracking
             $table->dateTime('time_in')->nullable();
             $table->dateTime('time_out')->nullable();
 
-            // Teacher + post-consultation outcome
+            // Teacher info
             $table->string('current_teacher')->nullable();
-            $table->string('after_consultation')->nullable();   // resume | go_home (or any string you decide)
+            $table->string('teacher_email')->nullable();
+            $table->string('after_consultation')->nullable(); 
 
             // Going home details
-            $table->string('going_home_method')->nullable();    // fetcher | self
+            $table->string('going_home_method')->nullable();
             $table->string('fetcher_name')->nullable();
             $table->string('self_approved_by')->nullable();
 
@@ -35,23 +38,15 @@ return new class extends Migration
             $table->text('remarks')->nullable();
 
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['client_id', 'time_in']);
             $table->index(['time_in']);
         });
-        
-        Schema::table('consultations', function (Blueprint $table) {
-        $table->softDeletes();
-    });
-
     }
 
     public function down(): void
     {
         Schema::dropIfExists('consultations');
-
-        Schema::table('consultations', function (Blueprint $table) {
-        $table->dropSoftDeletes();
-    });
     }
 };

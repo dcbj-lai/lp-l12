@@ -2,10 +2,15 @@
 
 namespace App\Mail;
 
+use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\SerializesModels;
 
-class StudentGoHomeMail extends Mailable
+class StudentGoHomeMail extends Mailable implements ShouldQueue
 {
+    use Queueable, SerializesModels;
+
     public function __construct(
         public string $studentName,
         public string $teacherName,
@@ -17,6 +22,6 @@ class StudentGoHomeMail extends Mailable
     public function build()
     {
         return $this->subject("Student Released from Campus – {$this->studentName}")
-            ->text('emails.guidance.student-go-home');
+            ->view('emails.guidance.student-go-home');
     }
 }

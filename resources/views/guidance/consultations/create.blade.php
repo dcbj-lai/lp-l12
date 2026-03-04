@@ -222,8 +222,15 @@
 
                             <div class="space-y-2">
                                 <label class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
-                                    <input type="radio" x-model="decision" value="resume" class="text-indigo-600">
-                                    Resume class
+                                    <input type="radio"
+                                        x-model="decision"
+                                        value="resume"
+                                        :disabled="!teacher"
+                                        class="text-indigo-600">
+
+                                    <span :class="!teacher ? 'text-gray-400' : ''">
+                                        Resume class
+                                    </span>
                                 </label>
 
                                 <label class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">

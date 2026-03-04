@@ -5,8 +5,11 @@ namespace App\Livewire\Guidance;
 use Livewire\Component;
 use App\Models\Client;
 use App\Models\Consultation;
+use App\Models\User;
 use App\Mail\StudentCheckedInMail;
+use App\Mail\StudentCheckedInNoTeacherMail;
 use Illuminate\Support\Facades\Mail;
+
 
 class CheckInConsultation extends Component
 {
@@ -27,8 +30,8 @@ class CheckInConsultation extends Component
     public function checkIn(): void
     {
         $this->validate([
-            'teacherName'  => ['required', 'string'],
-            'teacherEmail' => ['required', 'email'],
+            'teacherName'  => ['nullable', 'string'],
+            'teacherEmail' => ['nullable', 'email'],
         ]);
 
         if ($this->checkedIn) return;
@@ -36,25 +39,39 @@ class CheckInConsultation extends Component
         $consultation = Consultation::create([
             'client_id'       => $this->client->id,
             'current_teacher' => $this->teacherName,
+            'teacher_email'   => $this->teacherEmail,
             'time_in'         => now(),
             'time_out'        => null,
             'after_consultation' => 'resume',
         ]);
-
         $studentName = "{$this->client->first_name} {$this->client->last_name}";
         $timeInDisplay = $consultation->time_in->format('M d, Y h:i A');
         $timeInIso = $consultation->time_in->toISOString();
 
         // 🔥 Send using Mailable
-        $ccList = ['lem.fajarda@laicollege.edu.ph', 'lcfajarda@gmail.com'];
+        $ccList = ['lcfajarda@gmail.com'];
 
-        Mail::to($this->teacherEmail)
-            ->cc($ccList)
-            ->send(new StudentCheckedInMail(
-                $studentName,
-                $this->teacherName,
-                $timeInDisplay
-            ));
+        if (!empty($this->teacherEmail)) {
+
+            // Normal teacher email
+            Mail::to($this->teacherEmail)
+                ->cc($ccList)
+                ->send(new StudentCheckedInMail(
+                    $studentName,
+                    $this->teacherName,
+                    $timeInDisplay
+                ));
+
+        } else {
+
+            // Different email to CC only
+            Mail::to($ccList[0])
+                ->cc(array_slice($ccList, 1))
+                ->send(new StudentCheckedInNoTeacherMail(
+                    $studentName,
+                    $timeInDisplay
+                ));
+        }
 
         $this->checkedIn = true;
         $this->timeInIso = $timeInIso;
@@ -69,14 +86,27 @@ class CheckInConsultation extends Component
         );
     }
 
+
     public function render()
     {
-        $teachers = [
-            ['name' => 'Prof. Maria Santos', 'email' => 'maria@school.edu'],
-            ['name' => 'Prof. Juan Dela Cruz', 'email' => 'juan@school.edu'],
-            ['name' => 'Prof. James Johnson', 'email' => 'james@school.edu'],
-        ];
+        $facultyDepartment = \App\Models\Department::whereRaw('LOWER(name) = ?', ['faculty'])->first();
+
+        $teachers = [];
+
+        if ($facultyDepartment) {
+            $teachers = User::where('department_id', $facultyDepartment->id)
+                ->select('name', 'email')
+                ->orderBy('name')
+                ->get()
+                ->map(fn($u) => [
+                    'name' => $u->name,
+                    'email' => $u->email,
+                ])
+                ->toArray();
+        }
 
         return view('livewire.guidance.check-in-consultation', compact('teachers'));
     }
+
+
 }

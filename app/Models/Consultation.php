@@ -16,6 +16,7 @@ class Consultation extends Model
 
         // teacher + outcome
         'current_teacher',
+        'teacher_email',
         'after_consultation',
         'going_home_method',
         'fetcher_name',

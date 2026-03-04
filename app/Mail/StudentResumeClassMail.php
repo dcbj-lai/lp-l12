@@ -4,25 +4,18 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\SerializesModels;
 
-class StudentResumeClassMail extends Mailable
+class StudentResumeClassMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public string $studentName;
-    public string $teacherName;
-    public string $timeOutDisplay;
-
     public function __construct(
-        string $studentName,
-        string $teacherName,
-        string $timeOutDisplay
-    ) {
-        $this->studentName    = $studentName;
-        $this->teacherName    = $teacherName;
-        $this->timeOutDisplay = $timeOutDisplay;
-    }
+        public string $studentName,
+        public string $teacherName,
+        public string $timeOutDisplay
+    ) {}
 
     public function build()
     {

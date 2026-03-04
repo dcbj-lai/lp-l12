@@ -53,7 +53,7 @@ class ConsultationsController extends Controller
     public function store(Request $request, Client $client)
     {
         $data = $request->validate([
-            'current_teacher'     => ['required', 'string'],
+            'current_teacher'     => ['nullable', 'string'],
             'type_of_session'     => ['nullable', 'string'],
             'risk_assessment'     => ['nullable', 'string'],
             'issue_concern'       => ['nullable', 'string'],
@@ -94,48 +94,44 @@ class ConsultationsController extends Controller
         | Email Notification (Always Sends to Lem)
         |--------------------------------------------------------------------------
         */
-
-        $recipientEmail = 'lem.fajarda@laicollege.edu.ph';
-        $ccList = ['lcfajarda@gmail.com'];
-
-        $studentName    = "{$client->first_name} {$client->last_name}";
-        $teacherName    = $consultation->current_teacher;
+       $studentName = "{$client->first_name} {$client->last_name}";
         $timeOutDisplay = $consultation->time_out->format('M d, Y h:i A');
 
-        if ($data['after_consultation'] === 'resume') {
+        $ccList = ['lem.fajarda@laicollege.edu.ph', 'lcfajarda@gmail.com'];
 
-            Mail::to($recipientEmail)
-                ->cc($ccList)
-                ->send(
-                    new StudentResumeClassMail(
-                        $studentName,
-                        $teacherName,
-                        $timeOutDisplay
-                    )
-                );
+        $mail = null;
+
+        if ($consultation->after_consultation === 'resume') {
+            $mail = new StudentResumeClassMail(
+                $studentName,
+                $consultation->current_teacher ?? 'N/A',
+                $timeOutDisplay
+            );
         }
 
-        if ($data['after_consultation'] === 'go_home') {
+        if ($consultation->after_consultation === 'go_home') {
+            $mail = new StudentGoHomeMail(
+                $studentName,
+                $consultation->current_teacher ?? 'N/A',
+                $timeOutDisplay,
+                $consultation->going_home_method ?? 'N/A',
+                $consultation->going_home_method === 'fetcher'
+                    ? $consultation->fetcher_name
+                    : $consultation->self_approved_by
+            );
+        }
 
-            $releaseMode = $data['going_home_method'] === 'fetcher'
-                ? 'With Fetcher'
-                : 'By Oneself';
+        if ($mail) {
 
-            $releaseDetails = $data['going_home_method'] === 'fetcher'
-                ? $data['fetcher_name']
-                : $data['self_approved_by'];
-
-            Mail::to($recipientEmail)
-                ->cc($ccList)
-                ->send(
-                    new StudentGoHomeMail(
-                        $studentName,
-                        $teacherName,
-                        $timeOutDisplay,
-                        $releaseMode,
-                        $releaseDetails
-                    )
-                );
+            if (!empty($consultation->teacher_email)) {
+                Mail::to($consultation->teacher_email)
+                    ->cc($ccList)
+                    ->queue($mail);
+            } else {
+                Mail::to($ccList[0])
+                    ->cc(array_slice($ccList, 1))
+                    ->queue($mail);
+            }
         }
 
         return redirect()
@@ -154,4 +150,41 @@ class ConsultationsController extends Controller
     $consultation->delete(); // soft delete
     return back()->with('success', 'Consultation archived successfully.');
     }
+
+    public function update(Request $request, Consultation $consultation)
+{
+    $data = $request->validate([
+        'current_teacher'     => ['nullable','string'],
+        'time_in'             => ['nullable','date'],
+        'time_out'            => ['nullable','date'],
+        'type_of_session'     => ['nullable','string'],
+        'risk_assessment'     => ['nullable','string'],
+        'issue_concern'       => ['nullable','string'],
+        'intervention'        => ['nullable','string'],
+        'remarks'             => ['nullable','string'],
+        'after_consultation'  => ['required','in:resume,go_home'],
+        'going_home_method'   => ['nullable','in:fetcher,self'],
+        'fetcher_name'        => ['nullable','string'],
+        'self_approved_by'    => ['nullable','string'],
+    ]);
+
+    $consultation->update($data);
+
+    // 🔥 dynamic redirect
+    if ($request->filled('return_url')) {
+        return redirect($request->return_url)
+            ->with('success', 'Consultation updated successfully.');
+    }
+
+    return redirect()
+        ->route('guidance.consultations.index')
+        ->with('success', 'Consultation updated successfully.');
+}
+
+public function edit(Consultation $consultation)
+{
+    $consultation->load('client');
+
+    return view('guidance.consultations.edit', compact('consultation'));
+}
 }

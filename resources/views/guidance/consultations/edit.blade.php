@@ -1,0 +1,227 @@
+<x-layouts.app>
+
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+
+    <form method="POST"
+          action="{{ route('guidance.consultations.update', $consultation) }}">
+        @csrf
+        @method('PUT')
+
+        <input type="hidden" name="return_url"
+       value="{{ request('return_url') }}">
+
+        <!-- Top Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+            <!-- Current Teacher -->
+            <div class="bg-neutral-900 border border-neutral-700 rounded-xl p-5">
+                <p class="text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                    Current Teacher
+                </p>
+                <input type="text"
+                       name="current_teacher"
+                       value="{{ old('current_teacher', $consultation->current_teacher) }}"
+                       class="w-full bg-transparent text-white text-lg font-semibold focus:outline-none">
+            </div>
+
+            <!-- Time In -->
+            <div class="bg-neutral-900 border border-neutral-700 rounded-xl p-5">
+                <p class="text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                    Time In
+                </p>
+                <input type="datetime-local"
+                       name="time_in"
+                       value="{{ old('time_in', optional($consultation->time_in)->format('Y-m-d\TH:i')) }}"
+                       class="w-full bg-transparent text-white focus:outline-none">
+            </div>
+
+            <!-- Time Out -->
+            <div class="bg-neutral-900 border border-neutral-700 rounded-xl p-5">
+                <p class="text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                    Time Out
+                </p>
+                <input type="datetime-local"
+                       name="time_out"
+                       value="{{ old('time_out', optional($consultation->time_out)->format('Y-m-d\TH:i')) }}"
+                       class="w-full bg-transparent text-white focus:outline-none">
+            </div>
+
+        </div>
+
+        <!-- Session Information -->
+        <div class="bg-neutral-900 border border-neutral-700 rounded-xl p-6 mb-8">
+
+            <h2 class="text-lg font-semibold text-white mb-6">
+                Session Information
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+
+                <!-- Type of Session -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                        Type of Session
+                    </label>
+                    <select name="type_of_session"
+                            class="w-full bg-neutral-800 text-white border border-neutral-700 rounded p-3">
+                        @foreach(['Mandatory','PFA','Referral','Walk-In','Follow up','Group'] as $type)
+                            <option value="{{ $type }}"
+                                {{ $consultation->type_of_session === $type ? 'selected' : '' }}>
+                                {{ $type }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Risk Assessment -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                        Risk Assessment
+                    </label>
+                    <select name="risk_assessment"
+                            class="w-full bg-neutral-800 text-white border border-neutral-700 rounded p-3">
+                        @foreach(['Low','Moderate','High'] as $risk)
+                            <option value="{{ $risk }}"
+                                {{ $consultation->risk_assessment === $risk ? 'selected' : '' }}>
+                                {{ $risk }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Issue -->
+            <div class="mb-6">
+                <label class="block text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                    Issue / Concern
+                </label>
+                <textarea name="issue_concern"
+                          rows="4"
+                          class="w-full bg-neutral-800 text-white border border-neutral-700 rounded p-3">{{ old('issue_concern', $consultation->issue_concern) }}</textarea>
+            </div>
+
+            <!-- Intervention -->
+            <div class="mb-6">
+                <label class="block text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                    Intervention
+                </label>
+                <textarea name="intervention"
+                          rows="4"
+                          class="w-full bg-neutral-800 text-white border border-neutral-700 rounded p-3">{{ old('intervention', $consultation->intervention) }}</textarea>
+            </div>
+
+            <!-- Remarks -->
+            <div>
+                <label class="block text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                    Remarks
+                </label>
+                <textarea name="remarks"
+                          rows="3"
+                          class="w-full bg-neutral-800 text-white border border-neutral-700 rounded p-3">{{ old('remarks', $consultation->remarks) }}</textarea>
+            </div>
+
+        </div>
+
+        <!-- After Consultation -->
+        <div class="bg-neutral-900 border border-neutral-700 rounded-xl p-6 mb-8">
+
+            <h2 class="text-lg font-semibold text-white mb-6">
+                After Consultation
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+
+                <!-- Decision -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                        Decision
+                    </label>
+                    <select name="after_consultation"
+                            class="w-full bg-neutral-800 text-white border border-neutral-700 rounded p-3">
+                        <option value="resume"
+                            {{ $consultation->after_consultation === 'resume' ? 'selected' : '' }}>
+                            Resume
+                        </option>
+                        <option value="go_home"
+                            {{ $consultation->after_consultation === 'go_home' ? 'selected' : '' }}>
+                            Go Home
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Going Home Method -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                        Going Home Method
+                    </label>
+                    <select name="going_home_method"
+                            class="w-full bg-neutral-800 text-white border border-neutral-700 rounded p-3">
+                        <option value="fetcher"
+                            {{ $consultation->going_home_method === 'fetcher' ? 'selected' : '' }}>
+                            Fetcher
+                        </option>
+                        <option value="self"
+                            {{ $consultation->going_home_method === 'self' ? 'selected' : '' }}>
+                            Self
+                        </option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+
+                <!-- Fetcher Name -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                        Fetcher Name
+                    </label>
+                    <input type="text"
+                           name="fetcher_name"
+                           value="{{ old('fetcher_name', $consultation->fetcher_name) }}"
+                           class="w-full bg-neutral-800 text-white border border-neutral-700 rounded p-3">
+                </div>
+
+                <!-- Self Approved By -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-neutral-400 mb-2">
+                        Self Approved By
+                    </label>
+                    <input type="text"
+                           name="self_approved_by"
+                           value="{{ old('self_approved_by', $consultation->self_approved_by) }}"
+                           class="w-full bg-neutral-800 text-white border border-neutral-700 rounded p-3">
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end gap-4">
+
+            @if(request('return_url'))
+                <a href="{{ request('return_url') }}"
+                class="px-4 py-2 border border-neutral-600 text-white rounded">
+                    Cancel
+                </a>
+            @else
+                <a href="{{ route('guidance.consultations.index') }}"
+                class="px-4 py-2 border border-neutral-600 text-white rounded">
+                    Cancel
+                </a>
+            @endif
+
+            <button type="submit"
+                    class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
+                Update Consultation
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+</x-layouts.app>

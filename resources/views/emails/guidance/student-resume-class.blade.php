@@ -1,4 +1,4 @@
-Dear Professor {{ $teacherName }},
+Dear {{ $teacherName }},
 
 Good day.
 

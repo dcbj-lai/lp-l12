@@ -99,7 +99,7 @@
 
 
                                 <td class="border px-3 py-2 whitespace-normal break-words">
-                                    {{ $consultation->current_teacher ?? '—' }}
+                                    {{ $consultation->current_teacher ?: 'No Teacher Assigned' }}
                                 </td>
 
                                 <td class="border px-3 py-2 text-xs whitespace-nowrap">
@@ -135,6 +135,14 @@
                                             ]) }}"
                                         class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
                                             View
+                                        </a>
+
+                                        <a href="{{ route('guidance.consultations.edit', [
+                                                'consultation' => $consultation->id,
+                                                'return_url'   => url()->full()
+                                            ]) }}"
+                                        class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                            Edit
                                         </a>
 
                                         <!-- Archive -->

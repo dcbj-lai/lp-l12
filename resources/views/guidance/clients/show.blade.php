@@ -147,64 +147,75 @@
                         </tr>
                     </thead>
 
-                    <tbody class="text-neutral-800 dark:text-neutral-300">
-                    @foreach ($consultations as $log)
-                        <tr class="border-b border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition">
+                  <tbody class="text-neutral-800 dark:text-neutral-300">
+                        @foreach ($consultations as $log)
+                            <tr class="border-b border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition">
 
-                            <td class="border px-4 py-2 text-xs whitespace-nowrap">
-                                {{ optional($log->time_in)?->format('M d, Y h:i A') ?? '—' }}
-                            </td>
+                                <td class="border px-4 py-2 text-xs whitespace-nowrap">
+                                    {{ optional($log->time_in)?->format('M d, Y h:i A') ?? '—' }}
+                                </td>
 
-                            <td class="border px-4 py-2 text-xs whitespace-nowrap">
-                                {{ optional($log->time_out)?->format('M d, Y h:i A') ?? '—' }}
-                            </td>
+                                <td class="border px-4 py-2 text-xs whitespace-nowrap">
+                                    {{ optional($log->time_out)?->format('M d, Y h:i A') ?? '—' }}
+                                </td>
 
-                            <td class="border px-4 py-2 whitespace-nowrap">
-                                {{ $log->current_teacher ?? '—' }}
-                            </td>
+                                <td class="border px-4 py-2 whitespace-nowrap">
+                                    {{ $log->current_teacher ?: 'No Teacher Assigned' }}
+                                </td>
 
-                            <td class="border px-4 py-2 whitespace-nowrap">
-                                @if ($log->after_consultation === 'resume')
-                                    <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                                        Resume Class
-                                    </span>
-                                @elseif ($log->after_consultation === 'go_home')
-                                    <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
-                                        Go Home
-                                    </span>
-                                @else
-                                    —
-                                @endif
-                            </td>
+                                <td class="border px-4 py-2 whitespace-nowrap">
+                                    @if ($log->after_consultation === 'resume')
+                                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                            Resume Class
+                                        </span>
+                                    @elseif ($log->after_consultation === 'go_home')
+                                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                                            Go Home
+                                        </span>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
 
-                            <!-- Action -->
-                            <td class="border px-4 py-2 whitespace-nowrap text-center">
-                                <div class="flex justify-center gap-2">
+                                <!-- Action -->
+                                <td class="border px-4 py-2 whitespace-nowrap text-center">
+                                    <div class="flex justify-center gap-2">
 
-                                    <a href="{{ route('guidance.consultations.show', [
-                                            'consultation' => $log->id,
-                                            'return_url'   => url()->full(),
-                                        ]) }}"
-                                    class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
-                                        View
-                                    </a>
+                                        <!-- View -->
+                                        <a href="{{ route('guidance.consultations.show', [
+                                                'consultation' => $log->id,
+                                                'return_url'   => url()->full(),
+                                            ]) }}"
+                                        class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                            View
+                                        </a>
 
-                                    <button
-                                        type="button"
-                                        @click="
-                                            archiveId = {{ $log->id }};
-                                            showArchiveModal = true;
-                                        "
-                                        class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
-                                        Archive
-                                    </button>
+                                        <!-- Edit -->
+                                      <a href="{{ route('guidance.consultations.edit', [
+                                                'consultation' => $log->id,
+                                                'return_url'   => url()->full()
+                                            ]) }}"
+                                        class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                            Edit
+                                        </a>
 
-                                </div>
-                            </td>
+                                        <!-- Archive -->
+                                        <button
+                                            type="button"
+                                            @click="
+                                                archiveId = {{ $log->id }};
+                                                showArchiveModal = true;
+                                            "
+                                            class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                            Archive
+                                        </button>
 
-                        </tr>
-                    @endforeach
-                    </tbody>
+                                    </div>
+                                </td>
+
+                            </tr>
+                        @endforeach
+                        </tbody>
 
                 </table>
 
