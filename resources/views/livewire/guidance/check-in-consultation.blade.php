@@ -66,7 +66,7 @@
                 </p>
             @else
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    You may leave this blank. If no teacher is selected, notification will be sent to Guidance CC only.
+                    You may leave this blank. If no teacher is selected, notification will be sent to Acad Core CC only.
                 </p>
             @endif
         </div>

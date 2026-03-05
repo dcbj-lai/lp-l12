@@ -32,6 +32,7 @@
     value="{{ request('return_url') }}"
 >
 
+
 <!-- LOCK NOTICE -->
 
 <div
@@ -48,6 +49,7 @@ TOP CARDS (LOCKED)
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
+
     <!-- Teacher -->
 
     <div class="bg-neutral-900 border border-neutral-700 rounded-xl p-5">
@@ -59,9 +61,9 @@ TOP CARDS (LOCKED)
         <input
             type="text"
             name="current_teacher"
-            value="{{ old('current_teacher', $consultation->current_teacher) }}"
+            value="{{ old('current_teacher', $consultation->current_teacher ?: 'No Teacher Assigned') }}"
             :disabled="locked"
-            class="w-full bg-transparent text-white text-lg font-semibold focus:outline-none"
+            class="w-full bg-transparent text-white text-lg focus:outline-none"
         >
 
     </div>
