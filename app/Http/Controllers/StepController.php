@@ -44,13 +44,13 @@ class StepController extends Controller
 
         // Funny message generator
         $message = match (true) {
-            $steps < 1000 => "Only {$steps} steps? That’s 'walk to the fridge' numbers. 😅",
-            $steps < 5000 => "{$steps} steps — we’re warming up… slowly. 🐢",
-            $steps < 8000 => "{$steps} steps! Respectable human activity detected 👍",
-            $steps === 10000 => "Exactly 10,000 steps. Perfectly balanced. As all things should be. ⚖️",
-            $steps < 12000 => "{$steps} steps! Look at you being productive 💪",
-            $steps < 20000 => "{$steps} steps?! Marathon training or avoiding emails? 🏃‍♂️",
-            default => "{$steps} steps?! HR is checking your Fitbit for doping. 🥇🔥",
+            $steps < 1000 => "{$steps} steps lang? Parang nagbanyo lang ah! 😅",
+            $steps < 5000 => "{$steps} steps — Push mo pa 'te! 🐢",
+            $steps < 8000 => "{$steps} Uyy..umeefort maglakad! May tumatakbo sa isip mo??? 👍",
+            $steps === 10000 => "{$steps} Hala nakikiuso sa WHO! ⚖️",
+            $steps < 12000 => "{$steps} Feeling fitness influencer ah! 💪",
+            $steps < 20000 => "{$steps} steps?! Nagwo-work ka pa ba niyan?? 🏃‍♂️",
+            default => "{$steps} steps?! Ano ito, Bataan Death March???. 🔥🥇",
         };
 
         return redirect()
