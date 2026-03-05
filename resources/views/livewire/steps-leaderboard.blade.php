@@ -8,8 +8,7 @@
 
             <button @click="show = false"
                 class="absolute top-2 right-2 text-orange-400 opacity-50 hover:opacity-100 hover:text-orange-600 dark:hover:text-orange-300">
-                &times;
-            </button>
+                × </button>
 
             <div class="absolute top-4 left-4">
                 <h2 class="text-sm font-semibold text-gray-400">
@@ -75,26 +74,29 @@
                 Steps Leaderboard
             </h2>
 
-            <div class="flex flex-col md:flex-row gap-4 mb-6 items-end">
+            {{-- MOBILE FIRST FILTERS --}}
 
-                <div>
+            <div class="flex flex-col gap-3 mb-6 md:flex-row md:items-end">
+
+                <div class="w-full md:w-auto">
                     <label class="block text-xs font-medium mb-1">From</label>
                     <input type="date" wire:model.change="startDate" class="border rounded p-2 w-full text-sm">
                 </div>
 
-                <div>
+                <div class="w-full md:w-auto">
                     <label class="block text-xs font-medium mb-1">To</label>
                     <input type="date" wire:model.change="endDate" class="border rounded p-2 w-full text-sm">
                 </div>
 
-                <div class="flex gap-2">
+                <div class="w-full md:w-auto">
 
                     @if ($startDate !== $appliedStartDate || $endDate !== $appliedEndDate)
-                        <flux:button variant="primary" color="teal" wire:click="filter">
+                        <flux:button variant="primary" color="teal" wire:click="filter" class="w-full md:w-auto">
                             Apply
                         </flux:button>
                     @else
-                        <flux:button variant="primary" color="teal" wire:click="resetMonthToDate">
+                        <flux:button variant="primary" color="teal" wire:click="resetMonthToDate"
+                            class="w-full md:w-auto">
                             Month to Date
                         </flux:button>
                     @endif
@@ -115,10 +117,10 @@
 
                         <thead>
                             <tr class="border-b text-xs uppercase tracking-wide text-gray-500">
-                                <th class="text-left p-2">Rank</th>
+                                <th class="hidden sm:table-cell text-left p-2">Rank</th>
                                 <th class="text-left p-2">Name</th>
-                                <th class="text-left p-2">Total Steps</th>
-                                <th class="text-left p-2">Days</th>
+                                <th class="hidden sm:table-cell text-left p-2">Total Steps</th>
+                                <th class="hidden sm:table-cell text-left p-2">Days</th>
                             </tr>
                         </thead>
 
@@ -138,37 +140,52 @@
                             @foreach ($leaders as $index => $entry)
                                 <tr class="border-b hover:bg-gray-100 dark:hover:bg-gray-700">
 
-                                    <td class="p-2 font-medium w-14">
+                                    <td class="hidden sm:table-cell p-2 font-medium w-14">
                                         {{ $index + 1 }}
                                     </td>
 
                                     <td class="p-2">
 
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex flex-col sm:flex-row sm:items-center sm:gap-2">
 
-                                            <span>{{ $entry->user->name }}</span>
+                                            <div class="flex items-center gap-2">
 
-                                            @if ($entry->days_logged >= $consistencyThreshold)
-                                                <span class="text-xs" title="Consistent logging">🔥</span>
-                                            @endif
+                                                <span class="font-medium">
+                                                    {{ $entry->user->name }}
 
-                                            @if ($entry->total_steps == ($topSteps[0] ?? null))
-                                                <flux:icon name="trophy" class="text-yellow-500 h-4 w-4" />
-                                            @elseif ($entry->total_steps == ($topSteps[1] ?? null))
-                                                <flux:icon name="medal" class="text-gray-400 h-4 w-4" />
-                                            @elseif ($entry->total_steps == ($topSteps[2] ?? null))
-                                                <flux:icon name="award" class="text-orange-500 h-4 w-4" />
-                                            @endif
+                                                    @if ($entry->user_id === auth()->id())
+                                                        <span class="text-xs text-gray-500">(You)</span>
+                                                    @endif
+                                                </span>
+
+                                                @if ($entry->days_logged >= $consistencyThreshold)
+                                                    <span class="text-xs" title="Consistent logging">🔥</span>
+                                                @endif
+
+                                                @if ($entry->total_steps == ($topSteps[0] ?? null))
+                                                    <flux:icon name="trophy" class="text-yellow-500 h-4 w-4" />
+                                                @elseif ($entry->total_steps == ($topSteps[1] ?? null))
+                                                    <flux:icon name="medal" class="text-gray-400 h-4 w-4" />
+                                                @elseif ($entry->total_steps == ($topSteps[2] ?? null))
+                                                    <flux:icon name="award" class="text-orange-500 h-4 w-4" />
+                                                @endif
+
+                                            </div>
+
+                                            <div class="text-xs text-gray-500 sm:hidden">
+                                                {{ number_format($entry->total_steps) }} steps •
+                                                {{ $entry->days_logged }} days
+                                            </div>
 
                                         </div>
 
                                     </td>
 
-                                    <td class="p-2 font-semibold text-blue-600 dark:text-blue-400">
+                                    <td class="hidden sm:table-cell p-2 font-semibold text-blue-600 dark:text-blue-400">
                                         {{ number_format($entry->total_steps) }}
                                     </td>
 
-                                    <td class="p-2 text-gray-600 dark:text-gray-300">
+                                    <td class="hidden sm:table-cell p-2 text-gray-600 dark:text-gray-300">
                                         {{ $entry->days_logged }}
                                     </td>
 
