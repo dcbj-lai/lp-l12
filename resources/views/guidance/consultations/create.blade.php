@@ -225,7 +225,6 @@
                                     <input type="radio"
                                         x-model="decision"
                                         value="resume"
-                                        :disabled="!teacher"
                                         class="text-indigo-600">
 
                                     <span :class="!teacher ? 'text-gray-400' : ''">
@@ -315,11 +314,13 @@
                             Save / Submit
                         </button>
 
-                        <a href="{{ route('guidance.clients.show', $client) }}"
-                           class="inline-flex items-center rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50
-                                  dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+                       <button
+                            type="submit"
+                            name="action"
+                            value="cancel"
+                            class="px-3 py-2 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white">
                             Cancel
-                        </a>
+                        </button>
                     </div>
 
                     <p class="text-xs text-gray-500 dark:text-gray-400">

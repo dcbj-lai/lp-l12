@@ -13,7 +13,7 @@ class StudentCheckedInNoTeacherMail extends Mailable
 
     public function build()
     {
-        return $this->subject("Student Check-In (No Teacher Assigned) – {$this->studentName}")
+        return $this->subject("H&W: Student Check-In (No Teacher Assigned) – {$this->studentName}")
             ->text('emails.guidance.student-checked-in-no-teacher');
     }
 }

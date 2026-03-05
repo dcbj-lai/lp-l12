@@ -1,8 +1,10 @@
+@if($teacherName)
 Dear {{ $teacherName }},
+@else
+Good day,
+@endif
 
-Good day.
-
-This is to inform you that {{ $studentName }} has completed their session at the Guidance Office and is cleared to return to your class.
+This is to inform you that {{ $studentName }} has completed their session at the Guidance Office and is cleared to return to class.
 
 Time Out: {{ $timeOutDisplay }}
 

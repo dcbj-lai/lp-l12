@@ -66,7 +66,8 @@
         <div 
             x-data="{
                 showArchiveModal: false,
-                archiveId: null
+                archiveId: null,
+                returnPage: 'consultations'
             }"
             class="overflow-hidden shadow-xl sm:rounded-lg p-6">
             <div>
@@ -82,7 +83,6 @@
                             <th class="border px-3 py-2 text-left">Time In</th>
                             <th class="border px-3 py-2 text-left">Time Out</th>
                             <th class="border px-3 py-2 text-left">After Consultation</th>
-                            <th class="border px-3 py-2 text-left">Remarks</th>
                             <th class="border px-3 py-2 text-left">Action</th>
                         </tr>
                     </thead>
@@ -120,10 +120,6 @@
                                     }}
                                 </td>
 
-                                <td class="border px-3 py-2 whitespace-normal break-words">
-                                    {{ \Illuminate\Support\Str::limit($consultation->remarks ?? '', 60) ?: '—' }}
-                                </td>
-
                                 <!-- ✅ Single Action Column -->
                                 <td class="border px-3 py-2 whitespace-nowrap">
                                     <div class="flex items-center gap-2">
@@ -146,15 +142,16 @@
                                         </a>
 
                                         <!-- Archive -->
-                                        <button
-                                            type="button"
-                                            @click="
-                                                archiveId = {{ $consultation->id }};
-                                                showArchiveModal = true;
-                                            "
-                                            class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
-                                            Archive
-                                        </button>
+                                    <button
+                                        type="button"
+                                        @click="
+                                            archiveId = {{ $consultation->id }};
+                                            returnPage = 'consultations';
+                                            showArchiveModal = true;
+                                        "
+                                        class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                        Archive
+                                    </button>
 
                                     </div>
                                 </td>
@@ -203,11 +200,12 @@
                                 class="px-4 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition">
                                 Cancel
                             </button>
-
-                            <form method="POST"
-                                :action="`/guidance/consultations/${archiveId}/archive`">
+                           
+                            <form method="POST" :action="'/guidance/consultations/' + archiveId + '/archive'">
                                 @csrf
                                 @method('DELETE')
+
+                                    <input type="hidden" name="return" :value="returnPage">
 
                                 <button type="submit"
                                     class="px-4 py-2 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white transition">
