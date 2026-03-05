@@ -111,11 +111,12 @@
                     No steps found for selected period.
                 </p>
             @else
-                <div class="overflow-x-auto">
+                <div
+                    class="overflow-x-auto max-h-[420px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
 
                     <table class="w-full border-collapse text-sm">
 
-                        <thead>
+                        <thead class="sticky top-0 bg-white dark:bg-gray-800 z-10">
                             <tr class="border-b text-xs uppercase tracking-wide text-gray-500">
                                 <th class="hidden sm:table-cell text-left p-2">Rank</th>
                                 <th class="text-left p-2">Name</th>
