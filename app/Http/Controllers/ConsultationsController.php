@@ -154,7 +154,6 @@ class ConsultationsController extends Controller
         $studentName = "{$client->first_name} {$client->last_name}";
         $timeOutDisplay = $consultation->time_out->format('M d, Y h:i A');
 
-        $ccList = ['lem.fajarda@laicollege.edu.ph', 'lcfajarda@gmail.com'];
 
         $mail = null;
 
@@ -180,16 +179,15 @@ class ConsultationsController extends Controller
 
         if ($mail) {
 
-            if (!empty($consultation->teacher_email)) {
-                Mail::to($consultation->teacher_email)
-                    ->cc($ccList)
-                    ->queue($mail);
-            } else {
-                Mail::to($ccList[0])
-                    ->cc(array_slice($ccList, 1))
-                    ->queue($mail);
-            }
+        if (!empty($consultation->teacher_email)) {
+            Mail::to($consultation->teacher_email)
+                ->cc(env('REQUESTS_ACADCORE_EMAIL'))
+                ->queue($mail);
+        } else {
+            Mail::to(env('REQUESTS_ACADCORE_EMAIL'))
+                ->queue($mail);
         }
+    }
 
         return redirect()
             ->route('guidance.clients.show', $client)
