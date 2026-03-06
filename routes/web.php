@@ -19,6 +19,11 @@ use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\VisitorLogController;
 use App\Http\Controllers\PasswordLoginController;
 use App\Http\Controllers\PrivateRequestDocumentController;
+use App\Http\Controllers\ImportCsvController;
+use App\Http\Controllers\ClientsController;
+use App\Http\Controllers\ConsultationsController;
+
+
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -359,3 +364,49 @@ Route::get('/requests/documents/{path}', [PrivateRequestDocumentController::clas
     ->middleware('auth')
     ->name('requests.documents.show');
 
+// Guidance
+// Clients and Consultations
+
+Route::middleware(['auth', 'can:guidance'])->group(function () {
+        Route::get('/guidance/clients', [ClientsController::class, 'index'])
+        ->name('guidance.clients.index');
+
+    Route::get('/guidance/clients/{client}', [ClientsController::class, 'show'])
+        ->name('guidance.clients.show');
+
+    Route::view('/guidance/consultations', 'guidance.consultations.index')->name('guidance.consultations.index');
+
+    Route::get('/guidance/clients/{client}/consultations/create', [ConsultationsController::class, 'create'])
+    ->name('guidance.consultations.create');
+
+    Route::post('/guidance/clients/{client}/consultations', [ConsultationsController::class, 'store'])
+    ->name('guidance.consultations.store');
+
+    Route::get('/guidance/consultations/{consultation}', [ConsultationsController::class, 'show'])
+    ->name('guidance.consultations.show');
+
+    Route::get('/guidance/consultations', [ConsultationsController::class, 'index'])
+    ->name('guidance.consultations.index');
+
+    Route::post('/guidance/clients/{client}/consultations/check-in', [ConsultationsController::class, 'checkIn'])
+    ->name('guidance.consultations.checkin');
+
+    Route::delete(
+    '/guidance/consultations/{consultation}/archive', [ConsultationsController::class, 'archive'])
+    ->name('guidance.consultations.archive');
+
+    Route::get(
+    '/guidance/consultations/{consultation}/edit', [ConsultationsController::class, 'edit'])
+    ->name('guidance.consultations.edit');
+
+    Route::put('/guidance/consultations/{consultation}', [ConsultationsController::class, 'update'])
+    ->name('guidance.consultations.update');
+
+});
+
+//Import Csv
+Route::middleware(['auth', 'can:guidance-admin'])->group(function () {
+    Route::view('/guidance/import-csv', 'guidance.import-csv.index')->name('guidance.import-csv.index');
+
+    Route::post('/guidance/import-csv', [ImportCsvController::class, 'store'])->name('guidance.import-csv.store');
+});

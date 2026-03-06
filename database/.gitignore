@@ -1,1 +1,14 @@
-*.sqlite*
+# SQLite databases
+*.sqlite
+*.sqlite3
+
+# Specific config file
+config/app.php
+
+# Ignore a specific migration file
+database/migrations/2025_10_16_182501_alter_end_date_type_in_requests_table.php
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
