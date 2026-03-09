@@ -21,7 +21,7 @@ class StudentGoHomeMail extends Mailable implements ShouldQueue
 
     public function build()
     {
-        return $this->subject("H&W: Student Released from Campus – {$this->studentName}")
+        return $this->subject("H&W-Guidance: {$this->studentName} asked to go home")
             ->text('emails.guidance.student-go-home');
     }
 }
