@@ -1,4 +1,4 @@
-Dear Professor {{ $teacherName }},
+Dear {{ $teacherName }},
 
 Good day.
 
@@ -14,5 +14,4 @@ Thank you for your understanding and support.
 
 Respectfully,
 
-Test Lem
 Guidance Counselor
