@@ -1,6 +1,6 @@
 <x-layouts.app title="Client Profile">
 
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
 
         <!-- Breadcrumb -->
         <div class="mb-3 text-sm text-neutral-600 dark:text-neutral-400">
@@ -20,12 +20,10 @@
             </span>
         </div>
 
-
         <!-- Header -->
-        <div class="flex flex-wrap items-center justify-between mb-4">
-
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
             <div>
-                <h1 class="text-xl md:text-2xl font-bold">
+                <h1 class="text-xl md:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                     {{ $client->first_name }} {{ $client->last_name }}
                 </h1>
 
@@ -35,18 +33,15 @@
             </div>
 
             <a href="{{ route('guidance.clients.index') }}"
-               class="inline-block bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded-md shadow-sm transition-all duration-150">
+               class="inline-flex items-center justify-center bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded-md shadow-sm transition-all duration-150 w-full sm:w-auto">
                 Back to Clients
             </a>
-
         </div>
 
-        <hr class="mt-4 border-white/40">
-
+        <hr class="mt-4 border-neutral-200 dark:border-neutral-700">
 
         <!-- Client Information -->
-        <div class="overflow-hidden shadow-xl sm:rounded-lg p-6 mb-6 bg-neutral-800 text-neutral-100">
-
+        <div class="overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-6 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700">
             <h2 class="text-lg font-semibold mb-6">
                 Client Information
             </h2>
@@ -54,65 +49,60 @@
             <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
 
                 <div>
-                    <dt class="text-xs uppercase tracking-wide text-neutral-400">Email</dt>
-                    <dd class="mt-1 text-sm">{{ $client->email }}</dd>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Email</dt>
+                    <dd class="mt-1 text-sm break-all">{{ $client->email }}</dd>
                 </div>
 
                 <div>
-                    <dt class="text-xs uppercase tracking-wide text-neutral-400">First Name</dt>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">First Name</dt>
                     <dd class="mt-1 text-sm">{{ $client->first_name }}</dd>
                 </div>
 
                 <div>
-                    <dt class="text-xs uppercase tracking-wide text-neutral-400">Last Name</dt>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Last Name</dt>
                     <dd class="mt-1 text-sm">{{ $client->last_name }}</dd>
                 </div>
 
                 <div>
-                    <dt class="text-xs uppercase tracking-wide text-neutral-400">Course</dt>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Course</dt>
                     <dd class="mt-1 text-sm">{{ $client->course ?? '—' }}</dd>
                 </div>
 
                 <div>
-                    <dt class="text-xs uppercase tracking-wide text-neutral-400">Section</dt>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Section</dt>
                     <dd class="mt-1 text-sm">{{ $client->section ?? '—' }}</dd>
                 </div>
 
                 <div>
-                    <dt class="text-xs uppercase tracking-wide text-neutral-400">Created</dt>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Created</dt>
                     <dd class="mt-1 text-sm">
                         {{ optional($client->created_at)->format('M d, Y h:i A') }}
                     </dd>
                 </div>
 
                 <div>
-                    <dt class="text-xs uppercase tracking-wide text-neutral-400">Last Updated</dt>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Last Updated</dt>
                     <dd class="mt-1 text-sm">
                         {{ optional($client->updated_at)->format('M d, Y h:i A') }}
                     </dd>
                 </div>
 
             </dl>
-
         </div>
 
-
         <!-- Recent Consultations -->
-        <div class="overflow-hidden shadow-xl sm:rounded-lg p-6">
+        <div class="overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
 
-            <div class="flex flex-wrap items-center justify-between mb-4">
-
-                <h2 class="text-lg font-semibold">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                     Recent Consultations
                 </h2>
 
                 <a href="{{ route('guidance.consultations.create', $client) }}"
-                   class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md shadow-sm transition-all duration-150">
+                   class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md shadow-sm transition-all duration-150 w-full sm:w-auto">
                     Start a Consultation
                 </a>
-
             </div>
-
 
             @if ($consultations->count() === 0)
 
@@ -122,124 +112,104 @@
 
             @else
 
-
             <div
                 x-data="{
                     showArchiveModal: false,
                     archiveId: null,
                     returnPage: 'client'
                 }"
-                class="overflow-hidden shadow-xl sm:rounded-lg p-6 bg-white dark:bg-neutral-800"
             >
+                <div class="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-700">
+                    <table class="min-w-full border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
+                                <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">Time In</th>
+                                <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">Time Out</th>
+                                <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">Current Teacher</th>
+                                <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">After Consultation</th>
+                                <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-center whitespace-nowrap">Action</th>
+                            </tr>
+                        </thead>
 
-                <table class="w-full border-collapse border border-neutral-200 dark:border-neutral-700 text-sm">
+                        <tbody class="text-neutral-800 dark:text-neutral-300 bg-white dark:bg-neutral-900">
+                            @foreach ($consultations as $log)
+                            <tr class="border-b border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition">
+                                <td class="px-4 py-3 text-xs whitespace-nowrap">
+                                    {{ optional($log->time_in)?->format('M d, Y h:i A') ?? '—' }}
+                                </td>
 
-                    <thead>
-                        <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
-                            <th class="border px-4 py-2 text-left">Time In</th>
-                            <th class="border px-4 py-2 text-left">Time Out</th>
-                            <th class="border px-4 py-2 text-left">Current Teacher</th>
-                            <th class="border px-4 py-2 text-left">After Consultation</th>
-                            <th class="border px-4 py-2 text-center">Action</th>
-                        </tr>
-                    </thead>
+                                <td class="px-4 py-3 text-xs whitespace-nowrap">
+                                    {{ optional($log->time_out)?->format('M d, Y h:i A') ?? '—' }}
+                                </td>
 
-                    <tbody class="text-neutral-800 dark:text-neutral-300">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    {{ $log->current_teacher ?: 'No Teacher Assigned' }}
+                                </td>
 
-                        @foreach ($consultations as $log)
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    @if ($log->after_consultation === 'resume')
+                                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                            Resume Class
+                                        </span>
+                                    @elseif ($log->after_consultation === 'go_home')
+                                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                                            Go Home
+                                        </span>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
 
-                        <tr class="border-b border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition">
+                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <div class="flex flex-col sm:flex-row justify-center gap-2">
+                                        <!-- View -->
+                                        <a href="{{ route('guidance.consultations.show', [
+                                                'consultation' => $log->id,
+                                                'return_url' => url()->full()
+                                            ]) }}"
+                                           class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                            View
+                                        </a>
 
-                            <td class="border px-4 py-2 text-xs whitespace-nowrap">
-                                {{ optional($log->time_in)?->format('M d, Y h:i A') ?? '—' }}
-                            </td>
+                                        <!-- Edit -->
+                                        <a href="{{ route('guidance.consultations.edit', [
+                                                'consultation' => $log->id,
+                                                'return_url' => url()->full()
+                                            ]) }}"
+                                           class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                            Edit
+                                        </a>
 
-                            <td class="border px-4 py-2 text-xs whitespace-nowrap">
-                                {{ optional($log->time_out)?->format('M d, Y h:i A') ?? '—' }}
-                            </td>
-
-                            <td class="border px-4 py-2 whitespace-nowrap">
-                                {{ $log->current_teacher ?: 'No Teacher Assigned' }}
-                            </td>
-
-                            <td class="border px-4 py-2 whitespace-nowrap">
-
-                                @if ($log->after_consultation === 'resume')
-                                    <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                                        Resume Class
-                                    </span>
-
-                                @elseif ($log->after_consultation === 'go_home')
-                                    <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
-                                        Go Home
-                                    </span>
-
-                                @else
-                                    —
-                                @endif
-
-                            </td>
-
-                            <td class="border px-4 py-2 whitespace-nowrap text-center">
-
-                                <div class="flex justify-center gap-2">
-
-                                    <!-- View -->
-                                    <a href="{{ route('guidance.consultations.show', [
-                                            'consultation' => $log->id,
-                                            'return_url' => url()->full()
-                                        ]) }}"
-                                       class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
-                                        View
-                                    </a>
-
-                                    <!-- Edit -->
-                                    <a href="{{ route('guidance.consultations.edit', [
-                                            'consultation' => $log->id,
-                                            'return_url' => url()->full()
-                                        ]) }}"
-                                       class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
-                                        Edit
-                                    </a>
-
-                                    <!-- Archive -->
-                                    <button
-                                        type="button"
-                                        @click="
-                                            archiveId = {{ $log->id }};
-                                            returnPage = 'client';
-                                            showArchiveModal = true;
-                                        "
-                                        class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
-                                        Archive
-                                    </button>
-
-                                </div>
-
-                            </td>
-
-                        </tr>
-
-                        @endforeach
-
-                    </tbody>
-
-                </table>
-
+                                        <!-- Archive -->
+                                        <button
+                                            type="button"
+                                            @click="
+                                                archiveId = {{ $log->id }};
+                                                returnPage = 'client';
+                                                showArchiveModal = true;
+                                            "
+                                            class="inline-flex items-center justify-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                            Archive
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
 
                 <!-- Archive Modal -->
                 <div
                     x-show="showArchiveModal"
                     x-transition.opacity
                     x-cloak
-                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
                 >
-
                     <div
                         @click.away="showArchiveModal = false"
-                        class="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-full max-w-md p-6"
+                        class="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-full max-w-md p-6 border border-neutral-200 dark:border-neutral-700"
                     >
-
                         <h2 class="text-lg font-semibold text-neutral-900 dark:text-white mb-3">
                             Archive Consultation
                         </h2>
@@ -248,18 +218,17 @@
                             Are you sure you want to archive this consultation?
                         </p>
 
-                        <div class="flex justify-end gap-3">
-
+                        <div class="flex flex-col-reverse sm:flex-row justify-end gap-3">
                             <button
                                 type="button"
                                 @click="showArchiveModal = false"
-                                class="px-4 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition">
+                                class="px-4 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition w-full sm:w-auto">
                                 Cancel
                             </button>
 
                             <form method="POST"
-                                  :action="'/guidance/consultations/' + archiveId + '/archive'">
-
+                                  :action="'/guidance/consultations/' + archiveId + '/archive'"
+                                  class="w-full sm:w-auto">
                                 @csrf
                                 @method('DELETE')
 
@@ -267,20 +236,14 @@
 
                                 <button
                                     type="submit"
-                                    class="px-4 py-2 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white transition">
+                                    class="px-4 py-2 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white transition w-full sm:w-auto">
                                     Yes, Archive
                                 </button>
-
                             </form>
-
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
 
             <!-- Pagination -->
             <div class="mt-4">
@@ -288,9 +251,7 @@
             </div>
 
             @endif
-
         </div>
-
     </div>
 
 </x-layouts.app>
