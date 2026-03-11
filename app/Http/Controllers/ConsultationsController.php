@@ -37,6 +37,7 @@ class ConsultationsController extends Controller
         $dateTo = $request->input('date_to');
 
         $consultations = Consultation::with('client')
+            ->whereNotNull('time_out')
             ->when($q, function ($query) use ($q) {
                 $query->whereHas('client', function ($q2) use ($q) {
                     $q2->where('first_name', 'like', "%{$q}%")
