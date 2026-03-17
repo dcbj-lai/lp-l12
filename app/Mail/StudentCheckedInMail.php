@@ -26,7 +26,7 @@ class StudentCheckedInMail extends Mailable
 
     public function build()
     {
-        return $this->subject("Student Currently at Guidance Office – {$this->studentName}")
+        return $this->subject("H&W-Guidance: Student {$this->studentName} Check-In")
             ->text('emails.guidance.student-checked-in');
     }
 }

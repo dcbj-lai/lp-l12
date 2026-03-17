@@ -37,6 +37,7 @@ class ConsultationsController extends Controller
         $dateTo = $request->input('date_to');
 
         $consultations = Consultation::with('client')
+            ->whereNotNull('time_out')
             ->when($q, function ($query) use ($q) {
                 $query->whereHas('client', function ($q2) use ($q) {
                     $q2->where('first_name', 'like', "%{$q}%")
@@ -153,6 +154,7 @@ class ConsultationsController extends Controller
 
         $studentName = "{$client->first_name} {$client->last_name}";
         $timeOutDisplay = $consultation->time_out->format('M d, Y h:i A');
+        $ccRecipients = [env('REQUESTS_ACADCORE_EMAIL'), env('REQUESTS_GC_EMAIL')];
 
 
         $mail = null;
@@ -181,10 +183,10 @@ class ConsultationsController extends Controller
 
         if (!empty($consultation->teacher_email)) {
             Mail::to($consultation->teacher_email)
-                ->cc(env('REQUESTS_ACADCORE_EMAIL'))
+                ->cc($ccRecipients)
                 ->queue($mail);
         } else {
-            Mail::to(env('REQUESTS_ACADCORE_EMAIL'))
+            Mail::to($ccRecipients)
                 ->queue($mail);
         }
     }

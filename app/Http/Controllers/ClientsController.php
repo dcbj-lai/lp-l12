@@ -30,6 +30,7 @@ class ClientsController extends Controller
     public function show(Client $client)
     {
         $consultations = $client->consultations()
+            ->whereNotNull('time_out')
             ->orderByDesc('created_at')   // newest first by check-in time
             ->paginate(5);
 

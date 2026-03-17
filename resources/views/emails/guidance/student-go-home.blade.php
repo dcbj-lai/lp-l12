@@ -1,22 +1,20 @@
-Dear {{ $teacherName ?: 'Acad Core' }},
+Dear {{ $teacherName ?: 'Academics Team' }},
 
 Good day.
 
-This is to inform you that {{ $studentName }} has completed their session at the Guidance Office and has been released from campus.
+Please be informed that {{ $studentName }} has completed their session at the Guidance Office and has been advised to go home and rest.
 
 Time Out: {{ $timeOutDisplay }}
 
-Mode of Release: {{ $releaseMode }}
+Status: {{ $releaseMode }}
 
 @if($releaseDetails)
 Details: {{ $releaseDetails }}
 @endif
 
-The matter has been handled in accordance with professional and confidentiality standards.
+Thank you for your attention to this matter.
 
-Should you need any academic coordination, please contact the Guidance Office.
-
-Thank you for your understanding.
+For any concerns or clarifications, please get in touch with the Guidance Office.
 
 Respectfully,
 
