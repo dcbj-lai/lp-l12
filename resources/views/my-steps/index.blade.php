@@ -4,7 +4,7 @@
 
         {{-- Page Title --}}
         <h1 class="text-lg font-bold text-center text-gray-700 dark:text-gray-300">
-            <flux:icon name="target" class="w-7 h-7 inline-block stroke-amber-600 mr-1" />
+            <flux:icon name="target" class="w-7 h-7 inline stroke-amber-600 mr-1" />
             My Daily Steps Log
         </h1>
 
@@ -34,8 +34,11 @@
             <flux:input type="number" name="steps" value="{{ old('steps') ?? '' }}" placeholder="Enter steps"
                 min="1" required class="w-full" />
 
-            <flux:button type="submit" variant="primary" class="w-full">
+            <flux:button type="submit" variant="primary" class="w-full md:w-auto">
+
+                <flux:icon name="plus" class="w-4 h-4 mr-1 inline" />
                 Log Steps
+
             </flux:button>
 
         </form>
@@ -43,19 +46,19 @@
         {{-- Steps Logs Table --}}
         <div
             class="overflow-x-auto shadow rounded-lg
-@if (isset($stepsLogs) && $stepsLogs->count() > 5) max-h-[320px] overflow-y-auto @endif">
+        @if (isset($stepsLogs) && $stepsLogs->count() > 5) max-h-[320px] overflow-y-auto @endif">
 
             <table class="w-full border-collapse border border-gray-300 dark:border-gray-700 text-sm">
 
                 <thead class="bg-gray-600 dark:bg-gray-700 text-white sticky top-0 z-10">
                     <tr>
                         <th class="p-3 text-left">
-                            <flux:icon name="calendar-days" class="w-4 h-4 inline-block mr-1" />
+                            <flux:icon name="calendar-days" class="w-4 h-4 inline mr-1" />
                             Date
                         </th>
 
                         <th class="p-3 text-left">
-                            <flux:icon name="footprints" class="w-4 h-4 inline-block mr-1" />
+                            <flux:icon name="footprints" class="w-4 h-4 inline mr-1" />
                             Steps
                         </th>
 
@@ -82,23 +85,32 @@
                             </td>
 
                             {{-- Actions --}}
-                            <td class="p-3 space-y-2">
+                            <td class="p-3">
 
-                                <flux:button href="{{ route('my-steps.edit', $log) }}" variant="outline"
-                                    class="w-full border-gray-500 text-gray-500 hover:bg-gray-500 hover:text-white">
-                                    <flux:icon name="pencil" class="w-4 h-4 mr-1" />
-                                </flux:button>
+                                <div class="flex flex-col gap-2 md:flex-row">
 
-                                <form action="{{ route('my-steps.destroy', $log) }}" method="POST">
-                                    @csrf
-                                    @method('DELETE')
+                                    <flux:button href="{{ route('my-steps.edit', $log) }}" variant="outline"
+                                        class="w-full md:w-auto text-sm">
 
-                                    <flux:button type="submit" variant="outline"
-                                        class="w-full border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
-                                        <flux:icon name="trash" class="w-4 h-4 mr-1" />
+                                        <flux:icon name="pencil" class="w-4 h-4 mr-1 inline" />
+                                        Edit
+
                                     </flux:button>
 
-                                </form>
+                                    <form action="{{ route('my-steps.destroy', $log) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <flux:button type="submit" variant="outline" class="w-full md:w-auto text-sm">
+
+                                            <flux:icon name="trash" class="w-4 h-4 mr-1 inline" />
+                                            Delete
+
+                                        </flux:button>
+
+                                    </form>
+
+                                </div>
 
                             </td>
 
@@ -133,13 +145,16 @@
             – Philippians 3:14 ✨
         </div>
 
-        {{-- Back Button --}}
-        <div class="pt-4">
-            <flux:button href="{{ route('steps.index') }}" variant="outline"
-                class="w-full border-gray-500 text-gray-500 hover:bg-gray-500 hover:text-white">
+        {{-- Bottom Actions --}}
+        <div class="flex flex-col gap-3 pt-4 md:flex-row">
+
+            <flux:button href="{{ route('steps.index') }}" variant="outline" class="w-full md:w-auto">
+
                 <flux:icon name="circle-star" class="w-5 h-5 mr-1" />
                 See Leaderboard
+
             </flux:button>
+
         </div>
 
     </div>
