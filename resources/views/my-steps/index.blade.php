@@ -87,7 +87,6 @@
                                 <flux:button href="{{ route('my-steps.edit', $log) }}" variant="outline"
                                     class="w-full border-gray-500 text-gray-500 hover:bg-gray-500 hover:text-white">
                                     <flux:icon name="pencil" class="w-4 h-4 mr-1" />
-                                    Edit
                                 </flux:button>
 
                                 <form action="{{ route('my-steps.destroy', $log) }}" method="POST">
@@ -97,7 +96,6 @@
                                     <flux:button type="submit" variant="outline"
                                         class="w-full border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
                                         <flux:icon name="trash" class="w-4 h-4 mr-1" />
-                                        Delete
                                     </flux:button>
 
                                 </form>
