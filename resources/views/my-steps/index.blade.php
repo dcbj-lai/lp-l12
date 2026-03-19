@@ -41,11 +41,13 @@
         </form>
 
         {{-- Steps Logs Table --}}
-        <div class="overflow-x-auto shadow rounded-lg">
+        <div
+            class="overflow-x-auto shadow rounded-lg
+@if (isset($stepsLogs) && $stepsLogs->count() > 5) max-h-[320px] overflow-y-auto @endif">
 
             <table class="w-full border-collapse border border-gray-300 dark:border-gray-700 text-sm">
 
-                <thead class="bg-gray-600 dark:bg-gray-700 text-white">
+                <thead class="bg-gray-600 dark:bg-gray-700 text-white sticky top-0 z-10">
                     <tr>
                         <th class="p-3 text-left">
                             <flux:icon name="calendar-days" class="w-4 h-4 inline-block mr-1" />
@@ -135,10 +137,10 @@
 
         {{-- Back Button --}}
         <div class="pt-4">
-            <flux:button href="{{ route('dashboard') }}" variant="outline"
+            <flux:button href="{{ route('steps.index') }}" variant="outline"
                 class="w-full border-gray-500 text-gray-500 hover:bg-gray-500 hover:text-white">
-                <flux:icon name="layout-dashboard" class="w-5 h-5 mr-1" />
-                Back to Dashboard
+                <flux:icon name="circle-star" class="w-5 h-5 mr-1" />
+                See Leaderboard
             </flux:button>
         </div>
 
