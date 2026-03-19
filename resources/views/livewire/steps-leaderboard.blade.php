@@ -202,7 +202,13 @@
             @endif
 
         </div>
-
+        {{-- Back to My Steps --}}
+        <div class="mt-6">
+            <flux:button href="{{ route('my-steps.index') }}" variant="outline" class="w-full md:w-auto">
+                <flux:icon name="footprints" class="w-4 h-4 mr-1" />
+                Back to My Steps
+            </flux:button>
+        </div>
     @endif
 
 </div>
