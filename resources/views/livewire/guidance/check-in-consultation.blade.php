@@ -17,11 +17,11 @@
                             : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600' }}">
             
             <span wire:loading.remove wire:target="checkIn">
-                Check-in / Send Notification
+                Check-in
             </span>
 
             <span wire:loading wire:target="checkIn">
-                Sending...
+                Checking in...
             </span>
         </button>
     </div>
@@ -66,7 +66,7 @@
                 </p>
             @else
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    You may leave this blank. If no teacher is selected, notification will be sent to Acad Core CC only.
+                    You may leave this blank. The selected teacher will be saved with the consultation record.
                 </p>
             @endif
         </div>
