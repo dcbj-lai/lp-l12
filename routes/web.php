@@ -405,7 +405,7 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
 });
 
 //Import Csv
-Route::middleware(['auth', 'can:guidance-admin'])->group(function () {
+Route::middleware(['auth', 'can:guidance'])->group(function () {
     Route::view('/guidance/import-csv', 'guidance.import-csv.index')->name('guidance.import-csv.index');
 
     Route::post('/guidance/import-csv', [ImportCsvController::class, 'store'])->name('guidance.import-csv.store');
