@@ -10,11 +10,21 @@ class StepController extends Controller
 {
     public function index()
     {
-        $stepsLogs = Step::where('user_id', Auth::id())
+        $userId = Auth::id();
+
+        $stepsLogs = Step::where('user_id', $userId)
             ->orderBy('date', 'desc')
             ->paginate(10);
 
-        return view('my-steps.index', compact('stepsLogs'));
+        $monthlyTotal = Step::where('user_id', $userId)
+            ->whereMonth('date', now()->month)
+            ->whereYear('date', now()->year)
+            ->sum('steps');
+
+        return view('my-steps.index', [
+            'stepsLogs' => $stepsLogs,
+            'monthlyTotal' => $monthlyTotal,
+        ]);
     }
 
     public function store(Request $request)
