@@ -11,37 +11,29 @@ return new class extends Migration
         Schema::create('consultations', function (Blueprint $table) {
             $table->id();
 
-            // Student reference
-            $table->foreignId('client_id')
-                  ->constrained('clients')
-                  ->cascadeOnDelete();
+            $table->foreignId('client_id')->constrained()->onDelete('cascade');
 
-            // Time tracking
             $table->dateTime('time_in')->nullable();
             $table->dateTime('time_out')->nullable();
 
-            // Teacher info
+            $table->string('check_in_teacher')->nullable();
+            $table->string('check_in_teacher_email')->nullable();
             $table->string('current_teacher')->nullable();
             $table->string('teacher_email')->nullable();
-            $table->string('after_consultation')->nullable(); 
 
-            // Going home details
+            $table->string('after_consultation')->nullable();
             $table->string('going_home_method')->nullable();
             $table->string('fetcher_name')->nullable();
             $table->string('self_approved_by')->nullable();
 
-            // Consultation details
-            $table->string('type_of_session')->nullable();
-            $table->string('risk_assessment')->nullable();
+            $table->text('type_of_session')->nullable();
+            $table->text('risk_assessment')->nullable();
             $table->text('issue_concern')->nullable();
             $table->text('intervention')->nullable();
             $table->text('remarks')->nullable();
 
-            $table->timestamps();
             $table->softDeletes();
-
-            $table->index(['client_id', 'time_in']);
-            $table->index(['time_in']);
+            $table->timestamps();
         });
     }
 
