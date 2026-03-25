@@ -17,11 +17,11 @@
                             : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600' }}">
             
             <span wire:loading.remove wire:target="checkIn">
-                Check-in / Send Notification
+                Check-in
             </span>
 
             <span wire:loading wire:target="checkIn">
-                Sending...
+                Checking in...
             </span>
         </button>
     </div>
@@ -66,7 +66,7 @@
                 </p>
             @else
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    You may leave this blank. If no teacher is selected, notification will be sent to Acad Core CC only.
+                    You may leave this blank. The selected teacher will be saved with the consultation record.
                 </p>
             @endif
         </div>
@@ -82,7 +82,7 @@
                     {{ $timeInDisplay ?? '—' }}
                 </div>
             </div>
-
+<!-- 
             <div class="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
                 <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Time Out
@@ -90,7 +90,7 @@
                 <div class="mt-1 text-sm text-gray-900 dark:text-gray-100">
                     —
                 </div>
-            </div>
+            </div> -->
 
         </div>
 

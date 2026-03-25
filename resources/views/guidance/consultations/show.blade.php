@@ -36,13 +36,28 @@
                           rounded px-4 py-2">
                     Back
                 </a>
+
+                <a href="{{ route('guidance.consultations.edit', [
+                        'consultation' => $consultation->id,
+                        'return_url' => request('return_url')
+                    ]) }}"
+                   class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm transition">
+                    Edit
+                </a>
             </div>
         </div>
 
         {{-- Summary cards --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
-                <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">CURRENT TEACHER</div>
+                <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">TEACHER IN CHECK-IN</div>
+                <div class="mt-1 font-semibold text-gray-900 dark:text-white">
+                    {{ $consultation->check_in_teacher ?? '—' }}
+                </div>
+            </div>
+
+            <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">TEACHER IN CHECK-OUT</div>
                 <div class="mt-1 font-semibold text-gray-900 dark:text-white">
                     {{ $consultation->current_teacher ?? '—' }}
                 </div>
@@ -142,18 +157,12 @@
                 </div>
 
                 <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
-                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">SELF APPROVED BY</div>
+                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">APPROVED BY</div>
                     <div class="mt-1 text-gray-900 dark:text-white">
                         {{ $consultation->self_approved_by ?? '—' }}
                     </div>
                 </div>
             </div>
-        </div>
-
-        {{-- Audit --}}
-        <div class="mt-6 text-xs text-gray-500 dark:text-gray-400">
-            Created: {{ $consultation->created_at ? $consultation->created_at->format('Y-m-d h:i A') : '—' }}
-            · Updated: {{ $consultation->updated_at ? $consultation->updated_at->format('Y-m-d h:i A') : '—' }}
         </div>
     </div>
 </x-layouts.app>

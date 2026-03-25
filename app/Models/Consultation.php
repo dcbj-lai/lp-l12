@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Consultation extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'client_id',
 
@@ -15,6 +17,8 @@ class Consultation extends Model
         'time_out',
 
         // teacher + outcome
+        'check_in_teacher',
+        'check_in_teacher_email',
         'current_teacher',
         'teacher_email',
         'after_consultation',
@@ -35,12 +39,10 @@ class Consultation extends Model
         'time_out' => 'datetime',
     ];
 
+    protected $dates = ['deleted_at'];
+
     public function client()
     {
         return $this->belongsTo(Client::class);
     }
-
-        use SoftDeletes;
-        protected $dates = ['deleted_at'];
-
 }
