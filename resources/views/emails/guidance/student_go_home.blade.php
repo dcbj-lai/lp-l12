@@ -1,37 +1,35 @@
-@if($teacherName)
-Dear {{ $teacherName }},
-@else
-Dear Academics Team,
-@endif
+<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #222;">
+    <p>
+        @if($teacherName)
+            Dear {{ $teacherName }},
+        @else
+            Dear Academics Team,
+        @endif
+    </p>
 
-Please be informed that {{ $studentName }} had a consultation at the Guidance Office.
+    <p>
+        Please be informed that <strong>{{ $studentName }}</strong> had a consultation at the Guidance Office.
+    </p>
 
-Time In: {{ $timeInDisplay ?? 'N/A' }}
-Time Out: {{ $timeOutDisplay ?? 'N/A' }}
+    <p>
+        <strong>Time In:</strong> {{ $timeInDisplay ?? 'N/A' }}<br>
+        <strong>Time Out:</strong> {{ $timeOutDisplay ?? 'N/A' }}
+    </p>
 
-The student will be going home after the consultation.
+    <p>
+        The student will be going home after the consultation.
+    </p>
 
-Going Home Method:
-@if($goingHomeMethod === 'fetcher')
-With fetcher
-@elseif($goingHomeMethod === 'self')
-By oneself
-@else
-N/A
-@endif
+    <p>
+        This message is sent for information and coordination purposes.
+    </p>
 
-@if($goingHomeMethod === 'fetcher')
-Fetcher Name: {{ $fetcherName ?? 'N/A' }}
-@endif
+    <p>
+        Thank you.
+    </p>
 
-@if($goingHomeMethod === 'self')
-Approved By: {{ $selfApprovedBy ?? 'N/A' }}
-@endif
-
-This message is sent for information and coordination purposes.
-
-Thank you.
-
-Respectfully,
-
-Guidance Counselor
+    <p>
+        Respectfully,<br>
+        Guidance Counselor
+    </p>
+</div>

@@ -169,14 +169,6 @@ class ConsultationsController extends Controller
                 }
 
                 $message->send($mail);
-            } elseif (!empty($ccRecipients)) {
-                $message = Mail::to($ccRecipients);
-
-                if (!empty($clientEmail)) {
-                    $message->bcc($clientEmail);
-                }
-
-                $message->send($mail);
             }
         }
 

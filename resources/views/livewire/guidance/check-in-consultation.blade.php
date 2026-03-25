@@ -82,7 +82,7 @@
                     {{ $timeInDisplay ?? '—' }}
                 </div>
             </div>
-
+<!-- 
             <div class="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
                 <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Time Out
@@ -90,7 +90,7 @@
                 <div class="mt-1 text-sm text-gray-900 dark:text-gray-100">
                     —
                 </div>
-            </div>
+            </div> -->
 
         </div>
 

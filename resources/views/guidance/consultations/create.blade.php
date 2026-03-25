@@ -246,9 +246,7 @@
                                     </label>
                                 </div>
 
-                                <div x-show="decision === 'resume'" class="mt-3 text-sm text-gray-700 dark:text-gray-300">
-                                    If a next class teacher is selected, an email may be sent after submission.
-                                </div>
+                                
 
                                 <div x-show="decision === 'go_home'" class="mt-4 space-y-3">
                                     <div>
