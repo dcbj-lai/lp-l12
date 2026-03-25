@@ -80,88 +80,93 @@
             class="overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700"
         >
             <div class="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-700">
-                <table class="min-w-full border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
-                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left whitespace-nowrap">Student</th>
-                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left whitespace-nowrap">Current Teacher</th>
-                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left whitespace-nowrap">Time In</th>
-                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left whitespace-nowrap">Time Out</th>
-                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left whitespace-nowrap">After Consultation</th>
-                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left whitespace-nowrap">Action</th>
+               <table class="w-full table-fixed border-collapse text-sm">
+                <thead>
+                    <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
+                        <th class="w-[12%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Student</th>
+                        <th class="w-[16%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Teacher in Check-In</th>
+                        <th class="w-[16%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Teacher in Check-Out</th>
+                        <th class="w-[14%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Time In</th>
+                        <th class="w-[14%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Time Out</th>
+                        <th class="w-[10%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">After Consultation</th>
+                        <th class="w-[18%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody class="text-neutral-800 dark:text-neutral-300 bg-white dark:bg-neutral-900">
+                    @forelse($consultations as $consultation)
+                        <tr class="border-b border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition align-top">
+                            <td class="px-3 py-3 whitespace-normal break-words">
+                                {{ optional($consultation->client)->first_name }}
+                                {{ optional($consultation->client)->last_name }}
+                            </td>
+
+                            <td class="px-3 py-3 whitespace-normal break-words">
+                                {{ $consultation->check_in_teacher ?: 'No Teacher Assigned' }}
+                            </td>
+
+                            <td class="px-3 py-3 whitespace-normal break-words">
+                                {{ $consultation->current_teacher ?: 'No Teacher Assigned' }}
+                            </td>
+
+                            <td class="px-3 py-3 text-xs whitespace-nowrap">
+                                {{ optional($consultation->time_in)?->format('M d, Y h:i A') ?? '—' }}
+                            </td>
+
+                            <td class="px-3 py-3 text-xs whitespace-nowrap">
+                                {{ $consultation->time_out
+                                    ? \Carbon\Carbon::parse($consultation->time_out)->format('M d, Y h:i A')
+                                    : '—'
+                                }}
+                            </td>
+
+                            <td class="px-3 py-3 whitespace-normal break-words">
+                                {{ $consultation->after_consultation
+                                    ? \Illuminate\Support\Str::of($consultation->after_consultation)->replace('_', ' ')->title()
+                                    : '—'
+                                }}
+                            </td>
+
+                            <td class="px-3 py-3">
+                                <div class="flex flex-wrap gap-1.5">
+                                    <a href="{{ route('guidance.consultations.show', [
+                                            'consultation' => $consultation->id,
+                                            'return' => 'consultations'
+                                        ]) }}"
+                                    class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-sm transition">
+                                        View
+                                    </a>
+
+                                    <a href="{{ route('guidance.consultations.edit', [
+                                            'consultation' => $consultation->id,
+                                            'return_url'   => url()->full()
+                                        ]) }}"
+                                    class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-sm transition">
+                                        Edit
+                                    </a>
+
+                                    <button
+                                        type="button"
+                                        @click="
+                                            archiveId = {{ $consultation->id }};
+                                            returnPage = 'consultations';
+                                            showArchiveModal = true;
+                                        "
+                                        class="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-sm transition">
+                                        Archive
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-
-                    <tbody class="text-neutral-800 dark:text-neutral-300 bg-white dark:bg-neutral-900">
-                        @forelse($consultations as $consultation)
-                            <tr class="border-b border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition">
-                                <td class="px-3 py-3 whitespace-normal break-words min-w-[180px]">
-                                    {{ optional($consultation->client)->first_name }}
-                                    {{ optional($consultation->client)->last_name }}
-                                </td>
-
-                                <td class="px-3 py-3 whitespace-normal break-words min-w-[180px]">
-                                    {{ $consultation->current_teacher ?: 'No Teacher Assigned' }}
-                                </td>
-
-                                <td class="px-3 py-3 text-xs whitespace-nowrap min-w-[150px]">
-                                    {{ optional($consultation->time_in)?->format('M d, Y h:i A') ?? '—' }}
-                                </td>
-
-                                <td class="px-3 py-3 text-xs whitespace-nowrap min-w-[150px]">
-                                    {{ $consultation->time_out
-                                        ? \Carbon\Carbon::parse($consultation->time_out)->format('M d, Y h:i A')
-                                        : '—'
-                                    }}
-                                </td>
-
-                                <td class="px-3 py-3 whitespace-normal break-words min-w-[150px]">
-                                    {{ $consultation->after_consultation
-                                        ? \Illuminate\Support\Str::of($consultation->after_consultation)->replace('_', ' ')->title()
-                                        : '—'
-                                    }}
-                                </td>
-
-                                <td class="px-3 py-3 whitespace-nowrap min-w-[220px]">
-                                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                                        <a href="{{ route('guidance.consultations.show', [
-                                                'consultation' => $consultation->id,
-                                                'return' => 'consultations'
-                                            ]) }}"
-                                           class="inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-2 rounded-md shadow-sm transition">
-                                            View
-                                        </a>
-
-                                        <a href="{{ route('guidance.consultations.edit', [
-                                                'consultation' => $consultation->id,
-                                                'return_url'   => url()->full()
-                                            ]) }}"
-                                           class="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-3 py-2 rounded-md shadow-sm transition">
-                                            Edit
-                                        </a>
-
-                                        <button
-                                            type="button"
-                                            @click="
-                                                archiveId = {{ $consultation->id }};
-                                                returnPage = 'consultations';
-                                                showArchiveModal = true;
-                                            "
-                                            class="inline-flex items-center justify-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-2 rounded-md shadow-sm transition">
-                                            Archive
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-4 py-6 text-center text-neutral-500 dark:text-neutral-400">
-                                    No consultations found.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-4 py-6 text-center text-neutral-500 dark:text-neutral-400">
+                                No consultations found.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
             </div>
 
             <!-- Pagination -->

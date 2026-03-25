@@ -132,6 +132,7 @@ class ConsultationsController extends Controller
         $consultation = $consultation->fresh();
 
         $studentName = "{$client->first_name} {$client->last_name}";
+        $dateDisplay = $consultation->time_in?->format('M d, Y');
         $timeInDisplay = $consultation->time_in?->format('M d, Y h:i A');
         $timeOutDisplay = $consultation->time_out?->format('M d, Y h:i A');
         $clientEmail = $client->email ?: null;
@@ -153,6 +154,7 @@ class ConsultationsController extends Controller
                 $consultation->next_class_teacher
                     ?? $consultation->current_teacher
                     ?? null,
+                $dateDisplay,
                 $timeInDisplay,
                 $timeOutDisplay
             );
@@ -176,6 +178,7 @@ class ConsultationsController extends Controller
             $mail = new StudentGoHomeMail(
                 $studentName,
                 $consultation->current_teacher ?? null,
+                $dateDisplay,
                 $timeInDisplay,
                 $timeOutDisplay,
                 $consultation->going_home_method ?? null,

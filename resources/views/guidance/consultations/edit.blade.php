@@ -41,15 +41,33 @@
             </div>
 
             <!-- ======================================================
-            TOP CARDS (LOCKED)
+            TOP CARDS
             ====================================================== -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
 
-                <!-- Teacher -->
+                <!-- Teacher in Check-In -->
                 <div class="rounded-xl p-5 border bg-white border-neutral-200 shadow-sm
                             dark:bg-neutral-900 dark:border-neutral-700">
                     <p class="text-xs uppercase tracking-wider mb-2 text-neutral-500 dark:text-neutral-400">
-                        Current Teacher
+                        Teacher in Check-In
+                    </p>
+
+                    <input
+                        type="text"
+                        name="check_in_teacher"
+                        value="{{ old('check_in_teacher', $consultation->check_in_teacher ?: 'No Teacher Assigned') }}"
+                        :disabled="locked"
+                        class="w-full bg-transparent text-lg focus:outline-none
+                               text-neutral-900 placeholder-neutral-400
+                               dark:text-white dark:placeholder-neutral-500"
+                    >
+                </div>
+
+                <!-- Teacher in Check-Out -->
+                <div class="rounded-xl p-5 border bg-white border-neutral-200 shadow-sm
+                            dark:bg-neutral-900 dark:border-neutral-700">
+                    <p class="text-xs uppercase tracking-wider mb-2 text-neutral-500 dark:text-neutral-400">
+                        Teacher in Check-Out
                     </p>
 
                     <input
@@ -214,7 +232,7 @@
             </div>
 
             <!-- ======================================================
-            AFTER CONSULTATION (LOCKED)
+            AFTER CONSULTATION
             ====================================================== -->
             <div class="rounded-xl p-6 mb-8 border bg-white border-neutral-200 shadow-sm
                         dark:bg-neutral-900 dark:border-neutral-700">

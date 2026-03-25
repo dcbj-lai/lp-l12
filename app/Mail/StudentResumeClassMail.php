@@ -30,7 +30,7 @@ class StudentResumeClassMail extends Mailable implements ShouldQueue
 
     public function build()
     {
-        return $this->subject("H&W-Guidance: {$this->studentName} Returning to Class")
+        return $this->subject("Guidance and Wellness Session Attendance -  *CONFIDENTIALITY NOTICE")
             ->view('emails.guidance.student_resume_class');
     }
 }

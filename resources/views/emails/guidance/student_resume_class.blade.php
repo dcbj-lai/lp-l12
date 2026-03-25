@@ -8,7 +8,7 @@
     </p>
 
     <p>
-        Please be informed that <strong>{{ $studentName }}</strong> had a consultation at the Guidance Office.
+        This is to confirm that <strong>{{ $studentName }}</strong> attended a session with the Guidance and Wellness Office on {{ $dateDisplay ?? 'N/A' }}.
     </p>
 
     <p>
@@ -17,15 +17,15 @@
     </p>
 
     <p>
-        The student will be going home after the consultation.
+        The student has been advised to return to class after the session.
     </p>
 
     <p>
-        This message is sent for information and coordination purposes.
+        Please note that this message is intended for information and coordination purposes only.
     </p>
 
     <p>
-        Thank you.
+        Thank you for your understanding and support.
     </p>
 
     <p>
