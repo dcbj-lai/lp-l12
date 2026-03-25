@@ -132,9 +132,19 @@ class ConsultationsController extends Controller
         $consultation = $consultation->fresh();
 
         $studentName = "{$client->first_name} {$client->last_name}";
-        $dateDisplay = $consultation->time_in?->format('M d, Y');
-        $timeInDisplay = $consultation->time_in?->format('M d, Y h:i A');
-        $timeOutDisplay = $consultation->time_out?->format('M d, Y h:i A');
+
+        $dateDisplay = $consultation->time_in
+            ? $consultation->time_in->format('M d, Y')
+            : 'N/A';
+
+        $timeInDisplay = $consultation->time_in
+            ? $consultation->time_in->format('g:i A')
+            : 'N/A';
+
+        $timeOutDisplay = $consultation->time_out
+            ? $consultation->time_out->format('g:i A')
+            : 'N/A';
+
         $clientEmail = $client->email ?: null;
 
         $teacherRecipients = array_values(array_unique(array_filter([

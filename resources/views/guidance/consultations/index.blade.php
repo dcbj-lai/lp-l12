@@ -127,36 +127,36 @@
                                 }}
                             </td>
 
-                            <td class="px-3 py-3">
-                                <div class="flex flex-wrap gap-1.5">
-                                    <a href="{{ route('guidance.consultations.show', [
-                                            'consultation' => $consultation->id,
-                                            'return' => 'consultations'
-                                        ]) }}"
-                                    class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-sm transition">
-                                        View
-                                    </a>
+                           <td class="px-3 py-3 whitespace-nowrap">
+                            <div class="flex items-center gap-1.5">
+                                <a href="{{ route('guidance.consultations.show', [
+                                        'consultation' => $consultation->id,
+                                        'return' => 'consultations'
+                                    ]) }}"
+                                class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-sm transition">
+                                    View
+                                </a>
 
-                                    <a href="{{ route('guidance.consultations.edit', [
-                                            'consultation' => $consultation->id,
-                                            'return_url'   => url()->full()
-                                        ]) }}"
-                                    class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-sm transition">
-                                        Edit
-                                    </a>
+                                <a href="{{ route('guidance.consultations.edit', [
+                                        'consultation' => $consultation->id,
+                                        'return_url'   => url()->full()
+                                    ]) }}"
+                                class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-sm transition">
+                                    Edit
+                                </a>
 
-                                    <button
-                                        type="button"
-                                        @click="
-                                            archiveId = {{ $consultation->id }};
-                                            returnPage = 'consultations';
-                                            showArchiveModal = true;
-                                        "
-                                        class="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-sm transition">
-                                        Archive
-                                    </button>
-                                </div>
-                            </td>
+                                <button
+                                    type="button"
+                                    @click="
+                                        archiveId = {{ $consultation->id }};
+                                        returnPage = 'consultations';
+                                        showArchiveModal = true;
+                                    "
+                                    class="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-sm transition">
+                                    Archive
+                                </button>
+                            </div>
+                        </td>
                         </tr>
                     @empty
                         <tr>

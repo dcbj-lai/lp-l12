@@ -165,7 +165,7 @@
                                 @endif
                             </td>
 
-                            <td class="px-4 py-3 whitespace-nowrap text-center">
+                           <td class="px-4 py-3 whitespace-nowrap text-center">
                                 <div class="flex flex-col sm:flex-row justify-center gap-2">
                                     <a href="{{ route('guidance.consultations.show', [
                                             'consultation' => $log->id,
@@ -179,9 +179,20 @@
                                             'consultation' => $log->id,
                                             'return_url' => url()->full()
                                         ]) }}"
-                                    class="inline-flex items-center justify-center rounded-md bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-3 py-1.5 shadow-sm transition">
+                                    class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
                                         Edit
                                     </a>
+
+                                    <button
+                                        type="button"
+                                        @click="
+                                            archiveId = {{ $log->id }};
+                                            returnPage = 'client';
+                                            showArchiveModal = true;
+                                        "
+                                        class="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition">
+                                        Archive
+                                    </button>
                                 </div>
                             </td>
                         </tr>

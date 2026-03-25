@@ -13,6 +13,7 @@ class StudentGoHomeMail extends Mailable implements ShouldQueue
 
     public string $studentName;
     public ?string $teacherName;
+    public ?string $dateDisplay;
     public ?string $timeInDisplay;
     public ?string $timeOutDisplay;
     public ?string $goingHomeMethod;
@@ -22,6 +23,7 @@ class StudentGoHomeMail extends Mailable implements ShouldQueue
     public function __construct(
         string $studentName,
         ?string $teacherName,
+        ?string $dateDisplay,
         ?string $timeInDisplay,
         ?string $timeOutDisplay,
         ?string $goingHomeMethod,
@@ -30,6 +32,7 @@ class StudentGoHomeMail extends Mailable implements ShouldQueue
     ) {
         $this->studentName = $studentName;
         $this->teacherName = $teacherName;
+        $this->dateDisplay = $dateDisplay;
         $this->timeInDisplay = $timeInDisplay;
         $this->timeOutDisplay = $timeOutDisplay;
         $this->goingHomeMethod = $goingHomeMethod;
@@ -40,6 +43,6 @@ class StudentGoHomeMail extends Mailable implements ShouldQueue
     public function build()
     {
         return $this->subject("Guidance and Wellness Session Attendance -  *CONFIDENTIALITY NOTICE")
-            ->text('emails.guidance.student_go_home');
+            ->view('emails.guidance.student_go_home');
     }
 }
