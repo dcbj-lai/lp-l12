@@ -39,7 +39,15 @@ class GoogleController extends Controller
             $emailParam = $googleUser->email;
             $orgUnit = $this->getOrgUnitPath($emailParam);
 
-            // dd($emailParam, $orgUnit);
+            if (str_contains($orgUnit, '/Students')) {
+                \Log::warning('Blocked student login', [
+                    'email' => $emailParam,
+                    'org_unit' => $orgUnit
+                ]);
+                return redirect()
+                    ->route('access.denied')
+                    ->with('error', 'Access denied. Students are not allowed.');
+            }
 
 
             if ($user) {

@@ -368,7 +368,7 @@ Route::get('/requests/documents/{path}', [PrivateRequestDocumentController::clas
 // Clients and Consultations
 
 Route::middleware(['auth', 'can:guidance'])->group(function () {
-        Route::get('/guidance/clients', [ClientsController::class, 'index'])
+    Route::get('/guidance/clients', [ClientsController::class, 'index'])
         ->name('guidance.clients.index');
 
     Route::get('/guidance/clients/{client}', [ClientsController::class, 'show'])
@@ -377,30 +377,34 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
     Route::view('/guidance/consultations', 'guidance.consultations.index')->name('guidance.consultations.index');
 
     Route::get('/guidance/clients/{client}/consultations/create', [ConsultationsController::class, 'create'])
-    ->name('guidance.consultations.create');
+        ->name('guidance.consultations.create');
 
     Route::post('/guidance/clients/{client}/consultations', [ConsultationsController::class, 'store'])
-    ->name('guidance.consultations.store');
+        ->name('guidance.consultations.store');
 
     Route::get('/guidance/consultations/{consultation}', [ConsultationsController::class, 'show'])
-    ->name('guidance.consultations.show');
+        ->name('guidance.consultations.show');
 
     Route::get('/guidance/consultations', [ConsultationsController::class, 'index'])
-    ->name('guidance.consultations.index');
+        ->name('guidance.consultations.index');
 
     Route::post('/guidance/clients/{client}/consultations/check-in', [ConsultationsController::class, 'checkIn'])
-    ->name('guidance.consultations.checkin');
+        ->name('guidance.consultations.checkin');
 
     Route::delete(
-    '/guidance/consultations/{consultation}/archive', [ConsultationsController::class, 'archive'])
-    ->name('guidance.consultations.archive');
+        '/guidance/consultations/{consultation}/archive',
+        [ConsultationsController::class, 'archive']
+    )
+        ->name('guidance.consultations.archive');
 
     Route::get(
-    '/guidance/consultations/{consultation}/edit', [ConsultationsController::class, 'edit'])
-    ->name('guidance.consultations.edit');
+        '/guidance/consultations/{consultation}/edit',
+        [ConsultationsController::class, 'edit']
+    )
+        ->name('guidance.consultations.edit');
 
     Route::put('/guidance/consultations/{consultation}', [ConsultationsController::class, 'update'])
-    ->name('guidance.consultations.update');
+        ->name('guidance.consultations.update');
 
 });
 
@@ -410,3 +414,7 @@ Route::middleware(['auth', 'can:guidance-admin'])->group(function () {
 
     Route::post('/guidance/import-csv', [ImportCsvController::class, 'store'])->name('guidance.import-csv.store');
 });
+//access denied students
+Route::get('/access-denied', function () {
+    return view('auth.access-denied');
+})->name('access.denied');
