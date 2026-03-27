@@ -1,13 +1,10 @@
 <div class="space-y-4">
 
-    <!-- Header -->
-    <div>
-        <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">
-            Update Employee Dates
-        </h3>
-        <p class="text-xs text-gray-500">
-            Upload a CSV file (email, birthdate, hire_date — mm/dd/yyyy)
-        </p>
+    <!-- Instructions -->
+    <div class="text-xs text-gray-500 space-y-1">
+        <p>1. Select a CSV file with columns: email, birthdate, hire_date (mm/dd/yyyy).</p>
+        <p>2. Wait for the file to finish uploading.</p>
+        <p>3. Click "Apply Updates from CSV" to process the data.</p>
     </div>
 
     <!-- File Input -->
@@ -20,7 +17,7 @@
             Uploading file...
         </div>
 
-        <!-- ✅ Laravel validation errors ONLY -->
+        <!-- Validation errors -->
         @if ($errors instanceof \Illuminate\Support\MessageBag && $errors->has('file'))
             <p class="text-red-500 text-xs mt-1">
                 {{ $errors->first('file') }}
@@ -35,7 +32,7 @@
         <flux:button type="button" wire:click="processUpload" wire:loading.attr="disabled" variant="primary"
             size="sm">
             <span wire:loading.remove wire:target="processUpload">
-                Upload CSV
+                Apply Updates from CSV
             </span>
             <span wire:loading wire:target="processUpload">
                 Processing...
@@ -47,14 +44,12 @@
     @if (($successCount ?? 0) > 0 || !empty($csvErrors))
         <div class="pt-4 border-t space-y-2 max-h-60 overflow-y-auto">
 
-            <!-- Success -->
             @if (($successCount ?? 0) > 0)
                 <p class="text-sm font-semibold text-green-600">
                     Updated: {{ $successCount }}
                 </p>
             @endif
 
-            <!-- ✅ CSV Errors (your custom errors) -->
             @if (!empty($csvErrors))
                 <div class="text-xs text-red-500 space-y-1">
                     @foreach ($csvErrors as $error)
