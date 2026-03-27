@@ -3,11 +3,10 @@
         <div class="grid auto-rows-min md:grid-cols-4 gap-4">
             <!-- Bible Verse Card -->
             <livewire:feature-verse />
+            <!-- Celebration Card-->
+            <livewire:celebrations-card />
             <!-- Steps! -->
             <livewire:steps-leaderboard mode="card" />
-            <!--  -->
-            <livewire:celebrations-card />
-
         </div>
     </div>
 </x-layouts.app>
