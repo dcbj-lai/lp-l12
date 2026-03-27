@@ -8,48 +8,74 @@
         </flux:button>
 
         <!-- Edit Form -->
-        <form method="POST" action="{{ route('users.update', $user) }}" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form method="POST" action="{{ route('users.update', $user) }}"
+            class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             @csrf
             @method('PUT')
-        
+
             <!-- Left Column: Basic User Info -->
             <div class="space-y-4 pr-4 border-r border-zinc-300 dark:border-zinc-700">
                 <!-- Name -->
                 <div>
-                    <label for="name" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Name</label>
+                    <label for="name"
+                        class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Name</label>
                     <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" required
                         class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
                 </div>
-        
+
                 <!-- Email -->
                 <div>
-                    <label for="email" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Email</label>
-                    <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" required
+                    <label for="email"
+                        class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Email</label>
+                    <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}"
+                        required class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                </div>
+                <!-- Birthdate -->
+                <div>
+                    <label for="birthdate" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Birthdate
+                    </label>
+                    <input type="date" id="birthdate" name="birthdate"
+                        value="{{ old('birthdate', optional($user->birthdate)->format('Y-m-d')) }}"
                         class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
                 </div>
-        
+
+                <!-- Hire Date -->
+                <div>
+                    <label for="hire_date" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Hire Date
+                    </label>
+                    <input type="date" id="hire_date" name="hire_date"
+                        value="{{ old('hire_date', optional($user->hire_date)->format('Y-m-d')) }}"
+                        class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                </div>
+
                 <!-- Supervisor Dropdown -->
                 <div>
-                    <label for="supervisor_id" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Supervisor</label>
+                    <label for="supervisor_id"
+                        class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Supervisor</label>
                     <select id="supervisor_id" name="supervisor_id"
                         class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full">
                         <option value="" {{ $user->supervisor_id ? '' : 'selected' }}>No Supervisor</option>
-                        @foreach($supervisors as $supervisor)
-                            <option value="{{ $supervisor->id }}" {{ $user->supervisor_id == $supervisor->id ? 'selected' : '' }}>
+                        @foreach ($supervisors as $supervisor)
+                            <option value="{{ $supervisor->id }}"
+                                {{ $user->supervisor_id == $supervisor->id ? 'selected' : '' }}>
                                 {{ $supervisor->name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
-        
+
                 <!-- Department -->
                 <div>
-                    <label for="department_id" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Department</label>
+                    <label for="department_id"
+                        class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Department</label>
                     <select name="department_id" id="department_id"
                         class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full">
                         <option value="">Select Department</option>
                         @foreach ($departments as $department)
-                            <option value="{{ $department->id }}" {{ $user->department_id == $department->id ? 'selected' : '' }}>
+                            <option value="{{ $department->id }}"
+                                {{ $user->department_id == $department->id ? 'selected' : '' }}>
                                 {{ $department->name }}
                             </option>
                         @endforeach
@@ -57,26 +83,32 @@
                 </div>
                 <!-- Check-in Mode -->
                 <div>
-                    <label for="check_in_mode" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Check-in Mode</label>
+                    <label for="check_in_mode"
+                        class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Check-in Mode</label>
                     <select name="check_in_mode" id="check_in_mode"
                         class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full">
-                        <option value="virtual" {{ old('check_in_mode', $user->check_in_mode) === 'virtual' ? 'selected' : '' }}>Virtual</option>
-                        <option value="onsite" {{ old('check_in_mode', $user->check_in_mode) === 'onsite' ? 'selected' : '' }}>Onsite</option>
+                        <option value="virtual"
+                            {{ old('check_in_mode', $user->check_in_mode) === 'virtual' ? 'selected' : '' }}>Virtual
+                        </option>
+                        <option value="onsite"
+                            {{ old('check_in_mode', $user->check_in_mode) === 'onsite' ? 'selected' : '' }}>Onsite
+                        </option>
                     </select>
                 </div>
 
             </div>
-        
+
             <!-- Right Column: Roles, Payroll, and Rank -->
             <div class="space-y-4 pl-4">
                 <!-- Roles -->
                 <div>
                     <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Roles</label>
-        
+
                     <!-- Existing Roles as Dismissible Banners -->
                     <div class="flex flex-wrap gap-2 mb-2">
                         @foreach ($user->roles ?? [] as $role)
-                            <div class="bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 flex items-center gap-2 rounded-md text-xs">
+                            <div
+                                class="bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 flex items-center gap-2 rounded-md text-xs">
                                 <span>{{ $role }}</span>
                                 @if ($role !== 'user')
                                     <button type="button" onclick="removeRole(this, '{{ $role }}')">
@@ -86,10 +118,11 @@
                             </div>
                         @endforeach
                     </div>
-        
+
                     <!-- Add New Role Dropdown -->
                     <div class="flex gap-2">
-                        <select id="new-role" class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white text-md w-full">
+                        <select id="new-role"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white text-md w-full">
                             <option value="" disabled selected>Add role...</option>
                             <option value="finance.staff">Finance Staff</option>
                             <option value="finance.admin">Finance Admin</option>
@@ -100,36 +133,43 @@
                             <option value="acad.admin">Acad Admin</option>
                             <option value="guidance.admin">Guidance Admin</option>
                         </select>
-                        <flux:button type="button" size="sm" variant="primary" onclick="addRole()">Add Role</flux:button>
+                        <flux:button type="button" size="sm" variant="primary" onclick="addRole()">Add Role
+                        </flux:button>
                     </div>
-        
+
                     <!-- Hidden Roles Input -->
-                    <input type="hidden" name="roles" id="roles" value="{{ json_encode($user->roles ?? []) }}" />
+                    <input type="hidden" name="roles" id="roles"
+                        value="{{ json_encode($user->roles ?? []) }}" />
                 </div>
-        
+
                 <!-- Title -->
                 <div>
-                    <label for="position" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Position</label>
+                    <label for="position"
+                        class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Position</label>
                     <input type="text" id="position" name="position" value="{{ old('position', $user->position) }}"
                         class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
                 </div>
-        
+
                 <!-- Rank Input -->
                 <div>
-                    <label for="rank" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Rank</label>
+                    <label for="rank"
+                        class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Rank</label>
                     <select id="rank" name="rank" required
                         class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full">
-                        <option value="employee" {{ old('rank', $user->rank) === 'employee' ? 'selected' : '' }}>Employee</option>
-                        <option value="manager" {{ old('rank', $user->rank) === 'manager' ? 'selected' : '' }}>Manager</option>
+                        <option value="employee" {{ old('rank', $user->rank) === 'employee' ? 'selected' : '' }}>
+                            Employee</option>
+                        <option value="manager" {{ old('rank', $user->rank) === 'manager' ? 'selected' : '' }}>Manager
+                        </option>
                     </select>
                 </div>
-                
-        
+
+
                 <div class="flex flex-col md:flex-row gap-4">
                     <!-- Conditional Monthly Rate (Only for Finance Users) -->
-                    @if(auth()->user()->isFinanceAdmin())
+                    @if (auth()->user()->isFinanceAdmin())
                         <div class="flex-1">
-                            <label for="monthly_rate" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            <label for="monthly_rate"
+                                class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                                 Monthly Rate
                             </label>
                             <input type="text" id="monthly_rate" name="monthly_rate"
@@ -137,34 +177,34 @@
                                 class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-sm"
                                 placeholder="₱0.00" />
                         </div>
-                    
-                
-                    <!-- Payroll On Checkbox -->
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" id="payroll_on" name="payroll_on" value="1"
-                            {{ old('payroll_on', $user->payroll_on) ? 'checked' : '' }}
-                            class="rounded border-zinc-300 dark:bg-zinc-700 dark:text-white" />
-                        <label for="payroll_on" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                            Include in Payroll
-                        </label>
-                    </div>
+
+
+                        <!-- Payroll On Checkbox -->
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="payroll_on" name="payroll_on" value="1"
+                                {{ old('payroll_on', $user->payroll_on) ? 'checked' : '' }}
+                                class="rounded border-zinc-300 dark:bg-zinc-700 dark:text-white" />
+                            <label for="payroll_on" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                Include in Payroll
+                            </label>
+                        </div>
                     @endif
                 </div>
-                
+
             </div>
-        
+
             <!-- Full Width Submit Button -->
             <div class="col-span-1 md:col-span-2 flex justify-end">
                 <flux:button type="submit" variant="primary" size="sm">Save Changes</flux:button>
             </div>
         </form>
-        
+
 
 
 
 
         {{-- Finance only area for pay adjustments --}}
-        @if(auth()->user()->isFinanceAdmin())
+        @if (auth()->user()->isFinanceAdmin())
             <!-- Adjustments Section -->
             <div class="mt-8 p-4 border-t border-zinc-300 dark:border-zinc-600">
                 <h2 class="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-2">Pay Scheme</h2>
@@ -210,7 +250,8 @@
                             <input type="number" id="cycle" name="cycle" min="1" required
                                 class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
                             <!-- Effective Date -->
-                            <label for="effective_date" class="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                            <label for="effective_date"
+                                class="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                                 Effective Date (12-31-9999 for recurring)
                             </label>
                             <input type="date" id="effective_date" name="effective_date"
@@ -229,7 +270,8 @@
 
                     <!-- Right: Existing Adjustments (Scrollable List) -->
                     <div class="p-4 border-zinc-300 dark:border-zinc-600">
-                        <h2 class="text-md font-semibold text-zinc-800 dark:text-zinc-100 mb-2">Current Adjustments</h2>
+                        <h2 class="text-md font-semibold text-zinc-800 dark:text-zinc-100 mb-2">Current Adjustments
+                        </h2>
 
                         <!-- Add a Package Dropdown -->
                         <div class="mb-4">
@@ -241,12 +283,12 @@
                                 <label for="package"
                                     class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                                     Add Pay Package
-                                    <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full ml-2 
-                                                                            @if($user->package === 'L1') bg-blue-100 text-blue-600
+                                    <span
+                                        class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full ml-2 
+                                                                            @if ($user->package === 'L1') bg-blue-100 text-blue-600
                                                                             @elseif($user->package === 'L2') bg-green-100 text-green-600
                                                                             @elseif($user->package === 'ManCom') bg-purple-100 text-purple-600
-                                                                                @else bg-gray-100 text-gray-600
-                                                                            @endif">
+                                                                                @else bg-gray-100 text-gray-600 @endif">
                                         {{ $user->package ?? 'N/A' }}
                                     </span>
                                 </label>
@@ -260,20 +302,23 @@
                                     <option value="ClearAll" class="text-red-600">Clear All</option>
                                 </select>
 
-                                <flux:button size="sm" type="submit" class="mt-2" variant="primary" icon="plus">Apply</flux:button>
+                                <flux:button size="sm" type="submit" class="mt-2" variant="primary"
+                                    icon="plus">Apply</flux:button>
                             </form>
                         </div>
 
 
-                        @if($user->adjustments->isEmpty())
+                        @if ($user->adjustments->isEmpty())
                             <p class="text-sm text-zinc-500 dark:text-zinc-400 italic">No adjustments found.</p>
                         @else
                             <ul class="space-y-2">
                                 @foreach ($user->adjustments as $adjustment)
-                                    <li class="flex justify-between items-center bg-zinc-200 dark:bg-zinc-700 px-3 py-2 rounded-md">
+                                    <li
+                                        class="flex justify-between items-center bg-zinc-200 dark:bg-zinc-700 px-3 py-2 rounded-md">
                                         <span class="text-zinc-800 dark:text-zinc-200 text-xs">
                                             {{ $adjustment->description }} ({{ ucfirst($adjustment->mode) }}):
-                                            ₱{{ number_format($adjustment->amount, 2) }} - Cycle {{ $adjustment->cycle }}
+                                            ₱{{ number_format($adjustment->amount, 2) }} - Cycle
+                                            {{ $adjustment->cycle }}
                                         </span>
 
                                         <!-- Delete Button -->
@@ -297,32 +342,31 @@
         @endif
     </div>
 
-        {{-- Leave Credits Section --}}
+    {{-- Leave Credits Section --}}
     <div class="mt-8 p-4 border-t border-zinc-300 dark:border-zinc-600">
         <h2 class="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-4">Leave Credits</h2>
 
-        <form action="{{ route('users.leave-credits.update', $user->id) }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form action="{{ route('users.leave-credits.update', $user->id) }}" method="POST"
+            class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @csrf
             @method('PUT')
 
             <!-- PTO Credits -->
             <div>
-                <label for="pto" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">PTO Credits</label>
-                <input 
-                    type="number" step="0.01" name="pto" id="pto"
+                <label for="pto" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">PTO
+                    Credits</label>
+                <input type="number" step="0.01" name="pto" id="pto"
                     value="{{ old('pto', $user->requestCredit->pto ?? 0) }}"
-                    class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-                />
+                    class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200" />
             </div>
 
             <!-- WFH Credits -->
             <div>
-                <label for="wfh" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">WFH Credits</label>
-                <input 
-                    type="number" step="0.01" name="wfh" id="wfh"
+                <label for="wfh" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">WFH
+                    Credits</label>
+                <input type="number" step="0.01" name="wfh" id="wfh"
                     value="{{ old('wfh', $user->requestCredit->wfh ?? 0) }}"
-                    class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-                />
+                    class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200" />
             </div>
 
             <div class="col-span-1 md:col-span-2 flex justify-end">
@@ -333,7 +377,7 @@
         </form>
     </div>
 
-    
+
     <!-- Role Management Script -->
     <script>
         function addRole() {
@@ -345,8 +389,10 @@
                 roles.push(newRole);
 
                 const roleContainer = document.createElement('div');
-                roleContainer.className = "bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 rounded-full flex items-center gap-2 text-xs";
-                roleContainer.innerHTML = `<span>${newRole}</span>
+                roleContainer.className =
+                    "bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 rounded-full flex items-center gap-2 text-xs";
+                roleContainer.innerHTML =
+                    `<span>${newRole}</span>
                     <button type="button" onclick="removeRole(this, '${newRole}')"><flux:icon.x class="size-4 stroke-amber-600 hover:stroke-amber-400 inline" /></button>`;
                 document.querySelector('form div.flex.flex-wrap').appendChild(roleContainer);
 
@@ -362,6 +408,7 @@
             button.parentElement.remove();
             document.getElementById('roles').value = JSON.stringify(roles);
         }
+
         function confirmClearAll(form) {
             const packageSelected = form.package.value;
             if (packageSelected === 'ClearAll') {

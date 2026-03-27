@@ -10,7 +10,6 @@ use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
@@ -32,6 +31,8 @@ class User extends Authenticatable
         'rank',
         'position',
         'check_in_mode',
+        'birthdate',      // ✅ added
+        'hire_date',      // ✅ added
     ];
 
     /**
@@ -45,7 +46,7 @@ class User extends Authenticatable
     ];
 
     protected $attributes = [
-        'roles' => '["user"]', // Ensure default role is "User"
+        'roles' => '["user"]',
     ];
 
     /**
@@ -60,7 +61,11 @@ class User extends Authenticatable
             'password' => 'hashed',
             'roles' => 'array',
             'payroll_on' => 'boolean',
-            'monthly_rate' => 'decimal:2', // Ensures proper decimal formatting
+            'monthly_rate' => 'decimal:2',
+
+            // ✅ IMPORTANT: date casting
+            'birthdate' => 'date',
+            'hire_date' => 'date',
         ];
     }
 
@@ -71,66 +76,65 @@ class User extends Authenticatable
     {
         return Str::of($this->name)
             ->explode(' ')
-            ->map(fn (string $name) => Str::of($name)->substr(0, 1))
+            ->map(fn(string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
     }
+
     public function hasAnyRole(array $roles): bool
     {
         return count(array_intersect($this->roles, $roles)) > 0;
     }
+
     /**
      * Automatically corrects invalid values to No
-     * @param mixed $value
-     * @return void
      */
     public function setPayrollOnAttribute($value)
-{
-    $this->attributes['payroll_on'] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
-}
+    {
+        $this->attributes['payroll_on'] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
 
-public function adjustments()
-{
-    return $this->hasMany(Adjustment::class)->latest();
-}
+    public function adjustments()
+    {
+        return $this->hasMany(Adjustment::class)->latest();
+    }
 
+    public function isFinanceAdmin(): bool
+    {
+        return in_array('finance.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
+    }
 
-public function isFinanceAdmin(): bool
-{
-    return in_array('finance.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
-}
+    public function isPNCAdmin(): bool
+    {
+        return in_array('pnc.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
+    }
 
-public function isPNCAdmin(): bool
-{
-    return in_array('pnc.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
-}
+    public function supervisor()
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
 
-public function supervisor()
-{
-    return $this->belongsTo(User::class, 'supervisor_id');
-}
+    public function requestCredit()
+    {
+        return $this->hasOne(RequestCredit::class);
+    }
 
-public function requestCredit()
-{
-    return $this->hasOne(RequestCredit::class);
-}
+    public function isManager()
+    {
+        return $this->rank === 'manager';
+    }
 
-public function isManager()
-{
-    return $this->rank==='manager';
-}
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
 
-public function department()
-{
-    return $this->belongsTo(Department::class);
-}
+    public function isGuidanceAdmin(): bool
+    {
+        return in_array('guidance.admin', $this->roles ?? []);
+    }
 
-public function isGuidanceAdmin(): bool
-{
-    return in_array('guidance.admin', $this->roles ?? []);
-}
-
-public function isGuidanceStaff(): bool
-{
-    return in_array('guidance.staff', $this->roles ?? []);
-}
+    public function isGuidanceStaff(): bool
+    {
+        return in_array('guidance.staff', $this->roles ?? []);
+    }
 }

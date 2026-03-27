@@ -5,6 +5,8 @@
             <livewire:feature-verse />
             <!-- Steps! -->
             <livewire:steps-leaderboard mode="card" />
+            <!--  -->
+            <livewire:celebrations-card />
 
         </div>
     </div>

@@ -18,7 +18,7 @@ class UserController extends Controller
 
         $users = User::query()
             ->when($search, fn($query) => $query->where('name', 'like', "%{$search}%")
-                                                ->orWhere('email', 'like', "%{$search}%"))
+                ->orWhere('email', 'like', "%{$search}%"))
             ->orderBy('name')
             ->paginate(10);
 
@@ -36,104 +36,135 @@ class UserController extends Controller
 
     }
 
-public function update(Request $request, User $user)
-{
-    try {
+    public function update(Request $request, User $user)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => [
+                    'required',
+                    'email',
+                    'max:255',
+                    Rule::unique('users', 'email')->ignore($user->id),
+                ],
+                'supervisor_id' => ['nullable', 'exists:users,id'],
+                'department_id' => ['nullable', 'exists:departments,id'],
+                'roles' => ['nullable', 'string'],
+                'payroll_on' => ['nullable', 'boolean'],
+                'rank' => ['nullable', 'string', 'in:employee,manager'],
+                'position' => ['nullable', 'string'],
+                'monthly_rate' => ['nullable', 'string'],
+                'check_in_mode' => ['required', 'string', 'in:virtual,onsite'],
+
+                // 🔒 Hardened date fields
+                'birthdate' => [
+                    'nullable',
+                    'date',
+                    'before_or_equal:today',
+                ],
+                'hire_date' => [
+                    'nullable',
+                    'date',
+                    'before_or_equal:today',
+                    'after:1900-01-01',
+                ],
+            ]);
+
+            // ✅ Safe roles decoding
+            $roles = [];
+            if (!empty($validated['roles'])) {
+                $decoded = json_decode($validated['roles'], true);
+                $roles = is_array($decoded) ? $decoded : [];
+            }
+
+            // Ensure default role
+            if (!in_array('user', $roles)) {
+                $roles[] = 'user';
+            }
+
+            // ✅ Clean monthly rate safely
+            $monthlyRate = null;
+            if (!empty($validated['monthly_rate'])) {
+                $clean = str_replace(',', '', $validated['monthly_rate']);
+                if (is_numeric($clean)) {
+                    $monthlyRate = $clean;
+                }
+            }
+
+            // ✅ Optional logical guard (only if both exist)
+            if (!empty($validated['birthdate']) && !empty($validated['hire_date'])) {
+                if ($validated['hire_date'] < $validated['birthdate']) {
+                    return back()
+                        ->withErrors(['hire_date' => 'Hire date must be after birthdate.'])
+                        ->withInput()
+                        ->with('error', 'Invalid date relationship.');
+                }
+            }
+
+            // ✅ Update safely
+            $user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'supervisor_id' => $validated['supervisor_id'] ?? null,
+                'department_id' => $validated['department_id'] ?? null,
+                'roles' => $roles,
+                'payroll_on' => $validated['payroll_on'] ?? false,
+                'rank' => $validated['rank'] ?? 'employee',
+                'position' => $validated['position'] ?? null,
+                'monthly_rate' => $monthlyRate,
+                'check_in_mode' => $validated['check_in_mode'],
+
+                // Dates (safe null fallback)
+                'birthdate' => $validated['birthdate'] ?? null,
+                'hire_date' => $validated['hire_date'] ?? null,
+            ]);
+
+            return redirect()
+                ->route('users.index')
+                ->with('success', 'User updated successfully!');
+
+        } catch (ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput()
+                ->with('error', 'Please correct the errors and try again.');
+        }
+    }
+
+    public function updateLeaveCredits(Request $request, User $user)
+    {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => [
-                'required',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')->ignore($user->id),
-            ],
-            'supervisor_id' => 'nullable|exists:users,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'roles' => 'nullable|string',
-            'payroll_on' => 'nullable|boolean',
-            'rank' => 'nullable|string|in:employee,manager',
-            'position' => 'nullable|string',
-            'monthly_rate' => 'nullable|string',
-            'check_in_mode'=>'required|string|in:virtual,onsite',
+            'pto' => ['required', 'numeric', 'min:0'],
+            'wfh' => ['required', 'numeric', 'min:0'],
         ]);
 
-        // Decode roles and ensure it's an array
-        $roles = json_decode($validated['roles'], true) ?? [];
+        // Ensure the user has a related requestCredits record
+        $credits = $user->requestCredit()->firstOrCreate([
+            'user_id' => $user->id,
+        ]);
 
-        // Ensure 'User' role is always present
-        if (!in_array('user', $roles)) {
-            $roles[] = 'user';
+        // Update the fields
+        $credits->update([
+            'pto' => $validated['pto'],
+            'wfh' => $validated['wfh'],
+        ]);
+
+        return redirect()
+            ->route('users.edit', $user->id)
+            ->with('success', 'Leave credits updated successfully.');
+    }
+
+    public function delete(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            abort(403, 'You cannot delete your own account.');
         }
 
-        // Reassign roles back into the validated data
-        $validated['roles'] = $roles;
+        $user->delete();
 
-        // Clean and format the monthly rate (optional but nice)
-        $validated['monthly_rate'] = isset($validated['monthly_rate']) && is_numeric(str_replace(',', '', $validated['monthly_rate']))
-            ? str_replace(',', '', $validated['monthly_rate'])
-            : null;
-
-
-        // Update the user with validated data
-        $user->update([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'supervisor_id' => $validated['supervisor_id'],
-            'department_id' => $validated['department_id'],
-            'roles' => $validated['roles'],
-            'payroll_on' => $validated['payroll_on'] ?? false,
-            'rank' => $validated['rank'],
-            'position' => $validated['position'],
-            'monthly_rate' => $validated['monthly_rate'],
-            'check_in_mode' => $validated['check_in_mode'],
-        ]);
-
-        // Flash success and redirect
-        return redirect()->route('users.index')->with('success', 'User updated successfully!');
-
-    } catch (ValidationException $e) {
-        // Flash error and redirect back with input
-        return redirect()->back()
-            ->withErrors($e->validator)
-            ->withInput()
-            ->with('error', 'Please correct the errors and try again.');
+        return redirect()->route('users.index')
+            ->with('success', "User {$user->name} has been deleted.");
     }
-}
-
-public function updateLeaveCredits(Request $request, User $user)
-{
-    $validated = $request->validate([
-        'pto' => ['required', 'numeric', 'min:0'],
-        'wfh' => ['required', 'numeric', 'min:0'],
-    ]);
-
-    // Ensure the user has a related requestCredits record
-    $credits = $user->requestCredit()->firstOrCreate([
-        'user_id' => $user->id,
-    ]);
-
-    // Update the fields
-    $credits->update([
-        'pto' => $validated['pto'],
-        'wfh' => $validated['wfh'],
-    ]);
-
-    return redirect()
-        ->route('users.edit', $user->id)
-        ->with('success', 'Leave credits updated successfully.');
-}
-
-public function delete(User $user)
-{
-    if ($user->id === auth()->id()) {
-        abort(403, 'You cannot delete your own account.');
-    }
-
-    $user->delete();
-
-    return redirect()->route('users.index')
-        ->with('success', "User {$user->name} has been deleted.");
-}
 
 
 
