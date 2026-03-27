@@ -1,43 +1,44 @@
 <x-layouts.app title="Dashboard">
-    <div class="flex h-full w-full flex-1 flex-col rounded-xl">
+    <div class="flex h-full w-full flex-1 flex-col rounded-xl relative">
+
+        <!-- Cards -->
         <div class="grid auto-rows-min md:grid-cols-4 gap-4">
-            <!-- Bible Verse Card -->
             <livewire:feature-verse />
-            <!-- Celebration Card-->
             <livewire:celebrations-card />
-            <!-- Steps! -->
             <livewire:steps-leaderboard mode="card" />
         </div>
+
+        <!-- ✅ Gradient Fade (mobile only) -->
+        <div
+            class="md:hidden fixed bottom-0 left-0 w-full h-16 
+                   bg-gradient-to-t from-white/80 to-transparent 
+                   dark:from-zinc-900/80 pointer-events-none z-40">
+        </div>
+
+        <!-- ✅ Scroll Hint -->
+        <div x-data="{
+            atBottom: false,
+            init() {
+                const el = document.documentElement;
+                window.addEventListener('scroll', () => {
+                    this.atBottom = (window.innerHeight + window.scrollY) >= (el.scrollHeight - 10);
+                });
+            }
+        }" class="md:hidden fixed bottom-4 left-0 w-full flex justify-center z-50">
+            <div
+                class="pointer-events-none flex items-center gap-2 px-3 py-1 rounded-full 
+           bg-yellow-200/40 dark:bg-yellow-300/20 
+           backdrop-blur-md 
+           text-yellow-700 dark:text-yellow-200 
+           shadow-[0_0_10px_rgba(250,204,21,0.4)]">
+
+                <flux:icon name="arrow-down"
+                    class="w-3 h-3 transition-transform duration-300 text-yellow-600 dark:text-yellow-200"
+                    x-bind:class="{ 'rotate-180': atBottom }" />
+
+                <span x-text="atBottom ? 'Scroll up' : 'Scroll'"></span>
+            </div>
+        </div>
+
     </div>
 </x-layouts.app>
-
-
-<!-- Card Styling -->
-<style>
-    .dashboard-card {
-        position: relative;
-        color: #1a202c;
-        background-color: oklch(0.985 0 0);
-        /* Soft yellow */
-        border-radius: 0.75rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e2e8f0;
-        min-height: 150px;
-        transition: all 0.3s ease-in-out;
-        overflow: hidden;
-    }
-
-    /* Dark mode adaptation */
-    .dark .dashboard-card {
-        color: #e2e8f0;
-        background-color: oklch(0.371 0 0);
-        border-color: #4a5568;
-    }
-
-    /* Hover effect */
-    .dashboard-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-        filter: brightness(1.05);
-    }
-</style>
