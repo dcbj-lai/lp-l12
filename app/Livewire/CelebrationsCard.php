@@ -13,21 +13,23 @@ class CelebrationsCard extends Component
 
     public function mount()
     {
-        $currentMonth = Carbon::now()->month;
+        $currentMonth = now()->month;
 
         // 🎂 Birthdays
         $this->birthdays = User::query()
             ->whereNotNull('birthdate')
             ->whereMonth('birthdate', $currentMonth)
-            ->orderByRaw('DAY(birthdate)')
-            ->get();
+            ->get()
+            ->sortBy(fn($user) => optional($user->birthdate)->day)
+            ->values();
 
         // 🎉 Work Anniversaries
         $this->anniversaries = User::query()
             ->whereNotNull('hire_date')
             ->whereMonth('hire_date', $currentMonth)
-            ->orderByRaw('DAY(hire_date)')
-            ->get();
+            ->get()
+            ->sortBy(fn($user) => optional($user->hire_date)->day)
+            ->values();
     }
 
     public function render()
