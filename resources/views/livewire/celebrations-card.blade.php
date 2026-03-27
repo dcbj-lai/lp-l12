@@ -1,4 +1,4 @@
-<x-dashboard-card class="p-4">
+<x-dashboard-card variant="danger" class="p-4">
 
     <div class="relative flex flex-col aspect-square">
 

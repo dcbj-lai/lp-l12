@@ -1,4 +1,4 @@
-<x-dashboard-card class="p-4 flex items-center justify-center">
+<x-dashboard-card variant="danger" class="p-4 flex items-center justify-center aspect-square">
     <!-- Verse Content -->
     <div
         class="text-center text-transparent bg-gradient-to-r from-sky-500 via-blue-500 to-orange-500 bg-clip-text font-semibold">
