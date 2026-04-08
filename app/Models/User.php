@@ -34,6 +34,7 @@ class User extends Authenticatable
         'birthdate',      // ✅ added
         'hire_date',      // ✅ added
         'preferred_name',
+        'profile_photo_path',
     ];
 
     /**
@@ -75,10 +76,7 @@ class User extends Authenticatable
      */
     public function initials(): string
     {
-        return Str::of($this->name)
-            ->explode(' ')
-            ->map(fn(string $name) => Str::of($name)->substr(0, 1))
-            ->implode('');
+        return Str::of($this->name)->trim()->substr(0, 1)->upper();
     }
 
     public function hasAnyRole(array $roles): bool
