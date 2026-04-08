@@ -31,13 +31,29 @@
                         required class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
                 </div>
                 <!-- Birthdate -->
-                <div>
-                    <label for="birthdate" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        Birthdate
-                    </label>
-                    <input type="date" id="birthdate" name="birthdate"
-                        value="{{ old('birthdate', optional($user->birthdate)->format('Y-m-d')) }}"
-                        class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <!-- Preferred Name -->
+                    <div>
+                        <label for="preferred_name" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Preferred Name
+                        </label>
+                        <input type="text" id="preferred_name" name="preferred_name"
+                            value="{{ old('preferred_name', $user->preferred_name) }}"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full"
+                            placeholder="Nickname / display name" />
+                    </div>
+
+                    <!-- Birthdate -->
+                    <div>
+                        <label for="birthdate" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Birthdate
+                        </label>
+                        <input type="date" id="birthdate" name="birthdate"
+                            value="{{ old('birthdate', optional($user->birthdate)->format('Y-m-d')) }}"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                    </div>
+
                 </div>
 
                 <!-- Hire Date -->
@@ -147,7 +163,8 @@
                 <div>
                     <label for="position"
                         class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Position</label>
-                    <input type="text" id="position" name="position" value="{{ old('position', $user->position) }}"
+                    <input type="text" id="position" name="position"
+                        value="{{ old('position', $user->position) }}"
                         class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
                 </div>
 
