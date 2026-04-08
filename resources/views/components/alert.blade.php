@@ -1,3 +1,5 @@
+{{-- alert.blade.php --}}
+
 @props(['type' => 'success', 'message' => null])
 
 @php

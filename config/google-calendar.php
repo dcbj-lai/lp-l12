@@ -13,7 +13,7 @@ return [
             /*
              * Path to the json file containing the credentials.
              */
-            'credentials_json' => storage_path('app/private/credentials.json'),
+            'credentials_json' => storage_path('app/google-calendar/service-account-credentials.json'),
         ],
 
         /*
@@ -37,7 +37,7 @@ return [
      */
     'calendar_id' => env('GOOGLE_CALENDAR_ID'),
 
-     /*
+    /*
      *  The email address of the user account to impersonate.
      */
     'user_to_impersonate' => env('GOOGLE_CALENDAR_IMPERSONATE'),

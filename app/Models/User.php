@@ -33,6 +33,7 @@ class User extends Authenticatable
         'check_in_mode',
         'birthdate',      // ✅ added
         'hire_date',      // ✅ added
+        'preferred_name',
     ];
 
     /**

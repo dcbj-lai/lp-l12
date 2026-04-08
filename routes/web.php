@@ -1,27 +1,28 @@
 <?php
 
-use Livewire\Volt\Volt;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\StepController;
-use App\Http\Controllers\UserController;
-use App\Livewire\Attendance\MyAttendance;
-use App\Http\Controllers\GoogleController;
-use App\Http\Controllers\FinanceController;
-use App\Http\Controllers\PayrollController;
-use App\Http\Controllers\RequestController;
-use App\Http\Controllers\UtilityController;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use App\Http\Controllers\OnlineDayController;
 use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\OrgSettingController;
-use App\Http\Controllers\VisitorLogController;
-use App\Http\Controllers\PasswordLoginController;
-use App\Http\Controllers\PrivateRequestDocumentController;
-use App\Http\Controllers\ImportCsvController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ConsultationsController;
+// use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\ImportCsvController;
+use App\Http\Controllers\OnlineDayController;
+use App\Http\Controllers\OrgSettingController;
+use App\Http\Controllers\PasswordLoginController;
+use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\PrivateRequestDocumentController;
+use App\Http\Controllers\RequestController;
+use App\Http\Controllers\StepController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\UtilityController;
+use App\Http\Controllers\VisitorLogController;
+// use App\Livewire\Attendance\MyAttendance;
+// use App\Livewire\Holiday\HolidayCampaignForm;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Livewire\Volt\Volt;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 
 
@@ -418,3 +419,8 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
 Route::get('/access-denied', function () {
     return view('auth.access-denied');
 })->name('access.denied');
+
+/**Holiday Campaign Email */
+Route::get('/holiday/campaign', function () {
+    return view('holiday.campaign-page');
+})->middleware(['auth', 'can:is-comms-admin'])->name('holiday.campaign');

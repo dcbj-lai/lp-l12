@@ -18,6 +18,7 @@
         $isAcadAdmin = in_array('acad.admin', $user->roles ?? []);
         $isGuidanceAdmin = in_array('guidance.admin', $user->roles ?? []);
         $isGuidanceStaff = in_array('guidance.staff', $user->roles ?? []);
+        $isCommsAdmin = in_array('comms.admin', $user->roles ?? []);
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -29,23 +30,25 @@
         <flux:navlist class="w-64">
             <flux:navlist.item href="{{ route('dashboard') }}" icon="layout-dashboard">Dashboard</flux:navlist.item>
             <flux:navlist.group heading="My Portal" expandable :expanded="false">
-                <flux:navlist.item href="{{route('attendance.my_attendance')}}" icon="user-check">Attendance
+                <flux:navlist.item href="{{ route('attendance.my_attendance') }}" icon="user-check">Attendance
                 </flux:navlist.item>
-                <flux:navlist.item href="{{route('my-requests')}}" icon="calendar">Requests</flux:navlist.item>
-                <flux:navlist.item href="{{route('payslips.index')}}" icon="banknotes">Payslips</flux:navlist.item>
+                <flux:navlist.item href="{{ route('my-requests') }}" icon="calendar">Requests</flux:navlist.item>
+                <flux:navlist.item href="{{ route('payslips.index') }}" icon="banknotes">Payslips</flux:navlist.item>
                 <flux:navlist.item href="#" icon="bot-message-square">Notifications</flux:navlist.item>
-                <flux:navlist.item href="{{route('visitors.mine')}}" icon="book-user">Visitors</flux:navlist.item>
+                <flux:navlist.item href="{{ route('visitors.mine') }}" icon="book-user">Visitors</flux:navlist.item>
                 <flux:navlist.group heading="Life Steps">
-                    <flux:navlist.item href="{{route('my-steps.index')}}" icon="footprints">My Steps</flux:navlist.item>
-                    <flux:navlist.item href="{{route('steps.index')}}" icon="trophy">Leaderboard</flux:navlist.item>
+                    <flux:navlist.item href="{{ route('my-steps.index') }}" icon="footprints">My Steps
+                    </flux:navlist.item>
+                    <flux:navlist.item href="{{ route('steps.index') }}" icon="trophy">Leaderboard</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist.group>
             @if ($isPNC || $isSuperAdmin)
                 <flux:navlist.group heading="P&C" expandable :expanded="false">
-                    <flux:navlist.item href="{{route('users.index')}}" icon="users">Users</flux:navlist.item>
+                    <flux:navlist.item href="{{ route('users.index') }}" icon="users">Users</flux:navlist.item>
                     <flux:navlist.item href="{{ route('attendance.index') }}" icon="user-check">View Staff Attendance
                     </flux:navlist.item>
-                    <flux:navlist.item href="{{ route('requests.manage-hr') }}" icon="list-filter-plus">View Staff Requests
+                    <flux:navlist.item href="{{ route('requests.manage-hr') }}" icon="list-filter-plus">View Staff
+                        Requests
                     </flux:navlist.item>
                     <flux:navlist.item href="{{ route('org-settings.index') }}" icon="settings">Setup Requests
                     </flux:navlist.item>
@@ -53,25 +56,22 @@
             @endif
             @if ($isFinanceAdmin || $isSuperAdmin)
                 <flux:navlist.group heading="Finance" expandable :expanded="false">
-                    <flux:navlist.item href="{{route('payouts.index')}}" icon="hand-coins">Payroll
+                    <flux:navlist.item href="{{ route('payouts.index') }}" icon="hand-coins">Payroll
                     </flux:navlist.item>
                     <flux:navlist.item href="#" icon="file-chart-column-increasing">Reports</flux:navlist.item>
                 </flux:navlist.group>
             @endif
             @if ($isFrontDesk || $isSuperAdmin)
                 <flux:navlist.group heading="Front Desk" expandable :expanded="false">
-                    <flux:navlist.item href="{{route('frontdesk.visitors')}}" icon="logs">Visitor Logs
+                    <flux:navlist.item href="{{ route('frontdesk.visitors') }}" icon="logs">Visitor Logs
                     </flux:navlist.item>
                     <flux:navlist.item href="#" icon="file-chart-column-increasing">Reports</flux:navlist.item>
                 </flux:navlist.group>
             @endif
-            @if ($isAcadAdmin || $isSuperAdmin)
-                <flux:navlist.group heading="Acad Admin" expandable :expanded="false">
-                    <flux:navlist.item href="{{route('attendance.show_qr')}}" icon="qr-code">Attendance
-                        QR Code
-                    </flux:navlist.item>
-                    <flux:navlist.item href="{{route('onlinedays.index')}}" icon="airplay">
-                        Declare Online Days
+            @if ($isCommsAdmin || $isSuperAdmin)
+                <flux:navlist.group heading="Comms" expandable :expanded="false">
+                    <flux:navlist.item href="{{ route('holiday.campaign') }}" icon="message-square-share">
+                        Holiday Campaign
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
@@ -81,29 +81,30 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
-       @if ($isGuidanceAdmin)
-        <flux:navlist.group heading="Health and Wellness" expandable="false">
-            <flux:navlist.group heading="Guidance" expandable :expanded="false">
-                <flux:navlist.item href="{{ route('guidance.clients.index') }}" icon="users">
-                    Clients
-                </flux:navlist.item>
+            @if ($isGuidanceAdmin)
+                <flux:navlist.group heading="Health and Wellness" expandable="false">
+                    <flux:navlist.group heading="Guidance" expandable :expanded="false">
+                        <flux:navlist.item href="{{ route('guidance.clients.index') }}" icon="users">
+                            Clients
+                        </flux:navlist.item>
 
-                <flux:navlist.item href="{{ route('guidance.consultations.index') }}" icon="clipboard-document-list">
-                    Consultations
-                </flux:navlist.item>
-                    <flux:navlist.item href="{{ route('guidance.import-csv.index') }}" icon="arrow-up-tray">
-                        Import CSV
-                    </flux:navlist.item>
-            </flux:navlist.group>
-        </flux:navlist.group>
-       @endif
+                        <flux:navlist.item href="{{ route('guidance.consultations.index') }}"
+                            icon="clipboard-document-list">
+                            Consultations
+                        </flux:navlist.item>
+                        <flux:navlist.item href="{{ route('guidance.import-csv.index') }}" icon="arrow-up-tray">
+                            Import CSV
+                        </flux:navlist.item>
+                    </flux:navlist.group>
+                </flux:navlist.group>
+            @endif
 
         </flux:navlist>
         <!-- Navigation -->
         <flux:spacer />
 
         <flux:navlist variant="outline">
-            <flux:navlist.item icon="info" href="{{route('about')}}" wire:click.prevent="openModal">
+            <flux:navlist.item icon="info" href="{{ route('about') }}" wire:click.prevent="openModal">
                 {{ __('About Life Portal') }}
             </flux:navlist.item>
 
@@ -199,7 +200,8 @@
 
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
-                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
+                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle"
+                        class="w-full">
                         {{ __('Log Out') }}
                     </flux:menu.item>
                 </form>
