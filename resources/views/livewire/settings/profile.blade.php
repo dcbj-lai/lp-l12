@@ -6,10 +6,17 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\Rule;
 use Livewire\Volt\Component;
 
+use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Storage;
+
 new class extends Component {
+    use WithFileUploads;
+
     public string $name = '';
     public string $email = '';
     public string $preferred_name = '';
+
+    public $avatar; // temporary uploaded file
 
     /**
      * Mount the component.
@@ -19,6 +26,38 @@ new class extends Component {
         $this->name = Auth::user()->name;
         $this->email = Auth::user()->email;
         $this->preferred_name = Auth::user()->preferred_name ?? '';
+    }
+
+    public function updateAvatar(): void
+    {
+        $user = Auth::user();
+
+        $this->validate([
+            'avatar' => ['required', 'image', 'max:2048'], // 2MB
+        ]);
+
+        // Optional: delete old avatar
+        if ($user->profile_photo_path) {
+            Storage::disk('s3')->delete($user->profile_photo_path);
+        }
+
+        // Generate filename
+        $filename = 'avatar_' . time() . '.' . $this->avatar->getClientOriginalExtension();
+
+        $path = $this->avatar->storeAs('avatars/' . $user->id, $filename, 's3');
+
+        Storage::disk('s3')->setVisibility($path, 'public');
+
+        $user->update([
+            'profile_photo_path' => $path,
+        ]);
+
+        $this->modal('avatar-modal')->close();
+
+        // reset input
+        $this->reset('avatar');
+
+        $this->dispatch('profile-updated');
     }
 
     /**
@@ -68,33 +107,93 @@ new class extends Component {
 <section class="w-full">
     @include('partials.settings-heading')
     <div class="flex justify-end">
-        <div
-            class="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
+        <div class="flex flex-col items-center gap-2">
 
-            {{-- Avatar --}}
-            <div
-                class="h-12 w-12 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
-                @if (auth()->user()->profile_photo_path)
-                    <img src="{{ Storage::url(auth()->user()->profile_photo_path) }}" class="h-full w-full object-cover">
-                @else
-                    <span class="text-sm font-semibold text-black dark:text-white">
-                        {{ auth()->user()->initials() }}
-                    </span>
-                @endif
-            </div>
+            <flux:tooltip content="Change avatar">
 
-            {{-- Name + Preferred Name --}}
-            <div class="leading-tight">
-                <div class="font-semibold text-sm">
-                    {{ auth()->user()->name }}
+                {{-- Tooltip anchor MUST be a plain element --}}
+                <div class="inline-block">
+
+                    <flux:modal.trigger name="avatar-modal">
+
+                        <div
+                            class="h-24 w-24 rounded-full overflow-hidden
+                            bg-zinc-200 dark:bg-zinc-700
+                            flex items-center justify-center
+                            cursor-pointer
+                            hover:ring-2 hover:ring-primary-500 transition">
+
+                            @if (auth()->user()->profile_photo_path)
+                                <img src="{{ Storage::disk('s3')->url(auth()->user()->profile_photo_path) }}"
+                                    class="h-full w-full object-cover">
+                            @else
+                                <span class="text-lg font-semibold text-black dark:text-white">
+                                    {{ auth()->user()->initials() }}
+                                </span>
+                            @endif
+
+                        </div>
+
+                    </flux:modal.trigger>
+
                 </div>
 
-                <div class="text-[11px] text-yellow-300 drop-shadow-[0_0_6px_rgba(253,224,71,0.9)]">
-                    {{ auth()->user()->preferred_name ?? '' }}
+            </flux:tooltip>
+
+            {{-- Preferred Name --}}
+            @if (auth()->user()->preferred_name)
+                <div
+                    class="text-xs font-semibold text-yellow-300
+                    drop-shadow-[0_0_6px_rgba(253,224,71,0.9)]">
+                    {{ auth()->user()->preferred_name }}
                 </div>
-            </div>
+            @endif
 
         </div>
+        <flux:modal name="avatar-modal" class="md:w-96">
+            <form wire:submit="updateAvatar" class="space-y-6">
+
+                <div>
+                    <flux:heading size="lg">Update Profile Photo</flux:heading>
+                    <flux:text class="mt-2">
+                        Upload a new avatar image.
+                    </flux:text>
+                </div>
+
+                {{-- Preview --}}
+                <div class="flex justify-center">
+                    @if ($avatar)
+                        <img src="{{ $avatar->temporaryUrl() }}" class="h-24 w-24 rounded-full object-cover">
+                    @elseif(auth()->user()->profile_photo_path)
+                        <img src="{{ Storage::disk('s3')->url(auth()->user()->profile_photo_path) }}"
+                            class="h-24 w-24 rounded-full object-cover">
+                    @else
+                        <div class="h-24 w-24 rounded-full bg-zinc-200 flex items-center justify-center">
+                            <span class="text-sm font-semibold">
+                                {{ auth()->user()->initials() }}
+                            </span>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- File Input --}}
+                <flux:input type="file" wire:model="avatar" label="Choose Photo" />
+
+                @error('avatar')
+                    <div class="text-red-500 text-sm">{{ $message }}</div>
+                @enderror
+
+                {{-- Actions --}}
+                <div class="flex">
+                    <flux:spacer />
+
+                    <flux:button type="submit" variant="primary">
+                        Upload
+                    </flux:button>
+                </div>
+
+            </form>
+        </flux:modal>
     </div>
     <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">

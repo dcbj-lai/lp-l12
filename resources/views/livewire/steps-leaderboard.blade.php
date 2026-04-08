@@ -26,17 +26,47 @@
                     <ul class="space-y-3 w-full max-w-xs text-sm">
 
                         @foreach ($leaders as $index => $entry)
-                            <li class="flex justify-between items-center">
+                            <li class="flex items-center justify-between">
 
-                                <span class="text-gray-400 font-medium tracking-wide">
-                                    {{ $index + 1 }}. {{ $entry->user->preferred_name ?? $entry->user->name }}
-                                </span>
+                                {{-- Left: Rank + Avatar + Name --}}
+                                <div class="flex items-center gap-2 min-w-0">
 
-                                <span class="text-blue-600 font-semibold dark:text-blue-400">
-                                    {{ number_format($entry->total_steps) }}
-                                </span>
+                                    {{-- Rank --}}
+                                    <span class="text-gray-500 text-xs w-4">
+                                        {{ $index + 1 }}.
+                                    </span>
 
-                                <span>
+                                    {{-- Avatar --}}
+                                    <div
+                                        class="h-7 w-7 rounded-full overflow-hidden
+                    bg-zinc-200 dark:bg-zinc-700
+                    flex items-center justify-center shrink-0">
+
+                                        @if ($entry->user->profile_photo_path)
+                                            <img src="{{ Storage::disk('s3')->url($entry->user->profile_photo_path) }}"
+                                                class="h-full w-full object-cover">
+                                        @else
+                                            <span class="text-[10px] font-semibold text-black dark:text-white">
+                                                {{ $entry->user->initials() }}
+                                            </span>
+                                        @endif
+
+                                    </div>
+
+                                    {{-- Name --}}
+                                    <span class="text-gray-300 font-medium truncate">
+                                        {{ $entry->user->preferred_name ?? $entry->user->name }}
+                                    </span>
+
+                                </div>
+
+                                {{-- Right: Steps + Badge --}}
+                                <div class="flex items-center gap-2 shrink-0">
+
+                                    <span class="text-blue-600 font-semibold dark:text-blue-400 text-xs">
+                                        {{ number_format($entry->total_steps) }}
+                                    </span>
+
                                     @if ($index === 0)
                                         <flux:icon name="trophy" class="text-yellow-500 h-4 w-4" />
                                     @elseif ($index === 1)
@@ -44,7 +74,8 @@
                                     @elseif ($index === 2)
                                         <flux:icon name="award" class="text-orange-500 h-4 w-4" />
                                     @endif
-                                </span>
+
+                                </div>
 
                             </li>
                         @endforeach
@@ -147,16 +178,44 @@
                                         {{ $index + 1 }}
                                     </td>
 
-                                    <td class="py-2 pr-4 text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                                        {{ $entry->user->preferred_name ?? $entry->user->name }}
+                                    <td class="py-2 pr-4 text-gray-800 dark:text-gray-200">
+                                        <div class="flex items-center gap-3">
 
-                                        @if ($index === 0)
-                                            <flux:icon name="trophy" class="text-yellow-500 h-4 w-4" />
-                                        @elseif ($index === 1)
-                                            <flux:icon name="medal" class="text-gray-400 h-4 w-4" />
-                                        @elseif ($index === 2)
-                                            <flux:icon name="award" class="text-orange-500 h-4 w-4" />
-                                        @endif
+                                            {{-- Avatar --}}
+                                            <div
+                                                class="h-8 w-8 rounded-full overflow-hidden
+                    bg-zinc-200 dark:bg-zinc-700
+                    flex items-center justify-center shrink-0">
+
+                                                @if ($entry->user->profile_photo_path)
+                                                    <img src="{{ Storage::disk('s3')->url($entry->user->profile_photo_path) }}"
+                                                        class="h-full w-full object-cover">
+                                                @else
+                                                    <span class="text-xs font-semibold text-black dark:text-white">
+                                                        {{ $entry->user->initials() }}
+                                                    </span>
+                                                @endif
+
+                                            </div>
+
+                                            {{-- Name + Badge --}}
+                                            <div class="flex items-center gap-2">
+
+                                                <span>
+                                                    {{ $entry->user->preferred_name ?? $entry->user->name }}
+                                                </span>
+
+                                                @if ($index === 0)
+                                                    <flux:icon name="trophy" class="text-yellow-500 h-4 w-4" />
+                                                @elseif ($index === 1)
+                                                    <flux:icon name="medal" class="text-gray-400 h-4 w-4" />
+                                                @elseif ($index === 2)
+                                                    <flux:icon name="award" class="text-orange-500 h-4 w-4" />
+                                                @endif
+
+                                            </div>
+
+                                        </div>
                                     </td>
 
                                     <td class="py-2 text-right font-semibold text-blue-600 dark:text-blue-400">
