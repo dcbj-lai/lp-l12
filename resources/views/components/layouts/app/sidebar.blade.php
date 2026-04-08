@@ -134,9 +134,14 @@
                                 </span>
                             </span>
 
-                            <div class="grid flex-1 text-left text-sm leading-tight">
-                                <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
-                                <span class="truncate text-xs">{{ auth()->user()->position }}</span>
+                            <div class="grid flex-1 text-left leading-tight">
+                                <span class="truncate font-semibold">
+                                    {{ auth()->user()->name }}
+                                </span>
+
+                                <span class="text-[11px] text-yellow-300 drop-shadow-[0_0_6px_rgba(253,224,71,0.9)]">
+                                    {{ auth()->user()->preferred_name ?? '' }}
+                                </span>
                             </div>
                         </div>
                     </div>

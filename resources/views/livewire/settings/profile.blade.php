@@ -9,6 +9,7 @@ use Livewire\Volt\Component;
 new class extends Component {
     public string $name = '';
     public string $email = '';
+    public string $preferred_name = '';
 
     /**
      * Mount the component.
@@ -17,6 +18,7 @@ new class extends Component {
     {
         $this->name = Auth::user()->name;
         $this->email = Auth::user()->email;
+        $this->preferred_name = Auth::user()->preferred_name ?? '';
     }
 
     /**
@@ -28,15 +30,9 @@ new class extends Component {
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
+            'preferred_name' => ['nullable', 'string', 'max:255'],
 
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique(User::class)->ignore($user->id)
-            ],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
         ]);
 
         $user->fill($validated);
@@ -71,11 +67,41 @@ new class extends Component {
 
 <section class="w-full">
     @include('partials.settings-heading')
+    <div class="flex justify-end">
+        <div
+            class="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
 
+            {{-- Avatar --}}
+            <div
+                class="h-12 w-12 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
+                @if (auth()->user()->profile_photo_path)
+                    <img src="{{ Storage::url(auth()->user()->profile_photo_path) }}" class="h-full w-full object-cover">
+                @else
+                    <span class="text-sm font-semibold text-black dark:text-white">
+                        {{ auth()->user()->initials() }}
+                    </span>
+                @endif
+            </div>
+
+            {{-- Name + Preferred Name --}}
+            <div class="leading-tight">
+                <div class="font-semibold text-sm">
+                    {{ auth()->user()->name }}
+                </div>
+
+                <div class="text-[11px] text-yellow-300 drop-shadow-[0_0_6px_rgba(253,224,71,0.9)]">
+                    {{ auth()->user()->preferred_name ?? '' }}
+                </div>
+            </div>
+
+        </div>
+    </div>
     <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
             <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name"
                 readonly />
+            <flux:input wire:model="preferred_name" :label="__('Preferred Name')" type="text"
+                placeholder="Nickname / display name" />
 
             <div>
                 <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email"
@@ -86,7 +112,8 @@ new class extends Component {
                         <flux:text class="mt-4">
                             {{ __('Your email address is unverified.') }}
 
-                            <flux:link class="text-sm cursor-pointer" wire:click.prevent="resendVerificationNotification">
+                            <flux:link class="text-sm cursor-pointer"
+                                wire:click.prevent="resendVerificationNotification">
                                 {{ __('Click here to re-send the verification email.') }}
                             </flux:link>
                         </flux:text>

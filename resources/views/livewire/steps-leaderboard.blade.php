@@ -29,7 +29,7 @@
                             <li class="flex justify-between items-center">
 
                                 <span class="text-gray-400 font-medium tracking-wide">
-                                    {{ $index + 1 }}. {{ $entry->user->name }}
+                                    {{ $index + 1 }}. {{ $entry->user->preferred_name ?? $entry->user->name }}
                                 </span>
 
                                 <span class="text-blue-600 font-semibold dark:text-blue-400">
@@ -148,7 +148,7 @@
                                     </td>
 
                                     <td class="py-2 pr-4 text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                                        {{ $entry->user->name }}
+                                        {{ $entry->user->preferred_name ?? $entry->user->name }}
 
                                         @if ($index === 0)
                                             <flux:icon name="trophy" class="text-yellow-500 h-4 w-4" />
