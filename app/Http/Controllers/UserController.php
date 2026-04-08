@@ -41,6 +41,7 @@ class UserController extends Controller
         try {
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
+                'preferred_name' => ['nullable', 'string', 'max:255'],
                 'email' => [
                     'required',
                     'email',
@@ -104,6 +105,7 @@ class UserController extends Controller
             // ✅ Update safely
             $user->update([
                 'name' => $validated['name'],
+                'preferred_name' => $validated['preferred_name'] ?? null,
                 'email' => $validated['email'],
                 'supervisor_id' => $validated['supervisor_id'] ?? null,
                 'department_id' => $validated['department_id'] ?? null,
