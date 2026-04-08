@@ -27,13 +27,40 @@
                 @else
                     <ul class="space-y-1 ml-6">
                         @foreach ($birthdays as $user)
-                            <li class="flex justify-between items-center text-sm">
-                                <span class="truncate text-gray-700 dark:text-gray-200">
-                                    {{ $user->name }}
-                                </span>
-                                <span class="text-gray-400 text-xs">
+                            <li class="flex items-center justify-between text-sm">
+
+                                {{-- Left: Avatar + Name --}}
+                                <div class="flex items-center gap-2 min-w-0">
+
+                                    {{-- Avatar --}}
+                                    <div
+                                        class="h-6 w-6 rounded-full overflow-hidden
+                            bg-zinc-200 dark:bg-zinc-700
+                            flex items-center justify-center shrink-0">
+
+                                        @if ($user->profile_photo_path)
+                                            <img src="{{ Storage::disk('s3')->url($user->profile_photo_path) }}"
+                                                class="h-full w-full object-cover">
+                                        @else
+                                            <span class="text-[9px] font-semibold text-black dark:text-white">
+                                                {{ method_exists($user, 'initials') ? $user->initials() : substr($user->name, 0, 1) }}
+                                            </span>
+                                        @endif
+
+                                    </div>
+
+                                    {{-- Name --}}
+                                    <span class="truncate text-gray-700 dark:text-gray-200">
+                                        {{ $user->preferred_name ?? $user->name }}
+                                    </span>
+
+                                </div>
+
+                                {{-- Date --}}
+                                <span class="text-gray-400 text-xs shrink-0">
                                     {{ $user->birthdate->format('M d') }}
                                 </span>
+
                             </li>
                         @endforeach
                     </ul>
@@ -54,13 +81,40 @@
                 @else
                     <ul class="space-y-1 ml-6">
                         @foreach ($anniversaries as $user)
-                            <li class="flex justify-between items-center text-sm">
-                                <span class="truncate text-gray-700 dark:text-gray-200">
-                                    {{ $user->name }}
-                                </span>
-                                <span class="text-gray-400 text-xs">
+                            <li class="flex items-center justify-between text-sm">
+
+                                {{-- Left: Avatar + Name --}}
+                                <div class="flex items-center gap-2 min-w-0">
+
+                                    {{-- Avatar --}}
+                                    <div
+                                        class="h-6 w-6 rounded-full overflow-hidden
+                            bg-zinc-200 dark:bg-zinc-700
+                            flex items-center justify-center shrink-0">
+
+                                        @if ($user->profile_photo_path)
+                                            <img src="{{ Storage::disk('s3')->url($user->profile_photo_path) }}"
+                                                class="h-full w-full object-cover">
+                                        @else
+                                            <span class="text-[9px] font-semibold text-black dark:text-white">
+                                                {{ method_exists($user, 'initials') ? $user->initials() : substr($user->name, 0, 1) }}
+                                            </span>
+                                        @endif
+
+                                    </div>
+
+                                    {{-- Name --}}
+                                    <span class="truncate text-gray-700 dark:text-gray-200">
+                                        {{ $user->preferred_name ?? $user->name }}
+                                    </span>
+
+                                </div>
+
+                                {{-- Date --}}
+                                <span class="text-gray-400 text-xs shrink-0">
                                     {{ $user->hire_date->format('M d') }}
                                 </span>
+
                             </li>
                         @endforeach
                     </ul>
