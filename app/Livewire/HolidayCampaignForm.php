@@ -7,6 +7,7 @@ use App\Models\HolidayCampaign;
 use App\Models\User;
 use App\Services\AmazonS3Service;
 use App\Services\HtmlAssetProcessor;
+use App\Services\HtmlSanitizer;
 use Flux\Flux;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -85,15 +86,18 @@ class HolidayCampaignForm extends Component
         $this->dispatch('flash', type: 'success', message: 'Assets uploaded.');
     }
 
-    public function processHtml(HtmlAssetProcessor $processor)
-    {
-        $this->processedHtml = $processor->process(
+    public function processHtml(
+        HtmlAssetProcessor $processor,
+        HtmlSanitizer $sanitizer
+    ) {
+        $processed = $processor->process(
             $this->html,
             $this->assetMap
         );
 
-        // ✅ use Livewire event instead
-        $this->dispatch('flash', type: 'info', message: 'HTML processed. Review preview.');
+        $this->processedHtml = $sanitizer->clean($processed);
+
+        $this->dispatch('flash', type: 'info', message: 'HTML processed safely.');
     }
 
     public function saveCampaign()
@@ -165,6 +169,17 @@ class HolidayCampaignForm extends Component
 
         return redirect()->route('holiday.campaign')
             ->with('success', 'Campaign queued successfully.');
+    }
+
+    public function toggleSelectAll()
+    {
+        if (count($this->selectedUsers) === count($this->users)) {
+            $this->selectedUsers = [];
+        } else {
+            $this->selectedUsers = collect($this->users)
+                ->pluck('id')
+                ->toArray();
+        }
     }
 
     public function render()

@@ -84,9 +84,17 @@
             @php
                 $preview = html_entity_decode($processedHtml);
                 $preview = preg_replace('/\{\{\s*name\s*\}\}/', 'Colleague', $preview);
+
+                $doc = "<!DOCTYPE html><html><head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    </head><body>$preview</body></html>";
+
+                $base64 = base64_encode($doc);
             @endphp
 
-            {!! $preview !!}
+            <iframe class="w-full border rounded bg-white" style="min-height: 600px;" sandbox="allow-same-origin"
+                src="data:text/html;base64,{{ $base64 }}"></iframe>
         </div>
     </div>
 
@@ -108,9 +116,15 @@
 
         <div class="p-6 space-y-5">
 
-            <div class="flex items-center gap-2">
-                <flux:icon name="users" class="w-5 h-5" />
-                <h2 class="text-lg font-semibold">Select Recipients</h2>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <flux:icon name="users" class="w-5 h-5" />
+                    <h2 class="text-lg font-semibold">Select Recipients</h2>
+                </div>
+
+                <flux:button size="sm" variant="ghost" wire:click="toggleSelectAll">
+                    {{ count($selectedUsers) === count($users) ? 'Uncheck All' : 'Check All' }}
+                </flux:button>
             </div>
 
             {{-- Users --}}
