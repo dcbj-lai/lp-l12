@@ -16,26 +16,28 @@ class OpenAiHtmlEmailService
     {
         $html = mb_convert_encoding($html, 'UTF-8', 'UTF-8');
 
+        $html = $this->stripDocumentTags($html);
+
         $final = $this->fixItalicsDeterministic($html);
 
         return Purifier::clean($final, [
             'HTML.Allowed' => implode(',', [
                 'p[style]',
-                'table',
+                'table[style]',
                 'tbody',
                 'thead',
-                'tr',
-                'td',
+                'tr[style]',
+                'td[style]',
                 'br',
                 'strong',
                 'b',
                 'i',
                 'img[src|alt|width|height|style]',
-                'a[href|target]',
-                'h1',
-                'h2',
-                'h3',
-                'h4'
+                'a[href|target|style]',
+                'h1[style]',
+                'h2[style]',
+                'h3[style]',
+                'h4[style]'
             ]),
             'CSS.AllowedProperties' => [
                 'color',
@@ -48,6 +50,8 @@ class OpenAiHtmlEmailService
                 'width',
                 'height'
             ],
+            'CSS.AllowTricky' => true,
+            'CSS.Trusted' => true,
             'AutoFormat.AutoParagraph' => false,
             'AutoFormat.RemoveEmpty' => false,
         ]);
@@ -79,5 +83,17 @@ class OpenAiHtmlEmailService
             },
             $html
         );
+    }
+    private function stripDocumentTags(string $html): string
+    {
+        // Remove DOCTYPE
+        $html = preg_replace('/<!DOCTYPE.*?>/i', '', $html);
+
+        // Extract body content if exists
+        if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $html, $matches)) {
+            return $matches[1];
+        }
+
+        return $html;
     }
 }
