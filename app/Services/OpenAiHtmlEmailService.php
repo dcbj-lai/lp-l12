@@ -27,6 +27,7 @@ class OpenAiHtmlEmailService
 
         $final = $this->fixItalicsDeterministic($html);
         $final = $this->normalizeParagraphSpacing($final);
+        $final = $this->fixSignatureSpacing($final);
         $final = $this->wrapEmailLayout($final);
 
         return Purifier::clean($final, [
@@ -134,33 +135,39 @@ class OpenAiHtmlEmailService
 
                 $attrs = $matches[1] ?? '';
 
-                // Extract existing style if present
-                if (preg_match('/style="([^"]*)"/i', $attrs, $styleMatch)) {
-                    $style = $styleMatch[1];
+                // Extract existing style
+                $style = '';
 
-                    // Ensure margin
-                    if (!str_contains($style, 'margin')) {
-                        $style .= '; margin: 0 0 16px 0;';
-                    }
+                if (preg_match('/style="([^"]*)"/i', $attrs, $styleMatch)) {
+                    $style = strtolower($styleMatch[1]);
+
+                    // 🔥 Remove ALL existing margin definitions (case-insensitive)
+                    $style = preg_replace('/margin[^;]*;?/i', '', $style);
+
+                    // Normalize spacing
+                    $style .= ' margin: 0 0 16px 0;';
 
                     // Ensure font-size
                     if (!str_contains($style, 'font-size')) {
-                        $style .= '; font-size:14px;';
+                        $style .= ' font-size:14px;';
                     }
 
                     // Ensure line-height
                     if (!str_contains($style, 'line-height')) {
-                        $style .= '; line-height:1.6;';
+                        $style .= ' line-height:1.6;';
                     }
 
-                    // Replace existing style attribute
+                    // Clean spacing
+                    $style = trim(preg_replace('/\s+/', ' ', $style));
+
+                    // Replace style attribute
                     $attrs = preg_replace(
                         '/style="([^"]*)"/i',
                         'style="' . trim($style) . '"',
                         $attrs
                     );
                 } else {
-                    // No style at all → add it
+                    // No style → apply full default
                     $attrs .= ' style="margin: 0 0 16px 0; font-size:14px; line-height:1.6;"';
                 }
 
@@ -177,6 +184,33 @@ class OpenAiHtmlEmailService
 
         // Remove deprecated bgcolor attributes
         $html = preg_replace('/bgcolor="[^"]*"/i', '', $html);
+
+        return $html;
+    }
+
+    private function fixSignatureSpacing(string $html): string
+    {
+        // Add spacing before closing/signature phrases
+        $patterns = [
+            '/(<p[^>]*>)(With [^<]+<\/p>)/i',
+            '/(<p[^>]*>)(Sincerely[^<]*<\/p>)/i',
+            '/(<p[^>]*>)(Warm regards[^<]*<\/p>)/i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            $html = preg_replace(
+                $pattern,
+                '<p style="margin-top:24px;">$2',
+                $html
+            );
+        }
+
+        // Ensure last paragraph (name/signature) has spacing
+        $html = preg_replace(
+            '/<\/p>\s*<p([^>]*)>/i',
+            '</p><p$1 style="margin-top:8px;">',
+            $html
+        );
 
         return $html;
     }
