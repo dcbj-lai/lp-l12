@@ -15,7 +15,6 @@
                    dark:from-zinc-900/80 pointer-events-none z-40">
         </div>
 
-        <!-- ✅ Scroll Hint -->
         <!-- ✅ Scroll Hint (Top) -->
         <div x-data="{
             atBottom: false,
@@ -25,7 +24,8 @@
                     this.atBottom = (window.innerHeight + window.scrollY) >= (el.scrollHeight - 10);
                 });
             }
-        }" class="md:hidden fixed top-4 left-0 w-full flex justify-center z-50">
+        }"
+            class="md:hidden fixed top-4 left-0 w-full flex justify-center z-50 pointer-events-none">
             <div
                 class="pointer-events-none flex items-center gap-2 px-3 py-1 rounded-full 
        bg-yellow-200/40 dark:bg-yellow-300/20 
