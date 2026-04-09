@@ -1,5 +1,3 @@
-{{-- alert.blade.php --}}
-
 @props(['type' => 'success', 'message' => null])
 
 @php
@@ -25,28 +23,39 @@
         'info' => 'bg-blue-100 dark:bg-blue-900',
         'default' => 'bg-gray-100 dark:bg-gray-900',
     ];
-
-    $styles = ($borderColors[$type] ?? $borderColors['default']) . ' ' . ($bgColors[$type] ?? $bgColors['default']);
-    $icon = $icons[$type] ?? 'ℹ️';
 @endphp
 
-@if ($message)
-    <div x-data="{ show: false }" x-init="setTimeout(() => show = true, 100);
-    setTimeout(() => show = false, 5000)" x-show="show"
-        x-transition:enter="transform transition ease-out duration-500"
-        x-transition:enter-start="opacity-0 translate-x-10" x-transition:enter-end="opacity-100 translate-x-0"
-        x-transition:leave="transform transition ease-in duration-500"
-        x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 translate-x-10"
-        class="flex items-center space-x-3 px-5 py-3 rounded-lg border-l-4 shadow-lg {{ $styles }}">
-        <span>{{ $icon }}</span>
+<div x-data="{
+    show: {{ $message ? 'true' : 'false' }},
+    message: '{{ $message }}',
+    type: '{{ $type }}',
+    icons: @js($icons),
+    borderColors: @js($borderColors),
+    bgColors: @js($bgColors),
 
-        <span class="text-sm flex-1">
-            {{ $message }}
-        </span>
+    get styles() {
+        return (this.borderColors[this.type] ?? this.borderColors.default) + ' ' +
+            (this.bgColors[this.type] ?? this.bgColors.default);
+    }
+}" {{-- ✅ Listen to Livewire events --}}
+    x-on:flash.window="
+        message = $event.detail.message;
+        type = $event.detail.type;
+        show = true;
+        setTimeout(() => show = false, 5000);
+    "
+    {{-- ✅ Auto-hide for session flashes --}} x-init="if (show) setTimeout(() => show = false, 5000)" x-show="show"
+    x-transition:enter="transform transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-x-10"
+    x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transform transition ease-in duration-500"
+    x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 translate-x-10"
+    class="fixed top-5 right-5 z-50 flex items-center space-x-3 px-5 py-3 rounded-lg border-l-4 shadow-lg"
+    :class="styles">
+    <span x-text="icons[type] ?? 'ℹ️'"></span>
 
-        <button @click="show = false"
-            class="text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-lg font-bold">
-            &times;
-        </button>
-    </div>
-@endif
+    <span class="text-sm flex-1" x-text="message"></span>
+
+    <button @click="show = false"
+        class="text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-lg font-bold">
+        &times;
+    </button>
+</div>

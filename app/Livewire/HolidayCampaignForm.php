@@ -167,8 +167,6 @@ class HolidayCampaignForm extends Component
         // ✅ Close modal (Flux)
         Flux::modal('recipient-modal')->close();
 
-        return redirect()->route('holiday.campaign')
-            ->with('success', 'Campaign queued successfully.');
     }
 
     public function toggleSelectAll()

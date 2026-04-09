@@ -1,7 +1,9 @@
 {{-- resources/views/livewire/holiday/campaign-form.blade.php --}}
 
 <div class="space-y-8">
-
+    <script>
+        window.addEventListener('flash', e => console.log('FLASH EVENT:', e.detail));
+    </script>
     {{-- =========================
         ASSET UPLOAD
     ========================== --}}

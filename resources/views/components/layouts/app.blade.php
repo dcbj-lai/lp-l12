@@ -2,10 +2,13 @@
     <flux:main class="space-y-4">
 
         <!-- Flash Messages -->
-        <x-alert type="success" :message="session('success')" />
-        <x-alert type="error" :message="session('error')" />
-        <x-alert type="warning" :message="session('warning')" />
-        <x-alert type="info" :message="session('info')" />
+        <x-alert :message="session('success') ?? (session('error') ?? (session('warning') ?? session('info')))" :type="session('success')
+            ? 'success'
+            : (session('error')
+                ? 'error'
+                : (session('warning')
+                    ? 'warning'
+                    : 'info'))" />
 
         {{ $slot }}
 
