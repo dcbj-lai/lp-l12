@@ -1,4 +1,7 @@
-@props(['type' => 'success', 'message' => null])
+@props([
+    'type' => 'success',
+    'message' => null,
+])
 
 @php
     $icons = [
@@ -26,9 +29,9 @@
 @endphp
 
 <div x-data="{
-    show: {{ $message ? 'true' : 'false' }},
-    message: '{{ $message }}',
-    type: '{{ $type }}',
+    show: false,
+    message: '',
+    type: 'success',
     icons: @js($icons),
     borderColors: @js($borderColors),
     bgColors: @js($bgColors),
@@ -36,15 +39,24 @@
     get styles() {
         return (this.borderColors[this.type] ?? this.borderColors.default) + ' ' +
             (this.bgColors[this.type] ?? this.bgColors.default);
+    },
+
+    trigger(msg, typ = 'success') {
+        this.message = msg;
+        this.type = typ;
+        this.show = true;
+
+        setTimeout(() => this.show = false, 5000);
     }
-}" {{-- ✅ Listen to Livewire events --}}
+}" {{-- ✅ Session flash (on page load) --}} x-init="const initialMessage = @js($message);
+const initialType = @js($type);
+
+if (initialMessage) {
+    trigger(initialMessage, initialType);
+}" {{-- ✅ Livewire events --}}
     x-on:flash.window="
-        message = $event.detail.message;
-        type = $event.detail.type;
-        show = true;
-        setTimeout(() => show = false, 5000);
-    "
-    {{-- ✅ Auto-hide for session flashes --}} x-init="if (show) setTimeout(() => show = false, 5000)" x-show="show"
+        trigger($event.detail.message, $event.detail.type);
+    " x-show="show"
     x-transition:enter="transform transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-x-10"
     x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transform transition ease-in duration-500"
     x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 translate-x-10"

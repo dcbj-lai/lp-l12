@@ -24,7 +24,7 @@ class PreapprovedVisitForm extends Component
     public function addVisitor()
     {
         if (!$this->visitor_name || !$this->visitor_email || !filter_var($this->visitor_email, FILTER_VALIDATE_EMAIL)) {
-            $this->dispatch('notify', type: 'error', message: 'Please enter a valid name and email.');
+            $this->dispatch('flash', type: 'error', message: 'Please enter a valid name and email.');
             return;
         }
 
@@ -91,7 +91,10 @@ class PreapprovedVisitForm extends Component
             Mail::to($record->email)->queue(new VisitorPreApprovedMail($record));
         }
         return redirect()->route('visitors.mine')
-            ->with('success', "Pre-approved visit(s) successfully created.");
+            ->with('flash', [
+                'type' => 'success',
+                'message' => "Pre-approved visit(s) successfully created.",
+            ]);
 
     }
 
@@ -133,7 +136,7 @@ class PreapprovedVisitForm extends Component
             }
         }
 
-        $this->dispatch('notify', type: 'success', message: 'CSV uploaded. Review and click Create to proceed.');
+        $this->dispatch('flash', type: 'success', message: 'CSV uploaded. Review and click Create to proceed.');
         $this->reset('csvFile');
     }
 

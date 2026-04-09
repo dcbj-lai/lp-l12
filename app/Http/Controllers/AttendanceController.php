@@ -47,7 +47,10 @@ class AttendanceController extends Controller
         $attendance = Attendance::where('user_id', $user->id)->whereDate('date', $today)->first();
 
         if ($attendance) {
-            return back()->with('error', 'You have already checked in today.');
+            return back()->with('flash', [
+                'type' => 'error',
+                'message' => 'You have already checked in today.',
+            ]);
         }
 
         // Determine status & remarks based on check-in time
@@ -62,7 +65,10 @@ class AttendanceController extends Controller
             'remarks' => $remarks,
         ]);
 
-        return back()->with('success', 'Checked in successfully.');
+        return back()->with('flash', [
+            'type' => 'success',
+            'message' => 'Checked in successfully.',
+        ]);
     }
 
 
@@ -97,7 +103,10 @@ class AttendanceController extends Controller
 
         $attendance->save();
 
-        return back()->with('success', 'Checked out successfully.');
+        return back()->with('flash', [
+            'type' => 'success',
+            'message' => 'Checked out successfully.',
+        ]);
     }
 
     public function index(Request $request)
@@ -257,6 +266,7 @@ class AttendanceController extends Controller
             'status' => 'success',
             'message' => 'Successfully checked out!',
         ]);
+
     }
 
     // Modify by P&C
@@ -308,7 +318,10 @@ class AttendanceController extends Controller
 
         return redirect()
             ->route('attendance.index')
-            ->with('success', 'Attendance manually updated (P&C logged).');
+            ->with('flash', [
+                'type' => 'success',
+                'message' => 'Attendance manually updated (P&C logged).',
+            ]);
     }
 
     public function create()
@@ -362,7 +375,10 @@ class AttendanceController extends Controller
 
 
 
-        return redirect()->route('attendance.index')->with('success', 'Attendance record added successfully.');
+        return redirect()->route('attendance.index')->with('flash', [
+            'type' => 'success',
+            'message' => 'Attendance record added successfully.',
+        ]);
     }
 
     // Bad and dangerous area!
@@ -372,7 +388,10 @@ class AttendanceController extends Controller
 
         return redirect()
             ->route('attendance.index')
-            ->with('success', 'Attendance record permanently deleted.');
+            ->with('flash', [
+                'type' => 'success',
+                'message' => 'Attendance record permanently deleted.',
+            ]);
     }
 
     // Stop QR

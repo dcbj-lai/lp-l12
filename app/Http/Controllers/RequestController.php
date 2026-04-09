@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\RequestStatusNotification;
+// use App\Mail\RequestStatusNotification;
 use App\Models\Request as StaffRequest;
 use Illuminate\Support\Facades\Storage;
 
@@ -217,7 +217,10 @@ class RequestController extends Controller
 
         return redirect()
             ->route('my-requests')
-            ->with('success', 'Request submitted.');
+            ->with('flash', [
+                'type' => 'success',
+                'message' => 'Request submitted.',
+            ]);
     }
 
 
@@ -253,14 +256,23 @@ class RequestController extends Controller
 
         $staffRequest = StaffRequest::findOrFail($id);
 
-        if (($staffRequest->status === 'approved' && $request->input('action_type') === 'approve') || ($staffRequest->status === 'rejected' && $request->input('action_type') === 'reject')) {
+        if (
+            ($staffRequest->status === 'approved' && $request->input('action_type') === 'approve') ||
+            ($staffRequest->status === 'rejected' && $request->input('action_type') === 'reject')
+        ) {
             return redirect()->back()
-                ->with('error', "Request already {$staffRequest->status}.");
+                ->with('flash', [
+                    'type' => 'error',
+                    'message' => "Request already {$staffRequest->status}.",
+                ]);
         }
 
         if ($staffRequest->status === 'cancelled') {
             return redirect()->back()
-                ->with('error', "Request already {$staffRequest->status}.");
+                ->with('flash', [
+                    'type' => 'error',
+                    'message' => "Request already {$staffRequest->status}.",
+                ]);
         }
 
         $originalStatus = $staffRequest->status;
@@ -418,7 +430,10 @@ class RequestController extends Controller
         }
 
         return redirect()->route('requests.manage')
-            ->with('info', "Request {$staffRequest->status}.");
+            ->with('flash', [
+                'type' => 'info',
+                'message' => "Request {$staffRequest->status}.",
+            ]);
     }
 
 
@@ -478,7 +493,10 @@ class RequestController extends Controller
 
         return redirect()
             ->route('my-requests')
-            ->with('info', 'Request has been cancelled and notifications sent.');
+            ->with('flash', [
+                'type' => 'info',
+                'message' => 'Request has been cancelled and notifications sent.',
+            ]);
     }
 
 
@@ -492,7 +510,10 @@ class RequestController extends Controller
         }
 
         if ($requestModel->status !== 'pending') {
-            return back()->with('error', 'Only pending requests can be updated.');
+            return back()->with('flash', [
+                'type' => 'error',
+                'message' => 'Only pending requests can be updated.',
+            ]);
         }
 
 
@@ -642,7 +663,10 @@ class RequestController extends Controller
 
         return redirect()
             ->route('my-requests')
-            ->with('success', 'Request updated.');
+            ->with('flash', [
+                'type' => 'success',
+                'message' => 'Request updated.',
+            ]);
     }
 
 
@@ -665,13 +689,19 @@ class RequestController extends Controller
             );
         }
 
-        return redirect()->back()->with('success', 'Leave credits updated for all users.');
+        return redirect()->back()->with('flash', [
+            'type' => 'success',
+            'message' => 'Leave credits updated for all users.',
+        ]);
     }
 
     public function forceDestroy(StaffRequest $request)
     {
         $request->delete();
-        return redirect()->route('requests.manage')->with('success', 'Request permanently deleted.');
+        return redirect()->route('requests.manage')->with('flash', [
+            'type' => 'success',
+            'message' => 'Request permanently deleted.',
+        ]);
     }
 
 

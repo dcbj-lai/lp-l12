@@ -41,7 +41,10 @@ class StepController extends Controller
         if ($existingLog) {
             return redirect()
                 ->route('my-steps.index')
-                ->with('error', 'You already logged steps for this date. Nice try, time traveler. ⏳😏');
+                ->with('flash', [
+                    'type' => 'error',
+                    'message' => 'You already logged steps for this date. Nice try, time traveler. ⏳😏',
+                ]);
         }
 
         $steps = (int) $request->steps;
@@ -65,7 +68,10 @@ class StepController extends Controller
 
         return redirect()
             ->route('my-steps.index')
-            ->with('success', $message);
+            ->with('flash', [
+                'type' => 'success',
+                'message' => $message,
+            ]);
     }
 
     public function edit(Step $step)
@@ -116,7 +122,10 @@ class StepController extends Controller
 
         return redirect()
             ->route('my-steps.index')
-            ->with('success', $message);
+            ->with('flash', [
+                'type' => 'success',
+                'message' => $message,
+            ]);
     }
     public function destroy(Step $step)
     {
@@ -127,7 +136,10 @@ class StepController extends Controller
         $step->delete();
 
         return redirect()->route('my-steps.index')
-            ->with('success', 'Step log deleted successfully.');
+            ->with('flash', [
+                'type' => 'success',
+                'message' => 'Step log deleted. Laban bawi? 🕵️‍♂️',
+            ]);
     }
 
 }

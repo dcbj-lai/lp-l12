@@ -265,7 +265,10 @@ class VisitorLogController extends Controller
             $message = 'Visitor visit declined. Frontdesk has been notified.';
         }
 
-        return redirect()->back()->with('success', $message);
+        return redirect()->back()->with('flash', [
+            'type' => 'success',
+            'message' => $message,
+        ]);
     }
 
 
@@ -516,7 +519,10 @@ class VisitorLogController extends Controller
     public function visitorDestroy(VisitorLog $visitor)
     {
         $visitor->delete();
-        return redirect()->route('frontdesk.visitors')->with('success', 'Visitor log permanently deleted.');
+        return redirect()->route('frontdesk.visitors')->with('flash', [
+            'type' => 'success',
+            'message' => 'Visitor log permanently deleted.',
+        ]);
 
     }
 
@@ -529,7 +535,10 @@ class VisitorLogController extends Controller
 
         return redirect()
             ->route('frontdesk.visitors')
-            ->with('success', 'All incomplete pending visitor records have been cleaned up.');
+            ->with('flash', [
+                'type' => 'success',
+                'message' => 'All incomplete pending visitor records have been cleaned up.',
+            ]);
     }
 
 
@@ -547,7 +556,10 @@ class VisitorLogController extends Controller
         VisitorLog::where('batch_id', $batchId)->delete();
 
         return redirect()->route('visitors.mine')
-            ->with('success', "Cancelled {$count} pre-approved visit(s).");
+            ->with('flash', [
+                'type' => 'success',
+                'message' => "Cancelled {$count} pre-approved visit(s).",
+            ]);
     }
 
     public function showValidQr($visitor_id, $batch_id)
