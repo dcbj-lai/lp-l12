@@ -35,6 +35,16 @@ class HolidayCampaignForm extends Component
     public string $fromEmail = '';
     public string $fromName = '';
 
+    //AI inputs
+
+    public string $aiInput = '';     // raw text or base content
+    public string $aiPrompt = '';    // extra instructions
+    public string $aiMode = 'format_only'; // format_only | enhance | prompt
+    public string $enhancePrompt = '';
+
+    public string $backgroundColor = '#ffffff';
+
+
     public function boot(AmazonS3Service $s3)
     {
         $this->s3 = $s3->useDisk('s3'); // ✅ ensure public disk
@@ -95,6 +105,10 @@ class HolidayCampaignForm extends Component
             $this->assetMap
         );
 
+        // ✅ SAME INSTANCE
+        $service->setBackgroundColor($this->backgroundColor);
+
+        // ❌ DO NOT call app() again anywhere
         $this->processedHtml = $service->process($processed);
 
         $this->dispatch('flash', type: 'info', message: 'HTML processed safely.');
@@ -179,6 +193,158 @@ class HolidayCampaignForm extends Component
                 ->toArray();
         }
     }
+
+    /**AI Generation */
+    public function generateAiHtml(OpenAiHtmlEmailService $service)
+    {
+        // Guard: prevent empty usage
+        if ($this->aiMode !== 'prompt' && empty(trim($this->aiInput))) {
+            $this->dispatch('flash', type: 'error', message: 'Input text is required for this mode.');
+            return;
+        }
+
+        if ($this->aiMode === 'prompt' && empty(trim($this->aiPrompt))) {
+            $this->dispatch('flash', type: 'error', message: 'Prompt is required in prompt mode.');
+            return;
+        }
+
+        $instruction = match ($this->aiMode) {
+            'format_only' => "Convert the following text into a clean, table-based, email-safe HTML layout. Preserve the original wording. Use inline styles only.",
+            'enhance' => "Improve the wording and convert it into a polished, table-based, email-safe HTML email. Use inline styles only.",
+            'prompt' => "Generate a complete, table-based, email-safe HTML email from the given prompt. Use inline styles only.",
+            default => "Convert content into email-safe HTML.",
+        };
+
+        $input = trim($this->aiInput);
+        $extra = trim($this->aiPrompt);
+
+        $finalPrompt = trim("
+{$instruction}
+
+Additional Instructions:
+{$extra}
+
+Content:
+{$input}
+
+IMPORTANT:
+- Return ONLY valid HTML
+- No markdown
+- No explanations
+- Use table-based layout
+- Use inline CSS only
+");
+
+        $response = app(\OpenAI\Client::class)->chat()->create([
+            'model' => 'gpt-4.1-mini',
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => 'You generate strictly valid email HTML only. No text outside HTML.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $finalPrompt
+                ]
+            ],
+            'temperature' => 0.7,
+        ]);
+
+        $generatedHtml = trim($response->choices[0]->message->content ?? '');
+
+        if (
+            empty($generatedHtml) ||
+            !str_contains($generatedHtml, '<') ||
+            !str_contains($generatedHtml, '>')
+        ) {
+            $this->dispatch('flash', type: 'error', message: 'AI did not return valid HTML.');
+            return;
+        }
+
+        if (empty($generatedHtml)) {
+            $this->dispatch('flash', type: 'error', message: 'AI generation failed.');
+            return;
+        }
+
+        // Inject + process
+        $this->html = $generatedHtml;
+
+        $this->processHtml(
+            app(HtmlAssetProcessor::class),
+            $service
+        );
+
+        // Reset modal state (premium UX)
+        $this->reset(['aiInput', 'aiPrompt']);
+        $this->aiMode = 'format_only';
+
+        // Close modal
+        Flux::modal('ai-generate-modal')->close();
+    }
+
+    public function enhanceHtml(OpenAiHtmlEmailService $service)
+    {
+        if (empty(trim($this->html))) {
+            $this->dispatch('flash', type: 'error', message: 'No HTML to enhance.');
+            return;
+        }
+
+        $instruction = trim($this->enhancePrompt);
+
+        $finalPrompt = trim("
+Improve the following HTML email while preserving its structure.
+
+Instructions:
+{$instruction}
+
+IMPORTANT:
+- Return ONLY valid HTML
+- Do not remove structure (tables, layout)
+- Improve readability and tone
+- Keep it email-safe (inline CSS, table-based)
+- Do not add explanations
+");
+
+        $response = app(\OpenAI\Client::class)->chat()->create([
+            'model' => 'gpt-4.1-mini',
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => 'You improve existing email HTML without breaking structure. Output HTML only.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $finalPrompt . "\n\nHTML:\n" . $this->html
+                ]
+            ],
+            'temperature' => 0.6,
+        ]);
+
+        $enhancedHtml = trim($response->choices[0]->message->content ?? '');
+
+        if (
+            empty($enhancedHtml) ||
+            !preg_match('/<(table|p|div|html|body)[\s>]/i', $enhancedHtml)
+        ) {
+            $this->dispatch('flash', type: 'error', message: 'Enhancement failed.');
+            return;
+        }
+
+        // Inject + process
+        $this->html = $enhancedHtml;
+
+        $this->processHtml(
+            app(HtmlAssetProcessor::class),
+            $service
+        );
+
+        // Reset + close
+        $this->reset('enhancePrompt');
+
+        Flux::modal('ai-enhance-modal')->close();
+    }
+
+    /**AI Generation */
 
     public function render()
     {

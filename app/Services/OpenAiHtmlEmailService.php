@@ -7,18 +7,27 @@ use Mews\Purifier\Facades\Purifier;
 
 class OpenAiHtmlEmailService
 {
+
+    protected string $backgroundColor = '#ffffff';
     public function __construct(
         protected Client $client
     ) {
     }
 
+    public function setBackgroundColor(string $color): void
+    {
+        $this->backgroundColor = $color;
+    }
+
     public function process(string $html): string
     {
         $html = mb_convert_encoding($html, 'UTF-8', 'UTF-8');
-
+        $html = $this->stripBackgroundColors($html);
         $html = $this->stripDocumentTags($html);
 
         $final = $this->fixItalicsDeterministic($html);
+        $final = $this->normalizeParagraphSpacing($final);
+        $final = $this->wrapEmailLayout($final);
 
         return Purifier::clean($final, [
             'HTML.Allowed' => implode(',', [
@@ -96,4 +105,80 @@ class OpenAiHtmlEmailService
 
         return $html;
     }
+
+    private function wrapEmailLayout(string $html): string
+    {
+        $bg = $this->backgroundColor;
+
+        return "
+<table width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:{$bg}; padding:20px 0;'>
+    <tr>
+        <td align='center'>
+            <table width='600' cellpadding='0' cellspacing='0' border='0' style='background:#F5F1EC; padding:30px; font-family:Arial, sans-serif; color:#333333;'>
+                <tr>
+                    <td>
+                        {$html}
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+";
+    }
+    private function normalizeParagraphSpacing(string $html): string
+    {
+        return preg_replace_callback(
+            '/<p([^>]*)>/i',
+            function ($matches) {
+
+                $attrs = $matches[1] ?? '';
+
+                // Extract existing style if present
+                if (preg_match('/style="([^"]*)"/i', $attrs, $styleMatch)) {
+                    $style = $styleMatch[1];
+
+                    // Ensure margin
+                    if (!str_contains($style, 'margin')) {
+                        $style .= '; margin: 0 0 16px 0;';
+                    }
+
+                    // Ensure font-size
+                    if (!str_contains($style, 'font-size')) {
+                        $style .= '; font-size:14px;';
+                    }
+
+                    // Ensure line-height
+                    if (!str_contains($style, 'line-height')) {
+                        $style .= '; line-height:1.6;';
+                    }
+
+                    // Replace existing style attribute
+                    $attrs = preg_replace(
+                        '/style="([^"]*)"/i',
+                        'style="' . trim($style) . '"',
+                        $attrs
+                    );
+                } else {
+                    // No style at all → add it
+                    $attrs .= ' style="margin: 0 0 16px 0; font-size:14px; line-height:1.6;"';
+                }
+
+                return "<p{$attrs}>";
+            },
+            $html
+        );
+    }
+
+    private function stripBackgroundColors(string $html): string
+    {
+        // Remove background-color styles
+        $html = preg_replace('/background-color\s*:\s*[^;"]+;?/i', '', $html);
+
+        // Remove deprecated bgcolor attributes
+        $html = preg_replace('/bgcolor="[^"]*"/i', '', $html);
+
+        return $html;
+    }
+
 }
