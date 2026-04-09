@@ -16,6 +16,7 @@
         </div>
 
         <!-- ✅ Scroll Hint -->
+        <!-- ✅ Scroll Hint (Top) -->
         <div x-data="{
             atBottom: false,
             init() {
@@ -24,13 +25,13 @@
                     this.atBottom = (window.innerHeight + window.scrollY) >= (el.scrollHeight - 10);
                 });
             }
-        }" class="md:hidden fixed bottom-4 left-0 w-full flex justify-center z-50">
+        }" class="md:hidden fixed top-4 left-0 w-full flex justify-center z-50">
             <div
                 class="pointer-events-none flex items-center gap-2 px-3 py-1 rounded-full 
-           bg-yellow-200/40 dark:bg-yellow-300/20 
-           backdrop-blur-md 
-           text-yellow-700 dark:text-yellow-200 
-           shadow-[0_0_10px_rgba(250,204,21,0.4)]">
+       bg-yellow-200/40 dark:bg-yellow-300/20 
+       backdrop-blur-md 
+       text-yellow-700 dark:text-yellow-200 
+       shadow-[0_0_10px_rgba(250,204,21,0.4)]">
 
                 <flux:icon name="arrow-down"
                     class="w-3 h-3 transition-transform duration-300 text-yellow-600 dark:text-yellow-200"
