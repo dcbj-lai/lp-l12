@@ -21,6 +21,7 @@
         "livewire/flux": "^2.0",
         "livewire/volt": "^1.6.7",
         "mews/purifier": "^3.4",
+        "openai-php/client": "^0.19.1",
         "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-google-calendar": "^3.8"
     },

@@ -6,6 +6,8 @@ namespace App\Providers;
 use App\Services\GoogleCredentialLoader;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use OpenAI;
+use OpenAI\Client;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,7 +16,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(Client::class, function () {
+            return OpenAI::client(config('services.openai.key'));
+        });
     }
 
     /**

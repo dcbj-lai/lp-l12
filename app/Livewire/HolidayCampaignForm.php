@@ -7,7 +7,7 @@ use App\Models\HolidayCampaign;
 use App\Models\User;
 use App\Services\AmazonS3Service;
 use App\Services\HtmlAssetProcessor;
-use App\Services\HtmlSanitizer;
+use App\Services\OpenAiHtmlEmailService;
 use Flux\Flux;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -88,14 +88,14 @@ class HolidayCampaignForm extends Component
 
     public function processHtml(
         HtmlAssetProcessor $processor,
-        HtmlSanitizer $sanitizer
+        OpenAiHtmlEmailService $service
     ) {
         $processed = $processor->process(
             $this->html,
             $this->assetMap
         );
 
-        $this->processedHtml = $sanitizer->clean($processed);
+        $this->processedHtml = $service->process($processed);
 
         $this->dispatch('flash', type: 'info', message: 'HTML processed safely.');
     }

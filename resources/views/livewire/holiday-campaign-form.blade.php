@@ -66,7 +66,7 @@
 
         <textarea wire:model="html" rows="10" class="w-full border rounded px-3 py-2 font-mono text-sm"></textarea>
 
-        <flux:button icon="sparkles" wire:click="processHtml">
+        <flux:button variant="primary" icon="sparkles" size="xs" color="amber" wire:click="processHtml">
             Process HTML
         </flux:button>
     </div>
@@ -103,7 +103,7 @@
     ========================== --}}
     <flux:modal.trigger name="recipient-modal">
 
-        <flux:button icon="paper-airplane" variant="primary" wire:click="saveCampaign">
+        <flux:button icon="paper-airplane" variant="primary" size="xs" color="blue" wire:click="saveCampaign">
             Send Campaign
         </flux:button>
 
@@ -122,7 +122,7 @@
                     <h2 class="text-lg font-semibold">Select Recipients</h2>
                 </div>
 
-                <flux:button size="sm" variant="ghost" wire:click="toggleSelectAll">
+                <flux:button size="xs" variant="ghost" wire:click="toggleSelectAll">
                     {{ count($selectedUsers) === count($users) ? 'Uncheck All' : 'Check All' }}
                 </flux:button>
             </div>
@@ -155,11 +155,12 @@
             {{-- Actions --}}
             <div class="flex justify-end gap-2">
 
-                <flux:button variant="ghost" x-on:click="$flux.modal('recipient-modal').close()">
+                <flux:button variant="ghost" size="xs" x-on:click="$flux.modal('recipient-modal').close()">
                     Cancel
                 </flux:button>
 
-                <flux:button icon="paper-airplane" variant="primary" wire:click="sendCampaign">
+                <flux:button icon="paper-airplane" variant="primary" color="teal" size="xs"
+                    wire:click="sendCampaign">
                     Send
                 </flux:button>
 

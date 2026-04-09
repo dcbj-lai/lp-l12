@@ -46,6 +46,7 @@ class HtmlSanitizer
                 'font',
                 'font-size',
                 'font-weight',
+                'font-style',
                 'text-align',
                 'padding',
                 'margin',
