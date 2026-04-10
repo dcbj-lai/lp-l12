@@ -5,9 +5,11 @@
         window.addEventListener('flash', e => console.log('FLASH EVENT:', e.detail));
     </script>
     {{-- =========================
-        ASSET UPLOAD
-    ========================== --}}
-    <div class="space-y-3">
+    ASSET UPLOAD
+========================== --}}
+    <div x-data="{ isUploading: false, progress: 0 }" x-on:livewire-upload-start="isUploading = true"
+        x-on:livewire-upload-finish="isUploading = false; progress = 0" x-on:livewire-upload-error="isUploading = false"
+        x-on:livewire-upload-progress="progress = $event.detail.progress" class="space-y-3">
         <div class="flex items-center gap-2">
             <flux:icon name="arrow-up-tray" class="w-5 h-5" />
             <h2 class="font-semibold">Upload Assets</h2>
@@ -20,12 +22,35 @@
             <span class="text-red-500 text-sm">{{ $message }}</span>
         @enderror
 
+        {{-- 🔥 Minimal Progress Bar --}}
+        <div x-show="isUploading" class="w-full">
+            <div class="h-1 w-full bg-gray-700 rounded overflow-hidden">
+                <div class="h-1 bg-purple-500 transition-all duration-200" :style="`width: ${progress}%`"></div>
+            </div>
+            <div class="text-xs text-gray-400 mt-1" x-text="`Uploading ${progress}%`"></div>
+        </div>
+
+        {{-- Uploaded Files --}}
         @if (count($assetMap))
             <div class="border rounded p-3 space-y-2">
                 @foreach ($assetMap as $original => $url)
-                    <div class="text-sm">
-                        <div class="font-medium">{{ $original }}</div>
-                        <div class="text-gray-500 break-all">{{ $url }}</div>
+                    <div class="text-sm flex items-start justify-between gap-2">
+
+                        <div class="flex-1">
+                            <div class="font-medium">{{ $original }}</div>
+                            <div class="text-gray-500 break-all">{{ $url }}</div>
+                        </div>
+
+                        {{-- 🔥 Copy Button --}}
+                        <flux:button variant="ghost" size="xs" x-data
+                            x-on:click="
+                            navigator.clipboard.writeText('{{ $url }}');
+                            $el.innerText = 'Copied';
+                            setTimeout(() => $el.innerText = 'Copy', 1200);
+                        ">
+                            Copy
+                        </flux:button>
+
                     </div>
                 @endforeach
             </div>
@@ -75,7 +100,19 @@
             <h2 class="font-semibold">HTML Template</h2>
         </div>
 
-        <textarea wire:model="html" rows="10" class="w-full border rounded px-3 py-2 font-mono text-sm"></textarea>
+        <div x-data="highlightEditor()" x-init="init()" class="relative w-full">
+
+            {{-- Highlight Layer --}}
+            <pre x-ref="highlight"
+                class="absolute inset-0 overflow-auto border rounded px-3 py-2 font-mono text-sm leading-6 whitespace-pre-wrap break-words text-white"
+                x-html="highlight(value)"></pre>
+
+            {{-- Textarea --}}
+            <textarea x-model="value" rows="10" spellcheck="false" style="resize: none;"
+                @scroll="$refs.highlight.scrollTop = $el.scrollTop; $refs.highlight.scrollLeft = $el.scrollLeft"
+                class="relative w-full border rounded px-3 py-2 font-mono text-sm leading-6 whitespace-pre-wrap break-words bg-transparent text-transparent caret-white"></textarea>
+
+        </div>
 
         <div class="flex items-center gap-2">
             <flux:button variant="primary" icon="sparkles" size="xs" color="amber" wire:click="processHtml">
@@ -93,6 +130,9 @@
                     Enhance
                 </flux:button>
             </flux:modal.trigger>
+            <flux:button variant="primary" size="xs" color="fuchsia" wire:click="resetForm">
+                <flux:icon name="refresh-ccw-dot" class="w-4 h-4" />
+            </flux:button>
         </div>
     </div>
 
@@ -128,7 +168,8 @@
     ========================== --}}
     <flux:modal.trigger name="recipient-modal">
 
-        <flux:button icon="paper-airplane" variant="primary" size="xs" color="blue" wire:click="saveCampaign">
+        <flux:button icon="paper-airplane" variant="primary" size="xs" color="blue"
+            wire:click="saveCampaign">
             Send Campaign
         </flux:button>
 
@@ -236,11 +277,27 @@
 
             {{-- EXTRA PROMPT --}}
             <div class="space-y-2">
-                <label class="text-sm font-medium">Extra Instructions (optional)</label>
 
-                <input type="text" wire:model="aiPrompt"
-                    placeholder="e.g. Make it festive, Christmas theme, warm tone..."
-                    class="w-full border rounded px-3 py-2 text-sm">
+                <label class="text-sm text-gray-400">Instructions (optional)</label>
+
+                <div class="flex gap-2">
+
+                    <select class="w-1/3 border rounded px-2 py-1 text-sm bg-zinc-900 text-white border-zinc-700"
+                        wire:change="applyPreset($event.target.value)">
+                        <option value="" class="bg-zinc-900 text-white">Select preset...</option>
+
+                        @foreach ($aiPresets as $preset)
+                            <option value="{{ $preset }}" class="bg-zinc-900 text-white">
+                                {{ $preset }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <input type="text" wire:model="aiPrompt" placeholder="Add custom instructions..."
+                        class="flex-1 border rounded px-3 py-2 text-sm" />
+
+                </div>
+
             </div>
 
             {{-- ACTIONS --}}
@@ -289,5 +346,45 @@
 
         </div>
     </flux:modal>
+    <script>
+        function highlightEditor() {
+            return {
+                value: '',
 
+                init() {
+                    // 🔥 Initial sync
+                    this.value = this.$wire.html ?? '';
+
+                    // 🔥 Sync: Livewire → Alpine (AI generate, reset, etc.)
+                    this.$watch('$wire.html', (val) => {
+                        this.value = val ?? '';
+                    });
+
+                    // 🔥 Sync: Alpine → Livewire (typing)
+                    this.$watch('value', (val) => {
+                        this.$wire.set('html', val);
+                    });
+                },
+
+                highlight(html) {
+                    if (!html) return '';
+
+                    // Mark <img> tags
+                    let marked = html.replace(/(<img[\s\S]*?>)/gi, function(match) {
+                        return '__IMG_START__' + match + '__IMG_END__';
+                    });
+
+                    // Escape everything
+                    let escaped = marked
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+
+                    // Restore highlight safely
+                    return escaped
+                        .replace(/__IMG_START__/g, '<span style="color:#4ade80;">')
+                        .replace(/__IMG_END__/g, '</span>');
+                }
+            }
+        }
+    </script>
 </div>

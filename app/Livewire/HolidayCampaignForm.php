@@ -44,6 +44,17 @@ class HolidayCampaignForm extends Component
 
     public string $backgroundColor = '#ffffff';
 
+    public array $aiPresets = [
+        'Make it warm and friendly',
+        'Make it formal and professional',
+        'Make it festive (holiday theme)',
+        'Make it concise and clear',
+        'Highlight key message in bold',
+        'Add a strong call-to-action',
+        'Make tone inspirational and uplifting',
+        'Use softer, empathetic tone',
+    ];
+
 
     public function boot(AmazonS3Service $s3)
     {
@@ -69,6 +80,16 @@ class HolidayCampaignForm extends Component
         return [
             'assets.*' => 'file|mimes:jpg,jpeg,png,gif,svg,webp|max:2048',
         ];
+    }
+
+    public function applyPreset(string $value): void
+    {
+        if (empty($value)) {
+            return;
+        }
+
+        // Append instead of overwrite (better UX)
+        $this->aiPrompt = trim($this->aiPrompt . ' ' . $value);
     }
 
     private function folder(): string
@@ -210,20 +231,17 @@ class HolidayCampaignForm extends Component
 
         $instruction = match ($this->aiMode) {
             'format_only' => "Convert the following text into a clean, table-based, email-safe HTML layout. Preserve the original wording. Use inline styles only.",
-            'enhance' => "Improve the wording and convert it into a polished, table-based, email-safe HTML email. Use inline styles only.",
+            'enhance' => "Improve the wording with a warm, professional tone and convert into a polished, table-based, email-safe HTML email. Maintain clarity, proper paragraph spacing, and visual hierarchy. Use inline styles only.",
             'prompt' => "Generate a complete, table-based, email-safe HTML email from the given prompt. Use inline styles only.",
             default => "Convert content into email-safe HTML.",
         };
 
         $input = trim($this->aiInput);
-        $extra = trim($this->aiPrompt);
+        $extra = $this->aiMode === 'format_only' ? '' : trim($this->aiPrompt);
 
         $finalPrompt = trim("
 {$instruction}
-
-Additional Instructions:
-{$extra}
-
+" . (!empty($extra) ? "\nAdditional Instructions:\n{$extra}\n" : "") . "
 Content:
 {$input}
 
@@ -342,6 +360,23 @@ IMPORTANT:
         $this->reset('enhancePrompt');
 
         Flux::modal('ai-enhance-modal')->close();
+    }
+
+    public function resetForm()
+    {
+        $this->reset([
+            'html',
+            'processedHtml',
+            'aiInput',
+            'aiPrompt',
+            'enhancePrompt',
+        ]);
+
+        // optional: reset assets too
+        $this->assetMap = [];
+
+        // reset upload input
+        $this->uploadKey = 'upload-' . uniqid();
     }
 
     /**AI Generation */
