@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Department;
 use Illuminate\Http\Request;
-use App\Models\RequestCredit;
+// use App\Models\RequestCredit;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -121,15 +121,19 @@ class UserController extends Controller
                 'hire_date' => $validated['hire_date'] ?? null,
             ]);
 
-            return redirect()
-                ->route('users.index')
-                ->with('success', 'User updated successfully!');
+            return redirect()->back()->with('flash', [
+                'type' => 'success',
+                'message' => 'User updated successfully!',
+            ]);
 
         } catch (ValidationException $e) {
             return redirect()->back()
                 ->withErrors($e->validator)
                 ->withInput()
-                ->with('error', 'Please correct the errors and try again.');
+                ->with('flash', [
+                    'type' => 'error',
+                    'message' => 'Please correct the errors and try again.',
+                ]);
         }
     }
 
@@ -153,7 +157,10 @@ class UserController extends Controller
 
         return redirect()
             ->route('users.edit', $user->id)
-            ->with('success', 'Leave credits updated successfully.');
+            ->with('flash', [
+                'type' => 'success',
+                'message' => 'Leave credits updated successfully.',
+            ]);
     }
 
     public function delete(User $user)
@@ -165,7 +172,10 @@ class UserController extends Controller
         $user->delete();
 
         return redirect()->route('users.index')
-            ->with('success', "User {$user->name} has been deleted.");
+            ->with('flash', [
+                'type' => 'success',
+                'message' => "User {$user->name} has been deleted.",
+            ]);
     }
 
 
