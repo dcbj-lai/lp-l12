@@ -6,6 +6,7 @@
             <livewire:feature-verse />
             <livewire:celebrations-card />
             <livewire:steps-leaderboard mode="card" />
+            <livewire:speed-test-card />
         </div>
 
         <!-- ✅ Gradient Fade (mobile only) -->

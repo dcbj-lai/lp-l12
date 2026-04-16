@@ -424,3 +424,6 @@ Route::get('/access-denied', function () {
 Route::get('/holiday/campaign', function () {
     return view('holiday.campaign-page');
 })->middleware(['auth', 'can:is-comms-admin'])->name('holiday.campaign');
+
+
+
