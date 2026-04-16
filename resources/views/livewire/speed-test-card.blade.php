@@ -38,36 +38,41 @@
         <script>
             document.addEventListener('run-latency', async (event) => {
                 try {
-                    async function measureLatency(samples = 5) {
-                        // warm-up (connection setup)
-                        await fetch('/api/ping', {
+                    async function measureLatency(samples = 7) {
+                        const options = {
                             cache: 'no-store',
-                            keepalive: true
-                        });
+                            keepalive: true,
+                        };
+
+                        // warm-up (stabilize connection + container)
+                        for (let i = 0; i < 2; i++) {
+                            await fetch('/api/ping', options);
+                        }
 
                         let results = [];
 
                         for (let i = 0; i < samples; i++) {
                             const start = performance.now();
 
-                            await fetch('/api/ping', {
-                                cache: 'no-store',
-                                keepalive: true,
-                            });
+                            await fetch('/api/ping', options);
 
-                            results.push(performance.now() - start);
+                            const duration = performance.now() - start;
+                            results.push(duration);
                         }
 
-                        // remove worst outlier (Laravel spike)
+                        // sort ascending
                         results.sort((a, b) => a - b);
-                        results.pop(); // remove highest
 
-                        const avg = results.reduce((a, b) => a + b, 0) / results.length;
+                        // median
+                        const mid = Math.floor(results.length / 2);
+                        const median = results.length % 2 !== 0 ?
+                            results[mid] :
+                            (results[mid - 1] + results[mid]) / 2;
 
-                        return avg;
+                        return median;
                     }
 
-                    const latency = await measureLatency(5);
+                    const latency = await measureLatency(7);
 
                     const component = Livewire.find(event.detail.componentId);
                     component.call('setLatency', latency);
