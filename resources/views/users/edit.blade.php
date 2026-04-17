@@ -213,7 +213,7 @@
 
             <!-- Full Width Submit Button -->
             <div class="col-span-1 md:col-span-2 flex justify-end">
-                <flux:button type="submit" variant="primary" size="sm">Save Changes</flux:button>
+                <flux:button type="submit" variant="primary" size="sm">Slave Changes</flux:button>
             </div>
         </form>
 

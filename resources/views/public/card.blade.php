@@ -6,15 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $user->preferred_name ?: $user->name }}</title>
 
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
-    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
@@ -26,25 +20,42 @@
             transform: translateY(-3px) scale(1.02);
         }
 
-        /* subtle crimson glow (AWS style) */
+        /* subtle glow */
         .card-glow {
             box-shadow:
                 0 4px 20px rgba(0, 0, 0, 0.08),
-                0 0 0 rgba(220, 20, 60, 0);
+                0 0 0 rgba(128, 0, 0, 0);
             transition: box-shadow .3s ease;
         }
 
         .card-glow:hover {
             box-shadow:
                 0 6px 30px rgba(0, 0, 0, 0.12),
-                0 0 25px rgba(220, 20, 60, 0.25);
+                0 0 18px rgba(128, 0, 0, 0.18);
+        }
+
+        /* glowing maroon grid */
+        .circuit-bg {
+            background-image:
+                linear-gradient(rgba(128, 0, 0, 0.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(128, 0, 0, 0.12) 1px, transparent 1px);
+            background-size: 26px 26px;
+
+            /* subtle glow effect */
+            box-shadow: inset 0 0 40px rgba(128, 0, 0, 0.06);
+        }
+
+        /* dark mode tuning */
+        .dark .circuit-bg {
+            background-image:
+                linear-gradient(rgba(220, 20, 60, 0.18) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(220, 20, 60, 0.18) 1px, transparent 1px);
         }
     </style>
 </head>
 
 <body class="min-h-screen bg-zinc-50 dark:bg-zinc-900 text-stone-900 dark:text-stone-100 flex flex-col">
 
-    <!-- Main -->
     <main class="flex-1 w-full max-w-6xl mx-auto flex flex-col items-center justify-center p-6 lg:p-8">
 
         <!-- Profile Card -->
@@ -52,17 +63,24 @@
             class="w-full max-w-md 
             bg-white dark:bg-zinc-800 
             border border-zinc-200 dark:border-zinc-700
-            rounded-2xl
-            overflow-hidden hover-lift card-glow">
+            rounded-2xl overflow-hidden
+            hover-lift card-glow">
 
-            <!-- Cover (Crimson Gradient) -->
-            <div class="h-24 bg-gradient-to-r from-[#8B0000] via-[#B22222] to-[#DC143C]"></div>
+            <!-- Accent Strip -->
+            <div class="h-2 bg-[#800000]"></div>
 
             <!-- Content -->
-            <div class="px-6 pb-6">
+            <div class="px-6 pb-6 pt-6 circuit-bg">
+
+                <!-- School -->
+                <div class="text-center mb-3">
+                    <div class="text-xs tracking-wide uppercase text-[#800000] font-semibold">
+                        Life College International
+                    </div>
+                </div>
 
                 <!-- Avatar -->
-                <div class="-mt-12 mb-4 flex justify-center">
+                <div class="mb-4 flex justify-center">
                     <div
                         class="h-24 w-24 rounded-full overflow-hidden border-4 border-white dark:border-zinc-800 shadow">
 
@@ -76,7 +94,6 @@
                                 {{ strtoupper(substr($user->name, 0, 1)) }}
                             </div>
                         @endif
-
                     </div>
                 </div>
 
@@ -92,29 +109,32 @@
                         </div>
                     @endif
 
+                    <!-- ALWAYS SHOW POSITION (fallback safe) -->
                     <!-- Position -->
-                    @if ($user->position)
-                        <div class="mt-2 text-sm text-stone-700 dark:text-stone-300">
-                            {{ $user->position }}
-                        </div>
-                    @endif
+                    <div class="mt-2 text-sm">
+                        <span
+                            class="{{ $user->position ? 'text-stone-700 dark:text-stone-300' : 'text-transparent select-none' }}">
+                            {{ $user->position ?? '--' }}
+                        </span>
+                    </div>
 
                     <!-- Department -->
-                    @if ($user->department)
-                        <div class="text-sm text-stone-500 dark:text-stone-400">
-                            {{ $user->department->name }}
-                        </div>
-                    @endif
+                    <div class="text-sm">
+                        <span
+                            class="{{ $user->department?->name ? 'text-stone-500 dark:text-stone-400' : 'text-transparent select-none' }}">
+                            {{ $user->department->name ?? '--' }}
+                        </span>
+                    </div>
                 </div>
 
                 <!-- Action -->
                 <div class="mt-6">
                     <a href="{{ route('card.vcard', ['slug' => request()->route('slug')]) }}"
                         class="block w-full text-center 
-                        bg-[#DC143C] hover:bg-[#B22222]
+                        bg-[#800000] hover:bg-[#5c0000]
                         text-white py-2 rounded-lg font-medium transition
-                        shadow-[0_0_10px_rgba(220,20,60,0.25)]
-                        hover:shadow-[0_0_20px_rgba(220,20,60,0.4)]">
+                        shadow-[0_0_10px_rgba(128,0,0,0.25)]
+                        hover:shadow-[0_0_20px_rgba(128,0,0,0.35)]">
                         Save Contact
                     </a>
                 </div>
@@ -124,10 +144,9 @@
 
     </main>
 
-    <!-- Footer -->
     <footer class="border-t border-zinc-200 dark:border-zinc-700 bg-stone-50 dark:bg-stone-900 w-full py-6 mt-auto">
-        <div class="flex flex-wrap justify-center gap-3 text-sm text-stone-700 dark:text-stone-300">
-            <span>&copy; {{ date('Y') }} Life College International. All rights reserved.</span>
+        <div class="flex justify-center text-sm text-stone-700 dark:text-stone-300">
+            &copy; {{ date('Y') }} Life College International
         </div>
     </footer>
 
