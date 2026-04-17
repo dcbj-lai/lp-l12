@@ -213,9 +213,6 @@ new class extends Component {
             <div>
                 <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email"
                     readonly />
-                <flux:input wire:model="phone_work" label="Work Phone" type="text" placeholder="+63281234567" />
-
-                <flux:input wire:model="phone_mobile" label="Mobile Phone" type="text" placeholder="+639171234567" />
 
                 @if (auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !auth()->user()->hasVerifiedEmail())
                     <div>
@@ -236,6 +233,9 @@ new class extends Component {
                     </div>
                 @endif
             </div>
+            <flux:input wire:model="phone_work" label="Work Phone" type="text" placeholder="+63281234567" />
+
+            <flux:input wire:model="phone_mobile" label="Mobile Phone" type="text" placeholder="+639171234567" />
 
             <div class="flex items-center gap-4">
                 <div class="flex items-center justify-end">
