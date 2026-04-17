@@ -35,6 +35,8 @@ class User extends Authenticatable
         'hire_date',      // ✅ added
         'preferred_name',
         'profile_photo_path',
+        'phone_work',
+        'phone_mobile',
     ];
 
     /**

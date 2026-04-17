@@ -30,7 +30,16 @@ class PublicCardController extends Controller
     public function vcard(string $slug)
     {
         $users = User::with('department:id,name')
-            ->select('id', 'name', 'preferred_name', 'position', 'department_id')
+            ->select(
+                'id',
+                'name',
+                'preferred_name',
+                'position',
+                'department_id',
+                'email',
+                'phone_work',
+                'phone_mobile'
+            )
             ->get();
 
         $user = $users->first(function ($user) use ($slug) {
@@ -45,19 +54,36 @@ class PublicCardController extends Controller
         $fullName = $user->name;
         $displayName = $user->preferred_name ?: $user->name;
 
-        $vcard = <<<VCARD
-BEGIN:VCARD
-VERSION:3.0
-N:{$fullName};;;;
-FN:{$displayName}
-ORG:Life College International
-TITLE:{$user->position}
-EMAIL;TYPE=INTERNET:{$user->email}
-END:VCARD
-VCARD;
+        $lines = [
+            "BEGIN:VCARD",
+            "VERSION:3.0",
+            "N:{$fullName};;;;",
+            "FN:{$displayName}",
+            "ORG:Life College International",
+        ];
+
+        if ($user->position) {
+            $lines[] = "TITLE:{$user->position}";
+        }
+
+        if ($user->email) {
+            $lines[] = "EMAIL;TYPE=INTERNET:{$user->email}";
+        }
+
+        if ($user->phone_work) {
+            $lines[] = "TEL;TYPE=WORK,VOICE:{$user->phone_work}";
+        }
+
+        if ($user->phone_mobile) {
+            $lines[] = "TEL;TYPE=CELL:{$user->phone_mobile}";
+        }
+
+        $lines[] = "END:VCARD";
+
+        $vcard = implode("\n", $lines);
 
         return response($vcard, 200)
             ->header('Content-Type', 'text/vcard; charset=utf-8')
-            ->header('Content-Disposition', 'attachment; filename="' . $displayName . '.vcf"');
+            ->header('Content-Disposition', 'attachment; filename="' . Str::slug($displayName) . '.vcf"');
     }
 }

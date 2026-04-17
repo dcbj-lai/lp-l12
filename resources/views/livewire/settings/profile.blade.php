@@ -15,6 +15,8 @@ new class extends Component {
     public string $name = '';
     public string $email = '';
     public string $preferred_name = '';
+    public string $phone_work = '';
+    public string $phone_mobile = '';
 
     public $avatar; // temporary uploaded file
 
@@ -26,6 +28,9 @@ new class extends Component {
         $this->name = Auth::user()->name;
         $this->email = Auth::user()->email;
         $this->preferred_name = Auth::user()->preferred_name ?? '';
+
+        $this->phone_work = Auth::user()->phone_work ?? '';
+        $this->phone_mobile = Auth::user()->phone_mobile ?? '';
     }
 
     public function updateAvatar(): void
@@ -72,6 +77,9 @@ new class extends Component {
             'preferred_name' => ['nullable', 'string', 'max:255'],
 
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
+
+            'phone_work' => ['nullable', 'regex:/^\+?[0-9]{7,15}$/'],
+            'phone_mobile' => ['nullable', 'regex:/^\+?[0-9]{7,15}$/'],
         ]);
 
         $user->fill($validated);
@@ -205,6 +213,9 @@ new class extends Component {
             <div>
                 <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email"
                     readonly />
+                <flux:input wire:model="phone_work" label="Work Phone" type="text" placeholder="+63281234567" />
+
+                <flux:input wire:model="phone_mobile" label="Mobile Phone" type="text" placeholder="+639171234567" />
 
                 @if (auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !auth()->user()->hasVerifiedEmail())
                     <div>
