@@ -10,7 +10,17 @@ class PublicCardController extends Controller
     public function show(string $slug)
     {
         $users = User::with('department:id,name')
-            ->select('id', 'name', 'preferred_name', 'position', 'department_id', 'profile_photo_path')
+            ->select(
+                'id',
+                'name',
+                'preferred_name',
+                'position',
+                'department_id',
+                'email',           // REQUIRED
+                'phone_work',      // REQUIRED
+                'phone_mobile',   // optional
+                'profile_photo_path',
+            )
             ->get();
 
         $user = $users->first(function ($user) use ($slug) {
