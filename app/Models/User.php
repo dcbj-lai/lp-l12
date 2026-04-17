@@ -37,6 +37,7 @@ class User extends Authenticatable
         'profile_photo_path',
         'phone_work',
         'phone_mobile',
+        'address',        // ✅ added
     ];
 
     /**

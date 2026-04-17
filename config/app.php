@@ -126,5 +126,10 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
-
+    /*
+    |--------------------------------------------------------------------------
+    | CDN based resources
+    |--------------------------------------------------------------------------
+    */
+    'life_crest_url' => env('LIFE_CREST_URL'),
 ];

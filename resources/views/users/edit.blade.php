@@ -180,7 +180,43 @@
                         </option>
                     </select>
                 </div>
+                <!-- Phone Numbers -->
+                <div class="pt-4 border-t border-zinc-300 dark:border-zinc-700 space-y-4">
 
+                    <div class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Contact Information
+                    </div>
+
+                    <!-- Work Phone -->
+                    <div>
+                        <label for="phone_work" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Work Phone
+                        </label>
+                        <input type="text" id="phone_work" name="phone_work"
+                            value="{{ old('phone_work', $user->phone_work) }}" placeholder="+63281234567"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                    </div>
+
+                    <!-- Mobile Phone -->
+                    <div>
+                        <label for="phone_mobile" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Mobile Phone
+                        </label>
+                        <input type="text" id="phone_mobile" name="phone_mobile"
+                            value="{{ old('phone_mobile', $user->phone_mobile) }}" placeholder="+639171234567"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                    </div>
+                    <!-- Address -->
+                    <div class="pt-4 border-t border-zinc-300 dark:border-zinc-700">
+                        <label for="address" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                            Address
+                        </label>
+                        <input type="text" id="address" name="address"
+                            value="{{ old('address', $user->address) }}" placeholder="Street, City, Province"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                    </div>
+
+                </div>
 
                 <div class="flex flex-col md:flex-row gap-4">
                     <!-- Conditional Monthly Rate (Only for Finance Users) -->
@@ -213,7 +249,7 @@
 
             <!-- Full Width Submit Button -->
             <div class="col-span-1 md:col-span-2 flex justify-end">
-                <flux:button type="submit" variant="primary" size="sm">Slave Changes</flux:button>
+                <flux:button type="submit" variant="primary" size="sm">Save Changes</flux:button>
             </div>
         </form>
 

@@ -56,6 +56,9 @@ class UserController extends Controller
                 'position' => ['nullable', 'string'],
                 'monthly_rate' => ['nullable', 'string'],
                 'check_in_mode' => ['required', 'string', 'in:virtual,onsite'],
+                'phone_work' => ['nullable', 'string', 'max:20'],
+                'phone_mobile' => ['nullable', 'string', 'max:20'],
+                'address' => ['nullable', 'string', 'max:255'], // ✅ added validation for address
 
                 // 🔒 Hardened date fields
                 'birthdate' => [
@@ -115,6 +118,9 @@ class UserController extends Controller
                 'position' => $validated['position'] ?? null,
                 'monthly_rate' => $monthlyRate,
                 'check_in_mode' => $validated['check_in_mode'],
+                'phone_work' => $validated['phone_work'] ?? null,
+                'phone_mobile' => $validated['phone_mobile'] ?? null,
+                'address' => $validated['address'] ?? null, // ✅ added address update
 
                 // Dates (safe null fallback)
                 'birthdate' => $validated['birthdate'] ?? null,
