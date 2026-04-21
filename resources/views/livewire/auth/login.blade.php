@@ -85,11 +85,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
         </h1>
 
         {{-- Approved Badge --}}
-        <span class="text-[9px] sm:text-[10px] font-medium px-2.5 py-0.5 rounded-full
+        <span
+            class="text-[9px] sm:text-[10px] font-medium px-2.5 py-0.5 rounded-full
                      border border-zinc-300 dark:border-zinc-700
                      text-zinc-600 dark:text-zinc-400
                      bg-zinc-50 dark:bg-zinc-800/40">
-            Authentication for LAIC Systems
+            Authentication for LCI Systems
         </span>
     </div>
 
@@ -99,7 +100,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
     <form wire:submit="login" class="flex flex-col gap-6">
         {{-- Google Only Login --}}
         <div class="w-full max-w-sm">
-            <a href="{{ route('auth.google') }}" class="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700
+            <a href="{{ route('auth.google') }}"
+                class="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700
                   hover:bg-zinc-50 dark:hover:bg-zinc-800
                   text-zinc-800 dark:text-zinc-200 font-medium py-3 px-4 rounded-xl
                   flex items-center justify-center gap-2 sm:gap-3 shadow-sm transition-all">
