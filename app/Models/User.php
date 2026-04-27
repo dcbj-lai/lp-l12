@@ -7,10 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
+    use HasRoles;
+
+    protected string $guard_name = 'web';
 
     /**
      * The attributes that are mass assignable.
@@ -23,7 +27,7 @@ class User extends Authenticatable
         'password',
         'google_id',
         'supervisor_id',
-        'roles',
+        'legacy_roles', // ✅ updated
         'payroll_on',
         'monthly_rate',
         'department_id',
@@ -51,7 +55,7 @@ class User extends Authenticatable
     ];
 
     protected $attributes = [
-        'roles' => '["user"]',
+        'legacy_roles' => '["user"]',
     ];
 
     /**
@@ -64,7 +68,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'roles' => 'array',
+            'legacy_roles' => 'array', // ✅ updated
             'payroll_on' => 'boolean',
             'monthly_rate' => 'decimal:2',
 
@@ -82,9 +86,9 @@ class User extends Authenticatable
         return Str::of($this->name)->trim()->substr(0, 1)->upper();
     }
 
-    public function hasAnyRole(array $roles): bool
+    public function hasAnyLegacyRole(array $roles): bool
     {
-        return count(array_intersect($this->roles, $roles)) > 0;
+        return count(array_intersect($this->legacy_roles ?? [], $roles)) > 0;
     }
 
     /**
@@ -102,12 +106,12 @@ class User extends Authenticatable
 
     public function isFinanceAdmin(): bool
     {
-        return in_array('finance.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
+        return in_array('finance.admin', $this->legacy_roles ?? []) || in_array('super.admin', $this->legacy_roles ?? []);
     }
 
     public function isPNCAdmin(): bool
     {
-        return in_array('pnc.admin', $this->roles ?? []) || in_array('super.admin', $this->roles ?? []);
+        return in_array('pnc.admin', $this->legacy_roles ?? []) || in_array('super.admin', $this->legacy_roles ?? []);
     }
 
     public function supervisor()
@@ -132,11 +136,11 @@ class User extends Authenticatable
 
     public function isGuidanceAdmin(): bool
     {
-        return in_array('guidance.admin', $this->roles ?? []);
+        return in_array('guidance.admin', $this->legacy_roles ?? []);
     }
 
     public function isGuidanceStaff(): bool
     {
-        return in_array('guidance.staff', $this->roles ?? []);
+        return in_array('guidance.staff', $this->legacy_roles ?? []);
     }
 }

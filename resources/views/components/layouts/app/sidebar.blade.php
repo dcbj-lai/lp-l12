@@ -10,16 +10,25 @@
 <body class="min-h-screen bg-white dark:bg-zinc-800">
     @php
         $user = Auth::user();
-        $isPNC = in_array('pnc.admin', $user->roles ?? []);
-        $isFinanceAdmin = in_array('finance.admin', $user->roles ?? []);
-        $isSuperAdmin = in_array('super.admin', $user->roles ?? []);
+
+        // ✅ legacy roles
+        $legacyRoles = $user->legacy_roles ?? [];
+
+        $isPNC = in_array('pnc.admin', $legacyRoles);
+        $isFinanceAdmin = in_array('finance.admin', $legacyRoles);
+        $isSuperAdmin = in_array('super.admin', $legacyRoles);
         $isManager = $user->isManager();
-        $isFrontDesk = in_array('frontdesk.staff', $user->roles ?? []);
-        $isAcadAdmin = in_array('acad.admin', $user->roles ?? []);
-        $isGuidanceAdmin = in_array('guidance.admin', $user->roles ?? []);
-        $isGuidanceStaff = in_array('guidance.staff', $user->roles ?? []);
-        $isCommsAdmin = in_array('comms.admin', $user->roles ?? []);
-        $isClinicAdmin = in_array('clinic.admin', $user->roles ?? []);
+        $isFrontDesk = in_array('frontdesk.staff', $legacyRoles);
+        $isAcadAdmin = in_array('acad.admin', $legacyRoles);
+        $isGuidanceAdmin = in_array('guidance.admin', $legacyRoles);
+        $isGuidanceStaff = in_array('guidance.staff', $legacyRoles);
+        $isCommsAdmin = in_array('comms.admin', $legacyRoles);
+        $isClinicAdmin = in_array('clinic.admin', $legacyRoles);
+
+        // ✅ new system (for later use)
+        $isFacilityAdmin = $user->hasRole('facility.admin');
+        $isFacilityApprover = $user->hasRole('facility.approver');
+        $isFacilityUser = $user->hasRole('facility.user');
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -87,37 +96,38 @@
             @if ($isGuidanceAdmin || $isClinicAdmin)
                 <flux:navlist.group heading="Health and Wellness" expandable="false">
 
-                @if ($isGuidanceAdmin)
-                    <flux:navlist.group heading="Guidance" expandable :expanded="false">
-                        <flux:navlist.item href="{{ route('guidance.clients.index') }}" icon="users">
-                            Clients
-                        </flux:navlist.item>
+                    @if ($isGuidanceAdmin)
+                        <flux:navlist.group heading="Guidance" expandable :expanded="false">
+                            <flux:navlist.item href="{{ route('guidance.clients.index') }}" icon="users">
+                                Clients
+                            </flux:navlist.item>
 
-                        <flux:navlist.item href="{{ route('guidance.consultations.index') }}"
-                            icon="clipboard-document-list">
-                            Consultations
-                        </flux:navlist.item>
-                        <flux:navlist.item href="{{ route('guidance.import-csv.index') }}" icon="arrow-up-tray">
-                            Import CSV
-                        </flux:navlist.item>
-                    </flux:navlist.group>
-                @endif
-                
-                   @if ($isClinicAdmin)
-                    <flux:navlist.group heading="Clinic" expandable :expanded="false">
-                        <flux:navlist.item href="{{ route('clinic.patients.index') }}" icon="users">
-                            Patients
-                        </flux:navlist.item>
-                        <flux:navlist.item href="{{ route('clinic.consultations.index') }}" icon="clipboard-document-list">
-                            Consultations
-                        </flux:navlist.item>
-                        <flux:navlist.item href="{{ route('clinic.import-csv.index') }}" icon="arrow-up-tray">
-                            Import CSV
-                        </flux:navlist.item>
-                    </flux:navlist.group>
-                @endif
-                
-                 </flux:navlist.group>
+                            <flux:navlist.item href="{{ route('guidance.consultations.index') }}"
+                                icon="clipboard-document-list">
+                                Consultations
+                            </flux:navlist.item>
+                            <flux:navlist.item href="{{ route('guidance.import-csv.index') }}" icon="arrow-up-tray">
+                                Import CSV
+                            </flux:navlist.item>
+                        </flux:navlist.group>
+                    @endif
+
+                    @if ($isClinicAdmin)
+                        <flux:navlist.group heading="Clinic" expandable :expanded="false">
+                            <flux:navlist.item href="{{ route('clinic.patients.index') }}" icon="users">
+                                Patients
+                            </flux:navlist.item>
+                            <flux:navlist.item href="{{ route('clinic.consultations.index') }}"
+                                icon="clipboard-document-list">
+                                Consultations
+                            </flux:navlist.item>
+                            <flux:navlist.item href="{{ route('clinic.import-csv.index') }}" icon="arrow-up-tray">
+                                Import CSV
+                            </flux:navlist.item>
+                        </flux:navlist.group>
+                    @endif
+
+                </flux:navlist.group>
             @endif
 
         </flux:navlist>

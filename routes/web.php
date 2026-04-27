@@ -473,3 +473,28 @@ Route::get('/card/{slug}', [PublicCardController::class, 'show'])
 
 Route::get('/card/{slug}/vcard', [PublicCardController::class, 'vcard'])
     ->name('card.vcard');
+
+
+/**Resources Management and booking */
+/*
+|--------------------------------------------------------------------------
+| Protected (Internal)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/resources', function () {
+        return view('resources.index');
+    })->name('resources.index');
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Public Booking
+|--------------------------------------------------------------------------
+*/
+Route::get('/resources/book', function () {
+    return view('public.resources.book');
+})->name('resources.book');

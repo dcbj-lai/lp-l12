@@ -47,7 +47,7 @@
                         <tr class="hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300">
                             <td class="border p-2">{{ $user->name }}</td>
                             <td class="border p-2">{{ $user->email }}</td>
-                            <td class="border p-2">{{ implode(', ', $user->roles ?? []) }}</td>
+                            <td class="border p-2">{{ implode(', ', $user->legacy_roles ?? []) }}</td>
 
                             <!-- Payroll On Checkbox -->
                             <td class="border p-2 text-center">

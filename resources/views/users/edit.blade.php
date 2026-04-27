@@ -122,7 +122,7 @@
 
                     <!-- Existing Roles as Dismissible Banners -->
                     <div class="flex flex-wrap gap-2 mb-2">
-                        @foreach ($user->roles ?? [] as $role)
+                        @foreach ($user->legacy_roles ?? [] as $role)
                             <div
                                 class="bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 flex items-center gap-2 rounded-md text-xs">
                                 <span>{{ $role }}</span>
@@ -157,7 +157,7 @@
 
                     <!-- Hidden Roles Input -->
                     <input type="hidden" name="roles" id="roles"
-                        value="{{ json_encode($user->roles ?? []) }}" />
+                        value="{{ json_encode($user->legacy_roles ?? []) }}" />
                 </div>
 
                 <!-- Title -->
