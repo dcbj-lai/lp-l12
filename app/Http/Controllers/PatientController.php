@@ -79,7 +79,7 @@ class PatientController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name'  => ['required', 'string', 'max:255'],
             'email'      => ['nullable', 'email', 'max:255', 'unique:patients,email,' . $patient->id],
-            'type'       => ['required', 'in:student,staff'],
+            'type'       => ['required', 'string', 'in:student,staff'],
 
             'course'     => ['nullable', 'string', 'max:255'],
             'department' => ['nullable', 'string', 'max:255'],

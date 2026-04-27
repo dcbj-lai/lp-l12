@@ -15,7 +15,7 @@ return new class extends Migration
         $table->string('last_name');
         $table->string('email')->nullable()->unique();
 
-        $table->enum('type', ['student', 'staff']);
+        $table->string('type')->default('student');
 
         // student fields
         $table->string('course')->nullable();
