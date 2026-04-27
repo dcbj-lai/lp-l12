@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 // use App\Models\User;
-use App\Services\GoogleCredentialLoader;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use OpenAI;
@@ -26,20 +25,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('is-pnc', fn($user) => $user->hasAnyRole(['pnc.staff', 'pnc.admin', 'super.admin']));
-        Gate::define('is-acad-admin', fn($user) => $user->hasAnyRole(['acad.admin', 'super.admin']));
-        Gate::define('is-admin', fn($user) => $user->hasAnyRole(['sys.admin', 'super.admin']));
-        Gate::define('is-finance', fn($user) => $user->hasAnyRole(['finance.admin', 'super.admin']));
-        Gate::define('pnc-admin', fn($user) => $user->hasAnyRole(['pnc.admin', 'super.admin']));
-        Gate::define('is-manager-or-hr', fn($user) => $user->hasAnyRole(['pnc.admin', 'super.admin']));
-        Gate::define('is-manager-or-hr', fn($user) => $user->isManager() || $user->hasAnyRole(['pnc.admin', 'super.admin']));
-        Gate::define('is-super-admin', fn($user) => $user->hasAnyRole(['super.admin']));
-        Gate::define('is-frontdesk', fn($user) => $user->hasAnyRole(['frontdesk.staff', 'super.admin']));
-        Gate::define('is-comms-admin', fn($user) => $user->hasAnyRole(['comms.admin', 'super.admin']));
-        Gate::define('guidance', fn($user) => $user->hasAnyRole(['guidance.admin']));
-        Gate::define('is-clinic', fn($user) => $user->hasAnyRole(['clinic.admin']));
+        Gate::define('is-pnc', fn($user) => $user->hasAnyLegacyRole(['pnc.staff', 'pnc.admin', 'super.admin']));
+        Gate::define('is-acad-admin', fn($user) => $user->hasAnyLegacyRole(['acad.admin', 'super.admin']));
+        Gate::define('is-admin', fn($user) => $user->hasAnyLegacyRole(['sys.admin', 'super.admin']));
+        Gate::define('is-finance', fn($user) => $user->hasAnyLegacyRole(['finance.admin', 'super.admin']));
+        Gate::define('pnc-admin', fn($user) => $user->hasAnyLegacyRole(['pnc.admin', 'super.admin']));
+        Gate::define('is-manager-or-hr', fn($user) => $user->isManager() || $user->hasAnyLegacyRole(['pnc.admin', 'super.admin']));
+        Gate::define('is-super-admin', fn($user) => $user->hasAnyLegacyRole(['super.admin']));
+        Gate::define('is-frontdesk', fn($user) => $user->hasAnyLegacyRole(['frontdesk.staff', 'super.admin']));
+        Gate::define('is-comms-admin', fn($user) => $user->hasAnyLegacyRole(['comms.admin', 'super.admin']));
+        Gate::define('guidance', fn($user) => $user->hasAnyLegacyRole(['guidance.admin']));
+        Gate::define('is-clinic', fn($user) => $user->hasAnyLegacyRole(['clinic.admin']));
 
 
-        GoogleCredentialLoader::load();
+        // GoogleCredentialLoader::load();
     }
 }
