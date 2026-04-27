@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 // use App\Models\User;
+use App\Services\GoogleCredentialLoader;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use OpenAI;
@@ -38,6 +39,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('is-clinic', fn($user) => $user->hasAnyLegacyRole(['clinic.admin']));
 
 
-        // GoogleCredentialLoader::load();
+        GoogleCredentialLoader::load();
     }
 }
