@@ -56,7 +56,7 @@ class ResourceReservationService
      */
     public function create(array $data): ResourceReservation
     {
-        return DB::transaction(function () use ($data) {
+        $reservation = DB::transaction(function () use ($data) {
 
             $this->validateAvailability(
                 $data['resource_id'] ?? null,
@@ -67,6 +67,7 @@ class ResourceReservationService
 
             $reservation = ResourceReservation::create([
                 'user_id' => $data['user_id'] ?? auth()->id(),
+                'requester_email' => $data['requester_email'] ?? null,
                 'resource_id' => $data['resource_id'] ?? null,
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
@@ -75,12 +76,20 @@ class ResourceReservationService
                 'status' => 'pending',
             ]);
 
-            // Attach equipment
             if (!empty($data['equipment_ids'])) {
                 $reservation->equipment()->sync($data['equipment_ids']);
             }
 
             return $reservation;
         });
+
+        // 🔥 IMPORTANT: load relations AFTER transaction
+        $reservation->load('resource', 'equipment');
+
+        // 🔥 Send admin email (DO NOT break flow if it fails)
+        \Mail::to(config('mail.resource_admin'))
+            ->queue(new \App\Mail\ResourceBookingAdminNotification($reservation));
+
+        return $reservation;
     }
 }

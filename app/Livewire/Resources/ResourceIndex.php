@@ -128,6 +128,67 @@ class ResourceIndex extends Component
         $this->modal('manage-resource-modal')->close();
     }
 
+    public function createNew()
+    {
+        $this->reset([
+            'selectedResourceId',
+            'name',
+            'type',
+            'description',
+            'location',
+            'capacity',
+            'image',
+        ]);
+
+        $this->type = 'room';
+    }
+
+    public function store()
+    {
+        $this->validate();
+
+        $resource = Resource::create([
+            'name' => $this->name,
+            'type' => $this->type,
+            'description' => $this->description,
+            'location' => $this->type === 'room' ? $this->location : null,
+            'capacity' => $this->type === 'room' ? $this->capacity : null,
+            'created_by' => auth()->id(),
+        ]);
+
+        // 🖼️ Handle image
+        if ($this->image) {
+
+            $filename = 'resource_' . time() . '.' . $this->image->getClientOriginalExtension();
+
+            $path = $this->image->storeAs(
+                'resources/' . $resource->id,
+                $filename,
+                's3'
+            );
+
+            \Storage::disk('s3')->setVisibility($path, 'public');
+
+            $resource->update([
+                'image_path' => $path,
+            ]);
+        }
+
+        $this->reset([
+            'selectedResourceId',
+            'name',
+            'type',
+            'description',
+            'location',
+            'capacity',
+            'image',
+        ]);
+
+        $this->loadResources();
+
+        $this->modal('manage-resource-modal')->close();
+    }
+
     public function render()
     {
         return view('livewire.resources.resource-index');

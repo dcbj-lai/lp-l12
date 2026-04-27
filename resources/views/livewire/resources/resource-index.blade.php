@@ -1,12 +1,22 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
 
 <div class="space-y-6">
+    <div class="flex justify-end">
 
+        <flux:modal.trigger name="manage-resource-modal">
+
+            <flux:button wire:click="createNew" variant="primary">
+                + Add Resource
+            </flux:button>
+
+        </flux:modal.trigger>
+
+    </div>
     <!-- GRID -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
         @forelse ($resources as $resource)
-            <div class="border rounded-lg p-4 bg-white dark:bg-zinc-800 shadow-sm">
+            <x-ui.card class="p-4">
 
                 <!-- Image -->
                 <div class="h-40 w-full mb-3 overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-700">
@@ -49,7 +59,7 @@
 
                 </div>
 
-            </div>
+            </x-ui.card>
         @empty
             <div class="col-span-full text-center text-gray-500">
                 No resources available.
@@ -63,7 +73,9 @@
 
             <!-- Header -->
             <div>
-                <flux:heading size="lg">Manage Resource</flux:heading>
+                <flux:heading size="lg">
+                    {{ $selectedResourceId ? 'Manage Resource' : 'Add Resource' }}
+                </flux:heading>
                 <flux:text class="text-sm text-gray-500">
                     Edit resource details
                 </flux:text>
@@ -128,19 +140,27 @@
             <!-- Actions -->
             <div class="flex items-center justify-between">
 
-                <!-- DELETE -->
-                <flux:modal.trigger name="confirm-delete-resource">
+                @if ($selectedResourceId)
+                    <!-- DELETE (only in edit mode) -->
+                    <flux:modal.trigger name="confirm-delete-resource">
+                        <button class="text-sm text-red-600 hover:text-red-800 font-medium">
+                            Delete Resource
+                        </button>
+                    </flux:modal.trigger>
+                @else
+                    <div></div>
+                @endif
 
-                    <button class="text-sm text-red-600 hover:text-red-800 font-medium">
-                        Delete Resource
-                    </button>
-
-                </flux:modal.trigger>
-
-                <!-- SAVE -->
-                <flux:button wire:click="updateSelected" variant="primary">
-                    Save
-                </flux:button>
+                <!-- SAVE / CREATE -->
+                @if ($selectedResourceId)
+                    <flux:button wire:click="updateSelected" variant="primary">
+                        Save
+                    </flux:button>
+                @else
+                    <flux:button wire:click="store" variant="primary">
+                        Create
+                    </flux:button>
+                @endif
 
             </div>
 
