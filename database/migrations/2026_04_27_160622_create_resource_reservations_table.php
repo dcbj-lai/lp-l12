@@ -12,7 +12,6 @@ return new class extends Migration {
 
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('resource_id')->nullable()->constrained('resources')->nullOnDelete();
-            $table->string('requester_email')->nullable();
 
             $table->string('title');
             $table->text('description')->nullable();
