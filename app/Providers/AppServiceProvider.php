@@ -37,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('is-frontdesk', fn($user) => $user->hasAnyRole(['frontdesk.staff', 'super.admin']));
         Gate::define('is-comms-admin', fn($user) => $user->hasAnyRole(['comms.admin', 'super.admin']));
         Gate::define('guidance', fn($user) => $user->hasAnyRole(['guidance.admin']));
+        Gate::define('is-clinic', fn($user) => $user->hasAnyRole(['clinic.admin']));
 
 
         // try {

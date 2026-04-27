@@ -19,6 +19,7 @@
         $isGuidanceAdmin = in_array('guidance.admin', $user->roles ?? []);
         $isGuidanceStaff = in_array('guidance.staff', $user->roles ?? []);
         $isCommsAdmin = in_array('comms.admin', $user->roles ?? []);
+        $isClinicAdmin = in_array('clinic.admin', $user->roles ?? []);
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -81,8 +82,12 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
-            @if ($isGuidanceAdmin)
+
+
+            @if ($isGuidanceAdmin || $isClinicAdmin)
                 <flux:navlist.group heading="Health and Wellness" expandable="false">
+
+                @if ($isGuidanceAdmin)
                     <flux:navlist.group heading="Guidance" expandable :expanded="false">
                         <flux:navlist.item href="{{ route('guidance.clients.index') }}" icon="users">
                             Clients
@@ -96,7 +101,23 @@
                             Import CSV
                         </flux:navlist.item>
                     </flux:navlist.group>
-                </flux:navlist.group>
+                @endif
+                
+                   @if ($isClinicAdmin)
+                    <flux:navlist.group heading="Clinic" expandable :expanded="false">
+                        <flux:navlist.item href="{{ route('clinic.patients.index') }}" icon="users">
+                            Patients
+                        </flux:navlist.item>
+                        <flux:navlist.item href="{{ route('clinic.consultations.index') }}" icon="clipboard-document-list">
+                            Consultations
+                        </flux:navlist.item>
+                        <flux:navlist.item href="{{ route('clinic.import-csv.index') }}" icon="arrow-up-tray">
+                            Import CSV
+                        </flux:navlist.item>
+                    </flux:navlist.group>
+                @endif
+                
+                 </flux:navlist.group>
             @endif
 
         </flux:navlist>

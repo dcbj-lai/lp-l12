@@ -17,6 +17,9 @@ use App\Http\Controllers\StepController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\VisitorLogController;
+use App\Http\Controllers\PatientController;
+use App\Http\Controllers\ClinicConsultationController;
+use App\Http\Controllers\ImportCSVClinicController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
@@ -413,6 +416,46 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
 
     Route::post('/guidance/import-csv', [ImportCsvController::class, 'store'])->name('guidance.import-csv.store');
 });
+
+
+Route::prefix('clinic')
+    ->name('clinic.')
+    ->middleware(['auth', 'can:is-clinic'])
+    ->group(function () {
+        Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');
+        Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
+        Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
+        Route::put('/patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
+
+        Route::get('/patients/{patient}/consultations/create', [ClinicConsultationController::class, 'create'])
+            ->name('consultations.create');
+
+        Route::post('/patients/{patient}/consultations', [ClinicConsultationController::class, 'store'])
+            ->name('consultations.store');
+
+        Route::get('/consultations', [ClinicConsultationController::class, 'index'])
+            ->name('consultations.index');
+
+        Route::get('/consultations/{consultation}', [ClinicConsultationController::class, 'show'])
+            ->name('consultations.show');
+
+        Route::get('/consultations/{consultation}/edit', [ClinicConsultationController::class, 'edit'])
+            ->name('consultations.edit');
+
+        Route::put('/consultations/{consultation}', [ClinicConsultationController::class, 'update'])
+            ->name('consultations.update');
+
+        Route::delete('/consultations/{consultation}/archive', [ClinicConsultationController::class, 'archive'])
+            ->name('consultations.archive');
+
+        Route::get('/import-csv', [ImportCsvClinicController::class, 'index'])
+            ->name('import-csv.index');
+
+        Route::post('/import-csv', [ImportCsvClinicController::class, 'store'])
+            ->name('import-csv.store');
+    });
+
+
 //access denied students
 Route::get('/access-denied', function () {
     return view('auth.access-denied');
