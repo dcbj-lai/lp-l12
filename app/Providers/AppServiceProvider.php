@@ -40,12 +40,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('is-clinic', fn($user) => $user->hasAnyRole(['clinic.admin']));
 
 
-        // try {
-        //     $path = \App\Helpers\GoogleCredentialHelper::ensureCredentialsFile();
-        //     config(['google-calendar.service_account_credentials_json' => $path]);
-        // } catch (\Throwable $e) {
-        //     \Log::error('Failed to load Google Calendar credentials: ' . $e->getMessage());
-        // }
         GoogleCredentialLoader::load();
     }
 }

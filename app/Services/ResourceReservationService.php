@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Mail\ResourceBookingApproved;
 use App\Models\ResourceReservation;
+use App\Services\GoogleCalendarService;
 use Illuminate\Support\Facades\DB;
 
 class ResourceReservationService
@@ -66,7 +68,7 @@ class ResourceReservationService
             );
 
             $reservation = ResourceReservation::create([
-                'user_id' => $data['user_id'] ?? auth()->id(),
+                'user_id' => $data['user_id'] ?? null,
                 'requester_email' => $data['requester_email'] ?? null,
                 'resource_id' => $data['resource_id'] ?? null,
                 'title' => $data['title'],
@@ -89,6 +91,39 @@ class ResourceReservationService
         // 🔥 Send admin email (DO NOT break flow if it fails)
         \Mail::to(config('mail.resource_admin'))
             ->queue(new \App\Mail\ResourceBookingAdminNotification($reservation));
+        if (!empty($reservation->requester_email)) {
+            \Mail::to($reservation->requester_email)
+                ->queue(new \App\Mail\ResourceBookingRequesterConfirmation($reservation));
+        }
+
+        return $reservation;
+    }
+
+    public function approve(ResourceReservation $reservation, int $approverId): ResourceReservation
+    {
+        if ($reservation->status !== 'pending') {
+            throw new \Exception('Only pending reservations can be approved.');
+        }
+
+        // 🔥 Create Google Calendar event FIRST
+        $googleEventId = app(GoogleCalendarService::class)
+            ->createEvent($reservation);
+
+        // ✅ Update DB
+        $reservation->update([
+            'status' => 'approved',
+            'approved_by' => $approverId,
+            'approved_at' => now(),
+            'google_event_id' => $googleEventId,
+        ]);
+
+        $reservation->load('resource', 'equipment');
+
+        // 🔥 Notify requester
+        if ($reservation->requester_email) {
+            \Mail::to($reservation->requester_email)
+                ->queue(new ResourceBookingApproved($reservation));
+        }
 
         return $reservation;
     }

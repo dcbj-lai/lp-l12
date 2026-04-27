@@ -3,12 +3,15 @@
 use App\Http\Controllers\AdjustmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClientsController;
+use App\Http\Controllers\ClinicConsultationController;
 use App\Http\Controllers\ConsultationsController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\ImportCSVClinicController;
 use App\Http\Controllers\ImportCsvController;
 use App\Http\Controllers\OnlineDayController;
 use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\PasswordLoginController;
+use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PrivateRequestDocumentController;
 use App\Http\Controllers\PublicCardController;
@@ -17,9 +20,8 @@ use App\Http\Controllers\StepController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\VisitorLogController;
-use App\Http\Controllers\PatientController;
-use App\Http\Controllers\ClinicConsultationController;
-use App\Http\Controllers\ImportCSVClinicController;
+use App\Livewire\Resources\ReservationIndex;
+use App\Livewire\Resources\ReservationShow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
@@ -486,6 +488,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/resources', function () {
         return view('resources.index');
     })->name('resources.index');
+
+});
+
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/resources/reservations', ReservationIndex::class)
+        ->name('resources.reservations.index');
+
+    Route::get('/resources/reservations/{reservation}', ReservationShow::class)
+        ->name('resources.reservations.show');
 
 });
 
