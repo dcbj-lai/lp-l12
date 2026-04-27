@@ -207,15 +207,15 @@
                                                  focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                           placeholder="Describe the chief complaint...">{{ old('chief_complaint') }}</textarea>
                             </div>
-
                             {{-- Classification + Vitals + Pain --}}
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
+                            <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                
+                                <div class="md:col-span-3">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Case Classification</label>
                                     <select name="case_classification"
                                             class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
-                                                   dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
-                                                   focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                         <option value="">-- Select --</option>
                                         <option value="non_urgent" @selected(old('case_classification') === 'non_urgent')>Non urgent</option>
                                         <option value="trauma" @selected(old('case_classification') === 'trauma')>Trauma</option>
@@ -224,53 +224,54 @@
                                     </select>
                                 </div>
 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Blood Pressure</label>
-                                    <input type="text" name="blood_pressure" value="{{ old('blood_pressure') }}" placeholder="e.g. 120/80"
-                                           class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
-                                                  dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
-                                                  focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                </div>
-
-                                <div>
+                                <div class="md:col-span-3">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Pain Rating (0–10)</label>
                                     <input type="number" name="pain_rating" value="{{ old('pain_rating') }}" min="0" max="10" placeholder="0"
-                                           class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
-                                                  dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
-                                                  focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 </div>
 
-                                <div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Temperature (°C)</label>
+                                    <input type="number" step="0.01" name="temperature" value="{{ old('temperature') }}" placeholder="e.g. 36.50"
+                                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Blood Pressure</label>
+                                    <input type="text" name="blood_pressure" value="{{ old('blood_pressure') }}" placeholder="e.g. 120/80"
+                                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+
+                                <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Pulse Rate (bpm)</label>
                                     <input type="number" name="pulse_rate" value="{{ old('pulse_rate') }}" min="0" placeholder="e.g. 76"
-                                           class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
-                                                  dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
-                                                  focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 </div>
 
-                                <div>
+                                <div class="md:col-span-3">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Respiratory Rate</label>
                                     <input type="number" name="respiratory_rate" value="{{ old('respiratory_rate') }}" min="0" placeholder="e.g. 18"
-                                           class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
-                                                  dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
-                                                  focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 </div>
 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Temperature</label>
-                                    <input type="number" step="0.01" name="temperature" value="{{ old('temperature') }}" placeholder="e.g. 36.50"
-                                           class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
-                                                  dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
-                                                  focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                </div>
-
-                                <div>
+                                <div class="md:col-span-3">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">O2 Saturation (SpO2 %)</label>
                                     <input type="number" name="o2_saturation" value="{{ old('o2_saturation') }}" min="0" max="100" placeholder="e.g. 98"
-                                           class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
-                                                  dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
-                                                  focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
+                                                dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
+                                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 </div>
+
                             </div>
 
                             {{-- Assessment --}}

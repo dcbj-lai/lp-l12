@@ -102,15 +102,15 @@
                     <input type="hidden" name="return_url" value="{{ $returnUrl }}">
 
                     <!-- Case + Vitals + Pain -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                        <div class="md:col-span-3">
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
                                 Case Classification
                             </label>
                             <select name="case_classification"
                                     class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
-                                           dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
-                                           focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
+                                        focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="">-- Select --</option>
                                 <option value="non_urgent" @selected(old('case_classification', $consultation->case_classification) === 'non_urgent')>Non urgent</option>
                                 <option value="trauma" @selected(old('case_classification', $consultation->case_classification) === 'trauma')>Trauma</option>
@@ -119,89 +119,89 @@
                             </select>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
-                                Blood Pressure
-                            </label>
-                            <input type="text"
-                                   name="blood_pressure"
-                                   value="{{ old('blood_pressure', $consultation->blood_pressure) }}"
-                                   placeholder="e.g. 120/80"
-                                   class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
-                                          dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
-                                          focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </div>
-
-                        <div>
+                        <div class="md:col-span-3">
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
                                 Pain Rating (0–10)
                             </label>
                             <input type="number"
-                                   name="pain_rating"
-                                   min="0"
-                                   max="10"
-                                   value="{{ old('pain_rating', $consultation->pain_rating) }}"
-                                   class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
-                                          dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
-                                          focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                name="pain_rating"
+                                min="0"
+                                max="10"
+                                value="{{ old('pain_rating', $consultation->pain_rating) }}"
+                                class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
+                                        dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
+                                        focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
 
-                        <div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
+                                Temperature (°C)
+                            </label>
+                            <input type="number"
+                                step="0.01"
+                                name="temperature"
+                                value="{{ old('temperature', $consultation->temperature) }}"
+                                class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
+                                        dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
+                                        focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
+                                Blood Pressure
+                            </label>
+                            <input type="text"
+                                name="blood_pressure"
+                                value="{{ old('blood_pressure', $consultation->blood_pressure) }}"
+                                placeholder="e.g. 120/80"
+                                class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
+                                        dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
+                                        focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
                                 Pulse Rate (bpm)
                             </label>
                             <input type="number"
-                                   name="pulse_rate"
-                                   min="0"
-                                   value="{{ old('pulse_rate', $consultation->pulse_rate) }}"
-                                   class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
-                                          dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
-                                          focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                name="pulse_rate"
+                                min="0"
+                                value="{{ old('pulse_rate', $consultation->pulse_rate) }}"
+                                class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
+                                        dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
+                                        focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
 
-                        <div>
+                        <div class="md:col-span-3">
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
                                 Respiratory Rate
                             </label>
                             <input type="number"
-                                   name="respiratory_rate"
-                                   min="0"
-                                   value="{{ old('respiratory_rate', $consultation->respiratory_rate) }}"
-                                   class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
-                                          dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
-                                          focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                name="respiratory_rate"
+                                min="0"
+                                value="{{ old('respiratory_rate', $consultation->respiratory_rate) }}"
+                                class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
+                                        dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
+                                        focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
-                                Temperature
-                            </label>
-                            <input type="number"
-                                   step="0.01"
-                                   name="temperature"
-                                   value="{{ old('temperature', $consultation->temperature) }}"
-                                   class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
-                                          dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
-                                          focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </div>
-
-                        <div>
+                        <div class="md:col-span-3">
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
                                 O2 Saturation (SpO2 %)
                             </label>
                             <input type="number"
-                                   name="o2_saturation"
-                                   min="0"
-                                   max="100"
-                                   value="{{ old('o2_saturation', $consultation->o2_saturation) }}"
-                                   class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
-                                          dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
-                                          focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                name="o2_saturation"
+                                min="0"
+                                max="100"
+                                value="{{ old('o2_saturation', $consultation->o2_saturation) }}"
+                                class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
+                                        dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600
+                                        focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
                     </div>
 
                     <!-- Text areas -->
-                    <div>
+                    <div class="mt-4">
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
                             Chief Complaint
                         </label>
@@ -211,7 +211,7 @@
                                          focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ old('chief_complaint', $consultation->chief_complaint) }}</textarea>
                     </div>
 
-                    <div>
+                    <div class="mt-4">
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
                             Assessment
                         </label>
@@ -221,7 +221,7 @@
                                          focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ old('assessment', $consultation->assessment) }}</textarea>
                     </div>
 
-                    <div>
+                    <div class="mt-4">
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
                             Treatment
                         </label>
@@ -265,7 +265,7 @@
                             }
                         }'
                     >
-                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2 mt-3">
                             Medicines Given
                         </label>
 
@@ -370,7 +370,7 @@
                             }
                         }'
                     >
-                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2 mt-3">
                             Supplies Used
                         </label>
 
@@ -431,7 +431,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2 mt-3">
                             Remarks
                         </label>
                         <textarea name="remarks" rows="3"
@@ -446,7 +446,7 @@
 
                 <div>
                 
-                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2 mt-3">
                     Photos
                 </label>
 
@@ -516,7 +516,7 @@
                 </div>
 
                     <!-- Actions -->
-                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2 mt-3">
                         <button type="submit"
                                 class="inline-flex items-center justify-center rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 transition">
                             Update Consultation

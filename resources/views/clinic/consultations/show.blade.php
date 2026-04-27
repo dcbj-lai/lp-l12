@@ -171,42 +171,144 @@
             </div>
         </div>
 
-        {{-- Medicine and supplies --}}
-        <div class="border border-gray-200 dark:border-gray-700 rounded overflow-hidden mt-6 bg-white dark:bg-gray-900">
-            <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 font-semibold text-gray-800 dark:text-white border-b border-gray-200 dark:border-gray-700">
-                Medicine and Supplies
+    {{-- Medicine and Supplies --}}
+<div class="border border-gray-200 dark:border-gray-700 rounded overflow-hidden mt-6 bg-white dark:bg-gray-900">
+    <div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 font-semibold text-gray-800 dark:text-white border-b border-gray-200 dark:border-gray-700">
+        Medicine and Supplies
+    </div>
+
+    @php
+        /*
+            Supports both formats:
+
+            New format from create blade:
+            medicines = [
+                ['name' => 'Paracetamol', 'qty' => 2, 'label' => '500mg'],
+            ]
+
+            supplies = [
+                ['name' => 'Bandage', 'qty' => 1],
+            ]
+
+            Old fallback format:
+            medicine_given, medicine_qty, supplies_used, supplies_qty
+        */
+
+        $medicines = $consultation->medicines ?? [];
+        $supplies = $consultation->supplies ?? [];
+
+        if (is_string($medicines)) {
+            $decodedMedicines = json_decode($medicines, true);
+            $medicines = is_array($decodedMedicines) ? $decodedMedicines : [];
+        }
+
+        if ($medicines instanceof \Illuminate\Support\Collection) {
+            $medicines = $medicines->toArray();
+        }
+
+        if (is_string($supplies)) {
+            $decodedSupplies = json_decode($supplies, true);
+            $supplies = is_array($decodedSupplies) ? $decodedSupplies : [];
+        }
+
+        if ($supplies instanceof \Illuminate\Support\Collection) {
+            $supplies = $supplies->toArray();
+        }
+
+        if (empty($medicines) && !empty($consultation->medicine_given)) {
+            $medicines = [
+                [
+                    'name' => $consultation->medicine_given,
+                    'qty' => $consultation->medicine_qty,
+                    'label' => null,
+                ],
+            ];
+        }
+
+        if (empty($supplies) && !empty($consultation->supplies_used)) {
+            $supplies = [
+                [
+                    'name' => $consultation->supplies_used,
+                    'qty' => $consultation->supplies_qty,
+                ],
+            ];
+        }
+    @endphp
+
+    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {{-- Medicines --}}
+        <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+            <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300 mb-3">
+                MEDICINES GIVEN
             </div>
 
-            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
-                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">MEDICINE GIVEN</div>
-                    <div class="mt-1 text-gray-900 dark:text-white">
-                        {{ $consultation->medicine_given ?? '—' }}
-                    </div>
-                </div>
+            @if (!empty($medicines))
+                <div class="space-y-2">
+                    @foreach ($medicines as $medicine)
+                        @php
+                            $medicineName = data_get($medicine, 'name') ?? data_get($medicine, 'medicine_name');
+                            $medicineQty = data_get($medicine, 'qty') ?? data_get($medicine, 'quantity');
+                            $medicineLabel = data_get($medicine, 'label') ?? data_get($medicine, 'equivalent');
+                        @endphp
 
-                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
-                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">QTY. MEDICINE</div>
-                    <div class="mt-1 text-gray-900 dark:text-white">
-                        {{ $consultation->medicine_qty ?? '—' }}
-                    </div>
-                </div>
+                        <div class="flex flex-col gap-1 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                {{ $medicineName ?? '—' }}
+                            </div>
 
-                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
-                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">SUPPLIES USED</div>
-                    <div class="mt-1 text-gray-900 dark:text-white">
-                        {{ $consultation->supplies_used ?? '—' }}
-                    </div>
-                </div>
+                            <div class="text-xs text-gray-600 dark:text-gray-300">
+                                Qty: {{ $medicineQty ?? '—' }}
 
-                <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
-                    <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">QTY. SUPPLIES</div>
-                    <div class="mt-1 text-gray-900 dark:text-white">
-                        {{ $consultation->supplies_qty ?? '—' }}
-                    </div>
+                                @if (!empty($medicineLabel))
+                                    <span class="mx-1">|</span>
+                                    {{ $medicineLabel }}
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
-            </div>
+            @else
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                    —
+                </div>
+            @endif
         </div>
+
+        {{-- Supplies --}}
+        <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+            <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300 mb-3">
+                SUPPLIES USED
+            </div>
+
+            @if (!empty($supplies))
+                <div class="space-y-2">
+                    @foreach ($supplies as $supply)
+                        @php
+                            $supplyName = data_get($supply, 'name') ?? data_get($supply, 'supply_name');
+                            $supplyQty = data_get($supply, 'qty') ?? data_get($supply, 'quantity');
+                        @endphp
+
+                        <div class="flex flex-col gap-1 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                {{ $supplyName ?? '—' }}
+                            </div>
+
+                            <div class="text-xs text-gray-600 dark:text-gray-300">
+                                Qty: {{ $supplyQty ?? '—' }}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                    —
+                </div>
+            @endif
+        </div>
+
+    </div>
+</div>
 
         {{-- Photo attachments --}}
         <div class="border border-gray-200 dark:border-gray-700 rounded overflow-hidden mt-6 bg-white dark:bg-gray-900">

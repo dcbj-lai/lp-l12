@@ -32,9 +32,9 @@
 
     <p>
         Respectfully,<br>
-        --
-        Clinic Nurse
-        Center for Campus Health and Safety
-        Life College International
+        --<br>
+        Clinic Nurse<br>
+        Center for Campus Health and Safety<br>
+        Life College International<br>
     </p>
 </div>
