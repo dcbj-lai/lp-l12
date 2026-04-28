@@ -122,6 +122,11 @@
             <div class="space-y-4">
 
                 <flux:input wire:model="name" label="Name" />
+                <div>
+                    <label class="block text-sm mb-1">Control Number</label>
+                    <input type="text" wire:model="control_number" placeholder="e.g. RM-101"
+                        class="w-full rounded-md border px-3 py-2 text-sm">
+                </div>
 
                 <flux:select wire:model="type" label="Type">
                     <option value="room">Room</option>

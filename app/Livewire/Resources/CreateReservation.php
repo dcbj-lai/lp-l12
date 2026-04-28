@@ -29,6 +29,9 @@ class CreateReservation extends Component
 
     public $selected_equipment_to_add = null;
 
+    #[Validate('nullable|string|max:500')]
+    public $notes = '';
+
     public function mount()
     {
         $this->rooms = Resource::where('type', 'room')->orderBy('name')->get();
@@ -39,6 +42,8 @@ class CreateReservation extends Component
     {
         $this->validate();
 
+        // dd($this->requester_email, $this->resource_id, $this->equipment_ids, $this->title, $this->start_datetime, $this->end_datetime, $this->notes);
+
         try {
             $service->create([
                 'user_id' => null, // 🔥 public booking
@@ -48,6 +53,7 @@ class CreateReservation extends Component
                 'title' => $this->title,
                 'start_datetime' => $this->start_datetime,
                 'end_datetime' => $this->end_datetime,
+                'notes' => $this->notes,
             ]);
 
             $this->dispatch('flash', type: 'success', message: 'Your booking request has been submitted for approval.');
@@ -59,6 +65,7 @@ class CreateReservation extends Component
                 'title',
                 'start_datetime',
                 'end_datetime',
+                'notes',
             ]);
 
         } catch (\Throwable $e) {

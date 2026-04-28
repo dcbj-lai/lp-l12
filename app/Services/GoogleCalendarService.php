@@ -86,4 +86,11 @@ class GoogleCalendarService
 
         return implode("\n", $lines);
     }
+
+    public function deleteEvent(string $eventId): void
+    {
+        $calendarId = config('services.google.resource_calendar_id');
+
+        $this->calendar->events->delete($calendarId, $eventId);
+    }
 }

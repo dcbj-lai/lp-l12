@@ -139,6 +139,36 @@
 
     </div>
 
+    <div class="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 shadow-sm">
+
+        <!-- Section Header -->
+        <div class="mb-3">
+            <h3 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+                Notes / Instructions
+            </h3>
+            <p class="text-xs text-gray-500">
+                Optional setup details or special requests
+            </p>
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-zinc-200 dark:border-zinc-700 mb-3"></div>
+
+        <!-- Textarea -->
+        <textarea wire:model="notes" rows="3" placeholder="Setup instructions, special requests, etc."
+            class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 
+               bg-white dark:bg-zinc-900 
+               px-3 py-2 text-sm 
+               focus:outline-none focus:ring-2 focus:ring-[#9E1D20]/40 
+               focus:border-[#9E1D20]
+               transition"></textarea>
+
+        @error('notes')
+            <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+        @enderror
+
+    </div>
+
     <!-- SECTION: Schedule -->
     <div
         class="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-4 shadow-sm">

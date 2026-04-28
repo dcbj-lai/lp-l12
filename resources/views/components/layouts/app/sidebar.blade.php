@@ -14,7 +14,8 @@
         // ✅ legacy roles
         $legacyRoles = $user->legacy_roles ?? [];
 
-        $isPNC = in_array('pnc.admin', $legacyRoles);
+        // $isPNC = in_array('pnc.admin', $legacyRoles);
+        $isPNC = Gate::allows('is-pnc');
         $isFinanceAdmin = in_array('finance.admin', $legacyRoles);
         $isSuperAdmin = in_array('super.admin', $legacyRoles);
         $isManager = $user->isManager();
@@ -28,7 +29,8 @@
         // ✅ new system (for later use)
         $isFacilityAdmin = $user->hasRole('facility.admin');
         $isFacilityApprover = $user->hasRole('facility.approver');
-        $isFacilityUser = $user->hasRole('facility.user');
+
+        $canAccessFacility = $isFacilityAdmin || $isFacilityApprover;
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -52,6 +54,12 @@
                     <flux:navlist.item href="{{ route('steps.index') }}" icon="trophy">Leaderboard</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist.group>
+            @if ($isManager)
+                <flux:navlist.group heading="My Approvals" expandable :expanded="false">
+                    <flux:navlist.item href="{{ route('requests.manage') }}" icon="bookmark-check">Schedule Requests
+                    </flux:navlist.item>
+                </flux:navlist.group>
+            @endif
             @if ($isPNC || $isSuperAdmin)
                 <flux:navlist.group heading="P&C" expandable :expanded="false">
                     <flux:navlist.item href="{{ route('users.index') }}" icon="users">Users</flux:navlist.item>
@@ -85,12 +93,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
-            @if ($isManager)
-                <flux:navlist.group heading="My Approvals" expandable :expanded="false">
-                    <flux:navlist.item href="{{ route('requests.manage') }}" icon="bookmark-check">Schedule Requests
-                    </flux:navlist.item>
-                </flux:navlist.group>
-            @endif
+
 
 
             @if ($isGuidanceAdmin || $isClinicAdmin)
@@ -125,6 +128,26 @@
                                 Import CSV
                             </flux:navlist.item>
                         </flux:navlist.group>
+                    @endif
+
+                </flux:navlist.group>
+            @endif
+
+            @if ($canAccessFacility)
+                <flux:navlist.group heading="Facilities" expandable :expanded="false">
+
+                    @if ($isFacilityAdmin)
+                        <flux:navlist.item href="{{ route('resources.index') }}" icon="building-office"
+                            :active="request()->routeIs('resources.*')">
+                            Resources
+                        </flux:navlist.item>
+                    @endif
+
+                    @if ($isFacilityAdmin || $isFacilityApprover)
+                        <flux:navlist.item href="{{ route('resources.reservations.index') }}" icon="calendar-days"
+                            :active="request()->routeIs('reservations.*')">
+                            Reservations
+                        </flux:navlist.item>
                     @endif
 
                 </flux:navlist.group>
@@ -189,7 +212,8 @@
 
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
-                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
+                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle"
+                        class="w-full">
                         {{ __('Log Out') }}
                     </flux:menu.item>
                 </form>

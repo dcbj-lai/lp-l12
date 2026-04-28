@@ -32,6 +32,8 @@ class ResourceIndex extends Component
     public $location = '';
     public $capacity = null;
 
+    public $control_number = '';
+
     public function mount()
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
@@ -55,6 +57,7 @@ class ResourceIndex extends Component
         $this->description = $resource->description;
         $this->location = $resource->location;
         $this->capacity = $resource->capacity;
+        $this->control_number = $resource->control_number;
     }
 
     public function updateSelected()
@@ -91,6 +94,7 @@ class ResourceIndex extends Component
             'location' => $this->type === 'room' ? $this->location : null,
             'capacity' => $this->type === 'room' ? $this->capacity : null,
             'image_path' => $resource->image_path,
+            'control_number' => $this->control_number,
         ]);
 
         $this->reset('image'); // clear temp
@@ -119,6 +123,7 @@ class ResourceIndex extends Component
             'description',
             'location',
             'capacity',
+            'control_number',
         ]);
 
         $this->loadResources();
@@ -138,6 +143,7 @@ class ResourceIndex extends Component
             'location',
             'capacity',
             'image',
+            'control_number',
         ]);
 
         $this->type = 'room';
@@ -154,6 +160,7 @@ class ResourceIndex extends Component
             'location' => $this->type === 'room' ? $this->location : null,
             'capacity' => $this->type === 'room' ? $this->capacity : null,
             'created_by' => auth()->id(),
+            'control_number' => $this->control_number,
         ]);
 
         // 🖼️ Handle image
@@ -182,6 +189,7 @@ class ResourceIndex extends Component
             'location',
             'capacity',
             'image',
+            'control_number',
         ]);
 
         $this->loadResources();

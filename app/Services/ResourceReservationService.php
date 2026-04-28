@@ -76,6 +76,7 @@ class ResourceReservationService
                 'start_datetime' => $data['start_datetime'],
                 'end_datetime' => $data['end_datetime'],
                 'status' => 'pending',
+                'notes' => $data['notes'] ?? null,
             ]);
 
             if (!empty($data['equipment_ids'])) {

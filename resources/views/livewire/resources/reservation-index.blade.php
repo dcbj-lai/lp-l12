@@ -59,20 +59,39 @@
                     </div>
                 @endif
 
-                <!-- Actions -->
-                @if ($res->status === 'pending')
-                    <div class="mt-3 flex gap-2">
+                @if ($res->notes)
+                    <div
+                        class="mt-3 px-3 py-2 rounded-md border border-zinc-200 dark:border-zinc-700 
+                bg-zinc-50/60 dark:bg-zinc-900/40">
 
-                        <flux:button size="sm" variant="primary" wire:click="approve({{ $res->id }})">
-                            Approve
-                        </flux:button>
+                        <div class="text-[11px] uppercase tracking-wide text-gray-400 dark:text-zinc-500 mb-1">
+                            Notes / Instructions
+                        </div>
 
-                        <flux:button size="sm" variant="ghost" wire:click="reject({{ $res->id }})">
-                            Reject
-                        </flux:button>
+                        <div
+                            class="text-sm text-zinc-600 italic dark:text-zinc-400 leading-relaxed whitespace-pre-line">
+                            {{ $res->notes }}
+                        </div>
 
                     </div>
                 @endif
+
+                <!-- Actions -->
+                <div class="mt-3 flex items-center gap-2">
+
+                    <!-- Primary Action -->
+                    <flux:button size="sm" variant="primary"
+                        wire:click="{{ $res->status === 'approved' ? 'revoke(' . $res->id . ')' : 'approve(' . $res->id . ')' }}">
+                        {{ $res->status === 'approved' ? 'Revoke' : 'Approve' }}
+                    </flux:button>
+
+                    <!-- Reject -->
+                    <flux:button size="sm" variant="{{ $res->status === 'rejected' ? 'danger' : 'ghost' }}"
+                        wire:click="reject({{ $res->id }})">
+                        Reject
+                    </flux:button>
+
+                </div>
 
             </div>
         @empty

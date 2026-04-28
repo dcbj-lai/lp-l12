@@ -34,9 +34,9 @@ class ReservationIndex extends Component
             $reservation = ResourceReservation::with(['resource', 'equipment'])
                 ->findOrFail($id);
 
-            // 🔥 Prevent double approval
-            if ($reservation->status !== 'pending') {
-                throw new \Exception('Only pending reservations can be approved.');
+            // 🔥 Only block if already approved
+            if ($reservation->status === 'approved') {
+                throw new \Exception('Reservation is already approved.');
             }
 
             // 🔥 Create Google Calendar event
@@ -75,17 +75,100 @@ class ReservationIndex extends Component
 
     public function reject($id)
     {
-        $reservation = ResourceReservation::findOrFail($id);
+        try {
+            $reservation = ResourceReservation::findOrFail($id);
 
-        $reservation->update([
-            'status' => 'rejected',
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-        ]);
+            // 🔥 If previously approved → delete calendar event
+            if ($reservation->google_event_id) {
+                try {
+                    app(\App\Services\GoogleCalendarService::class)
+                        ->deleteEvent($reservation->google_event_id);
+                } catch (\Throwable $e) {
+                    \Log::warning('Failed to delete calendar event on reject', [
+                        'reservation_id' => $reservation->id,
+                        'event_id' => $reservation->google_event_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
-        $this->dispatch('flash', type: 'warning', message: 'Reservation rejected.');
+            // 🔥 Update reservation
+            $reservation->update([
+                'status' => 'rejected',
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+                'google_event_id' => null, // ✅ prevent stale reference
+            ]);
 
-        $this->loadReservations();
+            $this->dispatch(
+                'flash',
+                type: 'warning',
+                message: 'Reservation rejected.'
+            );
+
+            $this->loadReservations();
+
+        } catch (\Throwable $e) {
+            \Log::error('Reject failed', [
+                'reservation_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $this->dispatch(
+                'flash',
+                type: 'error',
+                message: 'Failed to reject reservation.'
+            );
+        }
+    }
+
+    public function revoke($id)
+    {
+        try {
+            $reservation = ResourceReservation::findOrFail($id);
+
+            // 🔥 If there is a calendar event → delete it
+            if ($reservation->google_event_id) {
+                try {
+                    app(\App\Services\GoogleCalendarService::class)
+                        ->deleteEvent($reservation->google_event_id);
+                } catch (\Throwable $e) {
+                    \Log::warning('Failed to delete calendar event on revoke', [
+                        'reservation_id' => $reservation->id,
+                        'event_id' => $reservation->google_event_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            // 🔥 Reset to pending (clean state)
+            $reservation->update([
+                'status' => 'pending',
+                'approved_by' => null,
+                'approved_at' => null,
+                'google_event_id' => null,
+            ]);
+
+            $this->dispatch(
+                'flash',
+                type: 'info',
+                message: 'Approval revoked. Reservation is now pending.'
+            );
+
+            $this->loadReservations();
+
+        } catch (\Throwable $e) {
+            \Log::error('Revoke failed', [
+                'reservation_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $this->dispatch(
+                'flash',
+                type: 'error',
+                message: 'Failed to revoke approval.'
+            );
+        }
     }
 
     public function render()

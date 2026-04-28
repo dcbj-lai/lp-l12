@@ -17,6 +17,7 @@ class Resource extends Model
         'capacity',
         'created_by',
         'image_path',
+        'control_number',
     ];
 
     // 🔗 Who created it
