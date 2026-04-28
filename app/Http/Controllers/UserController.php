@@ -74,16 +74,17 @@ class UserController extends Controller
                 ],
             ]);
 
+
             // ✅ Safe roles decoding
-            $roles = [];
+            $legacy_roles = [];
             if (!empty($validated['roles'])) {
                 $decoded = json_decode($validated['roles'], true);
-                $roles = is_array($decoded) ? $decoded : [];
+                $legacy_roles = is_array($decoded) ? $decoded : [];
             }
-
+            // dd($legacy_roles);
             // Ensure default role
-            if (!in_array('user', $roles)) {
-                $roles[] = 'user';
+            if (!in_array('user', $legacy_roles)) {
+                $legacy_roles[] = 'user';
             }
 
             // ✅ Clean monthly rate safely
@@ -112,7 +113,7 @@ class UserController extends Controller
                 'email' => $validated['email'],
                 'supervisor_id' => $validated['supervisor_id'] ?? null,
                 'department_id' => $validated['department_id'] ?? null,
-                'roles' => $roles,
+                'legacy_roles' => $legacy_roles,
                 'payroll_on' => $validated['payroll_on'] ?? false,
                 'rank' => $validated['rank'] ?? 'employee',
                 'position' => $validated['position'] ?? null,
