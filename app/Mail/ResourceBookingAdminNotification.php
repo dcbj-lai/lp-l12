@@ -23,7 +23,7 @@ class ResourceBookingAdminNotification extends Mailable
         return $this->subject('New Resource Booking Request')
             ->view('emails.resource-booking.admin')
             ->with([
-                'url' => route('resources.index'), // 👈 FIX
+                'url' => route('resources.reservations.index') . '#res-' . $this->reservation->id,
             ]);
     }
 }

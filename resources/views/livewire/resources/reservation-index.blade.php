@@ -1,4 +1,25 @@
-<div class="space-y-4">
+<div x-data="{
+    highlightId: null,
+    init() {
+        const hash = window.location.hash;
+
+        if (hash && hash.startsWith('#res-')) {
+            this.highlightId = hash.replace('#', '');
+
+            this.$nextTick(() => {
+                const el = document.getElementById(this.highlightId);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+
+            // remove highlight after a few seconds
+            setTimeout(() => {
+                this.highlightId = null;
+            }, 4000);
+        }
+    }
+}" class="space-y-4">
 
     <!-- Header -->
     <div>
@@ -14,7 +35,12 @@
     <div class="space-y-3">
 
         @forelse ($reservations as $res)
-            <div class="p-4 rounded-lg border bg-white dark:bg-zinc-800 shadow-sm">
+            <div :class="highlightId === 'res-{{ $res->id }}'
+                ?
+                'ring-2 ring-[#9E1D20] bg-[#9E1D20]/5 shadow-[0_0_20px_rgba(158,29,32,0.6),0_0_40px_rgba(158,29,32,0.4)]' :
+                ''"
+                id="res-{{ $res->id }}"
+                class="p-4 rounded-lg border bg-white dark:bg-zinc-800 shadow-sm transition-all duration-500">
 
                 <div class="flex justify-between items-start gap-3">
 
@@ -59,10 +85,11 @@
                     </div>
                 @endif
 
+                <!-- Notes -->
                 @if ($res->notes)
                     <div
                         class="mt-3 px-3 py-2 rounded-md border border-zinc-200 dark:border-zinc-700 
-                bg-zinc-50/60 dark:bg-zinc-900/40">
+                                bg-zinc-50/60 dark:bg-zinc-900/40">
 
                         <div class="text-[11px] uppercase tracking-wide text-gray-400 dark:text-zinc-500 mb-1">
                             Notes / Instructions
@@ -79,13 +106,11 @@
                 <!-- Actions -->
                 <div class="mt-3 flex items-center gap-2">
 
-                    <!-- Primary Action -->
                     <flux:button size="sm" variant="primary"
                         wire:click="{{ $res->status === 'approved' ? 'revoke(' . $res->id . ')' : 'approve(' . $res->id . ')' }}">
                         {{ $res->status === 'approved' ? 'Revoke' : 'Approve' }}
                     </flux:button>
 
-                    <!-- Reject -->
                     <flux:button size="sm" variant="{{ $res->status === 'rejected' ? 'danger' : 'ghost' }}"
                         wire:click="reject({{ $res->id }})">
                         Reject

@@ -113,6 +113,6 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
     /** Resource Booking Admin Email */
-    'resource_admin' => env('RESOURCE_BOOKING_ADMIN_EMAIL'),
+    'resource_admin' => env('REQUESTS_OP_EMAIL', 'ops.team@life.edu.ph'),
 
 ];
