@@ -171,6 +171,48 @@ class ReservationIndex extends Component
         }
     }
 
+    public function delete($id)
+    {
+        try {
+            $reservation = \App\Models\ResourceReservation::findOrFail($id);
+
+            // 🔥 Delete calendar event if exists
+            if ($reservation->google_event_id) {
+                try {
+                    app(\App\Services\GoogleCalendarService::class)
+                        ->deleteEvent($reservation->google_event_id);
+                } catch (\Throwable $e) {
+                    \Log::warning('Failed to delete event on reservation delete', [
+                        'reservation_id' => $id,
+                        'event_id' => $reservation->google_event_id,
+                    ]);
+                }
+            }
+
+            $reservation->delete();
+
+            $this->dispatch(
+                'flash',
+                type: 'warning',
+                message: 'Reservation deleted.'
+            );
+
+            $this->loadReservations();
+
+        } catch (\Throwable $e) {
+            \Log::error('Delete reservation failed', [
+                'reservation_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $this->dispatch(
+                'flash',
+                type: 'error',
+                message: 'Failed to delete reservation.'
+            );
+        }
+    }
+
     public function render()
     {
         return view('livewire.resources.reservation-index');

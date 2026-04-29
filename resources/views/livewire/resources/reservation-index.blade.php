@@ -33,20 +33,39 @@
 
     <!-- List -->
     <div class="space-y-3">
-
-        @forelse ($reservations as $res)
+        @php
+            $isFacilityAdmin = auth()->user()->hasRole('facility.admin');
+        @endphp @forelse ($reservations as $res)
             <div :class="highlightId === 'res-{{ $res->id }}'
                 ?
                 'ring-2 ring-[#9E1D20] bg-[#9E1D20]/5 shadow-[0_0_20px_rgba(158,29,32,0.6),0_0_40px_rgba(158,29,32,0.4)]' :
                 ''"
                 id="res-{{ $res->id }}"
-                class="p-4 rounded-lg border bg-white dark:bg-zinc-800 shadow-sm transition-all duration-500">
+                class="relative p-4 rounded-lg border bg-white dark:bg-zinc-800 shadow-sm transition-all duration-500">
 
-                <div class="flex justify-between items-start gap-3">
+                <!-- ❌ Delete (Top Right - Admin Only) -->
+                @if ($isFacilityAdmin)
+                    <div class="absolute top-2 right-2">
+                        <flux:button size="xs" variant="danger" wire:click="delete({{ $res->id }})"
+                            icon="circle-x" />
+                    </div>
+                @endif
+
+                <!-- Header Row -->
+                <div class="flex items-start justify-between gap-3">
 
                     <div class="space-y-1">
-                        <div class="font-semibold text-zinc-800 dark:text-zinc-100">
-                            {{ $res->title }}
+
+                        <!-- Title + Status -->
+                        <div class="flex items-center gap-2">
+                            <div class="font-semibold text-zinc-800 dark:text-zinc-100">
+                                {{ $res->title }}
+                            </div>
+
+                            <flux:badge size="sm"
+                                color="{{ $res->status === 'approved' ? 'green' : ($res->status === 'rejected' ? 'red' : 'yellow') }}">
+                                {{ ucfirst($res->status) }}
+                            </flux:badge>
                         </div>
 
                         <div class="text-xs text-gray-500">
@@ -58,17 +77,7 @@
                             →
                             {{ \Carbon\Carbon::parse($res->end_datetime)->format('M d, h:i A') }}
                         </div>
-                    </div>
 
-                    <!-- Status -->
-                    <div>
-                        @if ($res->status === 'pending')
-                            <span class="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-700">Pending</span>
-                        @elseif ($res->status === 'approved')
-                            <span class="text-xs px-2 py-1 rounded bg-green-100 text-green-700">Approved</span>
-                        @else
-                            <span class="text-xs px-2 py-1 rounded bg-red-100 text-red-700">Rejected</span>
-                        @endif
                     </div>
 
                 </div>
@@ -89,7 +98,7 @@
                 @if ($res->notes)
                     <div
                         class="mt-3 px-3 py-2 rounded-md border border-zinc-200 dark:border-zinc-700 
-                                bg-zinc-50/60 dark:bg-zinc-900/40">
+                    bg-zinc-50/60 dark:bg-zinc-900/40">
 
                         <div class="text-[11px] uppercase tracking-wide text-gray-400 dark:text-zinc-500 mb-1">
                             Notes / Instructions
@@ -106,7 +115,7 @@
                 <!-- Actions -->
                 <div class="mt-3 flex items-center gap-2">
 
-                    <flux:button size="sm" variant="primary"
+                    <flux:button size="sm" variant="primary" color="lime"
                         wire:click="{{ $res->status === 'approved' ? 'revoke(' . $res->id . ')' : 'approve(' . $res->id . ')' }}">
                         {{ $res->status === 'approved' ? 'Revoke' : 'Approve' }}
                     </flux:button>
