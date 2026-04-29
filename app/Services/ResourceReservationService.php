@@ -38,18 +38,35 @@ class ResourceReservationService
      */
     public function validateAvailability(?int $primaryResourceId, array $equipmentIds, $start, $end): void
     {
-        // Check main resource (room)
-        if ($primaryResourceId) {
-            if (!$this->isResourceAvailable($primaryResourceId, $start, $end)) {
-                throw new \Exception('Selected resource is not available for the chosen time.');
+        $ids = array_filter(array_merge(
+            $primaryResourceId ? [$primaryResourceId] : [],
+            $equipmentIds
+        ));
+
+        if (empty($ids)) {
+            return;
+        }
+
+        // 🔥 Load all resources in one query
+        $resources = \App\Models\Resource::whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        $conflicts = [];
+
+        foreach ($ids as $id) {
+            if (!$this->isResourceAvailable($id, $start, $end)) {
+                if (isset($resources[$id])) {
+                    $conflicts[] = $resources[$id]->name;
+                }
             }
         }
 
-        // Check equipment
-        foreach ($equipmentIds as $equipmentId) {
-            if (!$this->isResourceAvailable($equipmentId, $start, $end)) {
-                throw new \Exception('One of the selected equipment is not available.');
-            }
+        if (!empty($conflicts)) {
+            throw new \Exception(
+                'The following resources are not available for the selected time: ' .
+                collect($conflicts)->join(', ')
+            );
         }
     }
 

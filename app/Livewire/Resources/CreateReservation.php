@@ -77,7 +77,7 @@ class CreateReservation extends Component
             $this->dispatch(
                 'flash',
                 type: 'error',
-                message: 'Unable to process your booking. Please try again.'
+                message: $e->getMessage() ?: 'An error occurred while submitting your booking request. Please try again later.'
             );
         }
     }
