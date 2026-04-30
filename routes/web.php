@@ -525,13 +525,13 @@ Route::middleware(['auth', 'role:access.admin'])
     ->name('admin.access.')
     ->group(function () {
 
-        Route::get('/permissions', PermissionsIndex::class)
+        Route::view('/permissions', 'admin.access.permissions')
             ->name('permissions.index');
 
-        Route::get('/roles', RolesIndex::class)
+        Route::view('/roles', 'admin.access.roles')
             ->name('roles.index');
 
-        Route::get('/users', UsersIndex::class)
+        Route::view('/users', 'admin.access.users')
             ->name('users.index');
     });
 
