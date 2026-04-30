@@ -29,8 +29,9 @@
         // ✅ new system (for later use)
         $isFacilityAdmin = $user->hasRole('facility.admin');
         $isFacilityApprover = $user->hasRole('facility.approver');
-
         $canAccessFacility = $isFacilityAdmin || $isFacilityApprover;
+
+        $canAccessAdmin = $user->hasRole('access.admin');
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -143,12 +144,37 @@
                         </flux:navlist.item>
                     @endif
 
-                    @if ($isFacilityAdmin || $isFacilityApprover)
+                    @if ($isFacilityApprover)
                         <flux:navlist.item href="{{ route('resources.reservations.index') }}" icon="calendar-days"
                             :active="request()->routeIs('reservations.*')">
                             Reservations
                         </flux:navlist.item>
                     @endif
+
+                </flux:navlist.group>
+            @endif
+
+            @if ($canAccessAdmin)
+                <flux:navlist.group heading="Admin" expandable :expanded="false">
+
+                    <flux:navlist.group heading="Access" expandable :expanded="true">
+
+                        <flux:navlist.item href="{{ route('admin.access.users.index') }}" icon="users"
+                            :active="request()->routeIs('admin.access.users.*')">
+                            Users
+                        </flux:navlist.item>
+
+                        <flux:navlist.item href="{{ route('admin.access.roles.index') }}" icon="shield-check"
+                            :active="request()->routeIs('admin.access.roles.*')">
+                            Roles
+                        </flux:navlist.item>
+
+                        <flux:navlist.item href="{{ route('admin.access.permissions.index') }}" icon="key"
+                            :active="request()->routeIs('admin.access.permissions.*')">
+                            Permissions
+                        </flux:navlist.item>
+
+                    </flux:navlist.group>
 
                 </flux:navlist.group>
             @endif

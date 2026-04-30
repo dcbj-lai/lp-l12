@@ -20,6 +20,9 @@ use App\Http\Controllers\StepController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\VisitorLogController;
+use App\Livewire\Access\PermissionsIndex;
+use App\Livewire\Access\RolesIndex;
+use App\Livewire\Access\UsersIndex;
 use App\Livewire\Resources\ReservationIndex;
 use App\Livewire\Resources\ReservationShow;
 use Illuminate\Http\Request;
@@ -515,3 +518,20 @@ Route::get('/resources/book', function () {
 Route::get('/launcher', function () {
     return view('launcher');
 });
+
+
+Route::middleware(['auth', 'role:access.admin'])
+    ->prefix('admin/access')
+    ->name('admin.access.')
+    ->group(function () {
+
+        Route::get('/permissions', PermissionsIndex::class)
+            ->name('permissions.index');
+
+        Route::get('/roles', RolesIndex::class)
+            ->name('roles.index');
+
+        Route::get('/users', UsersIndex::class)
+            ->name('users.index');
+    });
+
