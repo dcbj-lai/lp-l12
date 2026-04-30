@@ -128,7 +128,7 @@
                     </div>
 
                     <div class="mt-4">
-                        {{ $students->appends(request()->query())->links() }}
+                        {{ $students->appends(array_merge(request()->query(), ['tab' => 'students']))->links() }}
                     </div>
                 </div>
             </div>
@@ -226,7 +226,7 @@
                     </div>
 
                     <div class="mt-4">
-                        {{ $staff->appends(request()->query())->links() }}
+                        {{ $staff->appends(array_merge(request()->query(), ['tab' => 'staff']))->links() }}
                     </div>
                 </div>
             </div>
