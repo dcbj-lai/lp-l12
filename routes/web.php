@@ -510,3 +510,8 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/resources/book', function () {
     return view('public.resources.book');
 })->name('resources.book');
+
+/**App Launcher */
+Route::get('/launcher', function () {
+    return view('launcher');
+});
