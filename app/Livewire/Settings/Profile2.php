@@ -88,6 +88,16 @@ class Profile2 extends Component
 
         $user->save();
 
+        // ✅ IMPORTANT: refresh model
+        $user->refresh();
+
+        // ✅ rehydrate component state
+        $this->name = $user->name;
+        $this->email = $user->email;
+        $this->preferred_name = $user->preferred_name ?? '';
+        $this->phone_work = $user->phone_work ?? '';
+        $this->phone_mobile = $user->phone_mobile ?? '';
+
         $this->dispatch('flash', type: 'success', message: 'Profile updated.');
     }
 
