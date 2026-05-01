@@ -8,7 +8,7 @@
 
             <flux:input name="password" label="Password" type="password" required />
 
-            <flux:button variant="primary" type="submit" class="w-full">
+            <flux:button variant="primary" type="submit" class="w-full" color="teal">
                 Login
             </flux:button>
 

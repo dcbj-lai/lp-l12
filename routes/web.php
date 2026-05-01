@@ -46,12 +46,28 @@ Route::get('dashboard', function () {
     ->name('dashboard');
 
 
-Route::middleware(['auth'])->group(function () {
-    Route::redirect('settings', 'settings/profile');
+// Route::middleware(['auth'])->group(function () {
+//     Route::redirect('settings', 'settings/profile');
 
-    Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
-    Volt::route('settings/password', 'settings.password')->name('settings.password');
-    Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+//     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
+//     Volt::route('settings/password', 'settings.password')->name('settings.password');
+//     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+
+// });
+
+Route::middleware(['auth'])->prefix('settings')->name('settings.')->group(function () {
+
+    Route::redirect('/', 'settings/profile-2');
+
+    Route::view('/profile-2', 'settings.profile-2')
+        ->name('profile-2');
+
+    Route::view('/password-2', 'settings.password-2')
+        ->name('password-2');
+
+    Route::view('/appearance-2', 'settings.appearance-2')
+        ->name('appearance-2');
+
 });
 
 // Google Routes
