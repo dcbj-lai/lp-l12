@@ -7,27 +7,65 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
 
             <!-- FORM -->
-            <div class="md:col-span-2 w-full" wire:key="profile-form">
+            <div class="md:col-span-2 w-full">
 
                 <form wire:submit.prevent="updateProfileInformation" class="space-y-4">
 
-                    <flux:input wire:model.live="name" label="Name" required />
+                    <!-- Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                            Name
+                        </label>
+                        <input type="text" wire:model.defer="name"
+                            class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm"
+                            required>
+                        @error('name')
+                            <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
 
-                    <flux:input wire:model.live="preferred_name" label="Preferred Name" />
+                    <!-- Preferred Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                            Preferred Name
+                        </label>
+                        <input type="text" wire:model.defer="preferred_name"
+                            class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
+                    </div>
 
-                    <flux:input wire:model.live="email" label="Email" readonly />
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                            Email
+                        </label>
+                        <input type="email" wire:model.defer="email"
+                            class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-sm"
+                            readonly>
+                    </div>
 
-                    <flux:input wire:model.live="phone_work" label="Work Phone" />
+                    <!-- Work Phone -->
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                            Work Phone
+                        </label>
+                        <input type="text" wire:model.defer="phone_work"
+                            class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
+                    </div>
 
-                    <flux:input wire:model.live="phone_mobile" label="Mobile Phone" />
+                    <!-- Mobile Phone -->
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                            Mobile Phone
+                        </label>
+                        <input type="text" wire:model.defer="phone_mobile"
+                            class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
+                    </div>
 
+                    <!-- Submit -->
                     <div class="flex items-center gap-4 pt-2">
-
-                        <flux:button type="submit" variant="primary" wire:loading.attr="disabled">
-                            <span wire:loading.remove>Save</span>
-                            <span wire:loading>Saving...</span>
+                        <flux:button type="submit" variant="primary" color="emerald">
+                            Save
                         </flux:button>
-
                     </div>
 
                 </form>
@@ -35,34 +73,25 @@
             </div>
 
             <!-- AVATAR -->
-            <div class="md:col-span-1 w-full flex flex-col items-center justify-start gap-3 md:sticky md:top-6 self-start"
-                wire:key="profile-avatar">
+            <div class="md:col-span-1 w-full flex flex-col items-center gap-3 md:sticky md:top-6 self-start">
 
-                <div class="w-full flex flex-col items-center">
+                <flux:modal.trigger name="avatar-modal">
+                    <div
+                        class="h-24 w-24 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary-500 transition">
 
-                    <flux:modal.trigger name="avatar-modal">
+                        @if (auth()->user()->profile_photo_path)
+                            <img src="{{ Storage::disk('s3')->url(auth()->user()->profile_photo_path) }}"
+                                class="h-full w-full object-cover">
+                        @else
+                            <span class="text-lg font-semibold">
+                                {{ auth()->user()->initials() }}
+                            </span>
+                        @endif
 
-                        <div
-                            class="h-24 w-24 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary-500 transition">
+                    </div>
+                </flux:modal.trigger>
 
-                            @if (auth()->user()->profile_photo_path)
-                                <img src="{{ Storage::disk('s3')->url(auth()->user()->profile_photo_path) }}"
-                                    class="h-full w-full object-cover">
-                            @else
-                                <span class="text-lg font-semibold">
-                                    {{ auth()->user()->initials() }}
-                                </span>
-                            @endif
-
-                        </div>
-
-                    </flux:modal.trigger>
-
-                    <span class="text-xs text-zinc-500 mt-2">
-                        Click to update
-                    </span>
-
-                </div>
+                <span class="text-xs text-zinc-500">Click to update</span>
 
             </div>
 
@@ -71,33 +100,26 @@
     </x-settings.layout>
 
     <!-- AVATAR MODAL -->
-    <flux:modal name="avatar-modal" class="md:w-96" wire:key="avatar-modal">
+    <flux:modal name="avatar-modal" class="md:w-96">
 
         <form wire:submit.prevent="updateAvatar" class="space-y-6">
 
-            <flux:heading size="lg">
-                Update Profile Photo
-            </flux:heading>
+            <flux:heading size="lg">Update Profile Photo</flux:heading>
 
             <div class="flex justify-center">
-
                 @if ($avatar)
                     <img src="{{ $avatar->temporaryUrl() }}" class="h-24 w-24 rounded-full object-cover">
                 @endif
-
             </div>
 
-            <flux:input type="file" wire:model="avatar" label="Choose Photo" />
+            <input type="file" wire:model="avatar" class="w-full text-sm">
 
             @error('avatar')
-                <div class="text-red-500 text-sm">
-                    {{ $message }}
-                </div>
+                <div class="text-red-500 text-sm">{{ $message }}</div>
             @enderror
 
-            <flux:button type="submit" variant="primary" wire:loading.attr="disabled">
-                <span wire:loading.remove>Upload</span>
-                <span wire:loading>Uploading...</span>
+            <flux:button type="submit" variant="primary" color="teal" class="w-full">
+                Upload
             </flux:button>
 
         </form>
