@@ -60,7 +60,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
-            @canany(['users.list', 'attendance.view', 'requests.manage', 'leave-credits.view'])
+            @canany(['users.list', 'attendance.view', 'requests.hr.view', 'leave-credits.view'])
 
                 <flux:navlist.group heading="P&C" expandable :expanded="false">
 
