@@ -14,6 +14,8 @@ class UsersIndex extends Component
     public $selectedUserId = null;
     public $selectedRoles = [];
 
+    public $search = '';
+
     public function mount()
     {
         $this->loadUsers();
@@ -22,7 +24,17 @@ class UsersIndex extends Component
 
     public function loadUsers()
     {
-        $this->users = User::orderBy('name')->get();
+        $this->users = User::query()
+            ->when($this->search, function ($query) {
+                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($this->search) . '%']);
+            })
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function updatedSearch()
+    {
+        $this->loadUsers();
     }
 
     public function loadRoles()
