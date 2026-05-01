@@ -80,23 +80,21 @@ class Profile2 extends Component
             'phone_mobile' => ['nullable', 'regex:/^\+?[0-9]{7,15}$/'],
         ]);
 
-        $user->fill($validated);
+        $user->update($validated);
 
-        if ($user->isDirty('email')) {
+        if ($user->wasChanged('email')) {
             $user->email_verified_at = null;
+            $user->save();
         }
 
-        $user->save();
-
-        // ✅ IMPORTANT: refresh model
-        $user->refresh();
-
-        // ✅ rehydrate component state
-        $this->name = $user->name;
-        $this->email = $user->email;
-        $this->preferred_name = $user->preferred_name ?? '';
-        $this->phone_work = $user->phone_work ?? '';
-        $this->phone_mobile = $user->phone_mobile ?? '';
+        // 🔥 Rehydrate ALL properties at once
+        $this->fill([
+            'name' => $user->name,
+            'email' => $user->email,
+            'preferred_name' => $user->preferred_name ?? '',
+            'phone_work' => $user->phone_work ?? '',
+            'phone_mobile' => $user->phone_mobile ?? '',
+        ]);
 
         $this->dispatch('flash', type: 'success', message: 'Profile updated.');
     }

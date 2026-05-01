@@ -16,7 +16,7 @@
                         <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                             Name
                         </label>
-                        <input type="text" wire:model.defer="name"
+                        <input type="text" wire:model="name"
                             class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm"
                             required>
                         @error('name')
@@ -29,7 +29,7 @@
                         <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                             Preferred Name
                         </label>
-                        <input type="text" wire:model.defer="preferred_name"
+                        <input type="text" wire:model="preferred_name"
                             class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
                     </div>
 
@@ -38,7 +38,7 @@
                         <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                             Email
                         </label>
-                        <input type="email" wire:model.defer="email"
+                        <input type="email" wire:model="email"
                             class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-sm"
                             readonly>
                     </div>
@@ -48,7 +48,7 @@
                         <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                             Work Phone
                         </label>
-                        <input type="text" wire:model.defer="phone_work"
+                        <input type="text" wire:model="phone_work"
                             class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
                     </div>
 
@@ -57,7 +57,7 @@
                         <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                             Mobile Phone
                         </label>
-                        <input type="text" wire:model.defer="phone_mobile"
+                        <input type="text" wire:model="phone_mobile"
                             class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
                     </div>
 
