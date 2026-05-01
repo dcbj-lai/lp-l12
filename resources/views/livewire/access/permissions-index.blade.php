@@ -33,43 +33,17 @@
                 <div class="space-y-2">
                     @foreach ($permissions as $permission)
                         <div class="flex items-center justify-between text-sm">
-
                             <span class="text-zinc-700 dark:text-zinc-200">
                                 {{ $permission['name'] }}
                             </span>
 
-                            <flux:modal.trigger name="delete-permission-{{ $permission['id'] }}">
-                                <flux:button variant="ghost" size="sm" icon="circle-x"
-                                    class="text-red-500 hover:text-red-700" />
-                            </flux:modal.trigger>
-
+                            <flux:button variant="ghost" size="sm" icon="circle-x"
+                                class="text-red-500 hover:text-red-700"
+                                wire:click="confirmDelete({{ $permission['id'] }}, '{{ $permission['name'] }}')" />
                         </div>
                     @endforeach
                 </div>
-                <flux:modal name="delete-permission-{{ $permission['id'] }}">
 
-                    <div class="p-6 space-y-4">
-                        <h2 class="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
-                            Delete Permission
-                        </h2>
-
-                        <p class="text-sm text-zinc-600 dark:text-zinc-400">
-                            Are you sure you want to delete
-                            <span class="font-semibold">{{ $permission['name'] }}</span>?
-                        </p>
-
-                        <div class="flex justify-end space-x-2">
-                            <flux:button variant="ghost" x-on:click="$dispatch('close')">
-                                Cancel
-                            </flux:button>
-
-                            <flux:button variant="danger" wire:click="delete({{ $permission['id'] }})">
-                                Delete
-                            </flux:button>
-                        </div>
-                    </div>
-
-                </flux:modal>
             </div>
         @empty
             <div class="text-sm text-zinc-500">
@@ -78,7 +52,35 @@
         @endforelse
     </div>
 
-    <!-- Modal -->
+    <!-- Delete Modal (SINGLE) -->
+    <flux:modal name="delete-permission">
+
+        <div class="p-6 space-y-4">
+            <h2 class="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
+                Delete Permission
+            </h2>
+
+            <p class="text-sm text-zinc-600 dark:text-zinc-400">
+                Are you sure you want to delete
+                <span class="font-semibold">{{ $selectedName }}</span>?
+            </p>
+
+            <div class="flex justify-end space-x-2">
+
+                <flux:button variant="ghost" x-on:click="$dispatch('close-modal', { name: 'delete-permission' })">
+                    Cancel
+                </flux:button>
+
+                <flux:button variant="danger" wire:click="delete">
+                    Delete
+                </flux:button>
+
+            </div>
+        </div>
+
+    </flux:modal>
+
+    <!-- Create Permission Modal -->
     <flux:modal name="create-permission">
 
         <div class="p-6 space-y-4">
@@ -96,7 +98,7 @@
 
             <div class="flex justify-end space-x-2">
 
-                <flux:button variant="ghost" x-on:click="$dispatch('close')">
+                <flux:button variant="ghost" x-on:click="$dispatch('close-modal', { name: 'create-permission' })">
                     Cancel
                 </flux:button>
 
@@ -109,6 +111,5 @@
         </div>
 
     </flux:modal>
-
 
 </div>

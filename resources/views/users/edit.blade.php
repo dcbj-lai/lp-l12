@@ -219,32 +219,41 @@
 
                 </div>
 
-                <div class="flex flex-col md:flex-row gap-4">
-                    <!-- Conditional Monthly Rate (Only for Finance Users) -->
-                    @if (auth()->user()->isFinanceAdmin())
-                        <div class="flex-1">
-                            <label for="monthly_rate"
-                                class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                Monthly Rate
-                            </label>
-                            <input type="text" id="monthly_rate" name="monthly_rate"
-                                value="{{ number_format($user->monthly_rate, 2) ?? '' }}"
-                                class="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-sm"
-                                placeholder="₱0.00" />
+                @can('users.compensation.manage')
+                    <div class="border border-zinc-300 dark:border-zinc-700 rounded-md p-4 space-y-4">
+
+                        <div class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Compensation
                         </div>
 
+                        <div class="flex flex-col md:flex-row gap-4">
 
-                        <!-- Payroll On Checkbox -->
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" id="payroll_on" name="payroll_on" value="1"
-                                {{ old('payroll_on', $user->payroll_on) ? 'checked' : '' }}
-                                class="rounded border-zinc-300 dark:bg-zinc-700 dark:text-white" />
-                            <label for="payroll_on" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                Include in Payroll
-                            </label>
+                            <!-- Monthly Rate -->
+                            <div class="flex-1">
+                                <label for="monthly_rate"
+                                    class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                    Monthly Rate
+                                </label>
+                                <input type="text" id="monthly_rate" name="monthly_rate"
+                                    value="{{ number_format($user->monthly_rate, 2) ?? '' }}"
+                                    class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full"
+                                    placeholder="₱0.00" />
+                            </div>
+
+                            <!-- Payroll Checkbox -->
+                            <div class="flex items-center gap-2 mt-6 md:mt-7">
+                                <input type="checkbox" id="payroll_on" name="payroll_on" value="1"
+                                    {{ old('payroll_on', $user->payroll_on) ? 'checked' : '' }}
+                                    class="rounded border-zinc-300 dark:bg-zinc-700 dark:text-white" />
+                                <label for="payroll_on" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                    Include in Payroll
+                                </label>
+                            </div>
+
                         </div>
-                    @endif
-                </div>
+
+                    </div>
+                @endcan
 
             </div>
 
@@ -259,7 +268,7 @@
 
 
         {{-- Finance only area for pay adjustments --}}
-        @if (auth()->user()->isFinanceAdmin())
+        @can('users.compensation.manage')
             <!-- Adjustments Section -->
             <div class="mt-8 p-4 border-t border-zinc-300 dark:border-zinc-600">
                 <h2 class="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-2">Pay Scheme</h2>
@@ -394,7 +403,7 @@
                     </div>
                 </div>
             </div>
-        @endif
+        @endcan
     </div>
 
     {{-- Leave Credits Section --}}

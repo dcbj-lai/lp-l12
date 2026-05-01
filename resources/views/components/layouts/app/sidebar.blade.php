@@ -30,7 +30,7 @@
         $isFacilityAdmin = $user->hasRole('facility.admin');
         $isFacilityApprover = $user->hasRole('facility.approver');
         $canAccessFacility = $isFacilityAdmin || $isFacilityApprover;
-
+        $canInitializeLeave = $user->hasPermissionTo('leave-credits.initialize');
         $canAccessAdmin = $user->hasRole('access.admin');
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">

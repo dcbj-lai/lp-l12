@@ -11,7 +11,9 @@ class PermissionsIndex extends Component
     public $groupedPermissions = [];
 
     public $name = '';
-    public $showModal = false;
+
+    public $selectedId = null;
+    public $selectedName = '';
 
     protected $rules = [
         'name' => 'required|string|max:255|unique:permissions,name',
@@ -31,10 +33,27 @@ class PermissionsIndex extends Component
             ->toArray();
     }
 
-    public function create()
+    public function confirmDelete($id, $name)
     {
-        $this->reset('name');
-        $this->showModal = true;
+        $this->selectedId = $id;
+        $this->selectedName = $name;
+
+        $this->modal('delete-permission')->show();
+    }
+
+    public function delete()
+    {
+        if (!$this->selectedId) {
+            return;
+        }
+
+        Permission::findOrFail($this->selectedId)->delete();
+
+        $this->reset(['selectedId', 'selectedName']);
+
+        $this->loadPermissions();
+        $this->modal('delete-permission')->close();
+        $this->dispatch('flash', type: 'info', message: 'Permission deleted.');
     }
 
     public function store()
@@ -48,22 +67,12 @@ class PermissionsIndex extends Component
             'guard_name' => 'web',
         ]);
 
-        // ✅ Reset input so placeholder shows again
         $this->reset('name');
 
         $this->loadPermissions();
+
         $this->modal('create-permission')->close();
         $this->dispatch('flash', type: 'success', message: 'Permission created.');
-    }
-
-    public function delete($id)
-    {
-        Permission::findOrFail($id)->delete();
-
-        $this->loadPermissions();
-
-        // session()->flash('message', 'Permission deleted.');
-        $this->dispatch('flash', type: 'info', message: 'Permission deleted.');
     }
 
     public function render()

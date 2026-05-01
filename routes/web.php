@@ -129,11 +129,28 @@ Route::get('/my-attendance', [AttendanceController::class, 'myAttendance'])
 
 
 // HR-Only Routes
-Route::middleware(['auth', 'can:is-pnc'])->group(function () {
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-    Route::put('/users/{user}/payroll', [UserController::class, 'togglePayroll'])->name('users.togglePayroll');
-    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+// Route::middleware(['auth', 'can:is-pnc'])->group(function () {
+//     Route::get('/users', [UserController::class, 'index'])->name('users.index');
+//     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+//     Route::put('/users/{user}/payroll', [UserController::class, 'togglePayroll'])->name('users.togglePayroll');
+//     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+// });
+
+
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/users', [UserController::class, 'index'])
+        ->middleware('permission:users.list')
+        ->name('users.index');
+
+    Route::middleware('permission:users.edit')->group(function () {
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    });
+
+    Route::put('/users/{user}/payroll', [UserController::class, 'togglePayroll'])
+        ->middleware('permission:users.payroll.toggle')
+        ->name('users.togglePayroll');
 });
 
 // Acad Admin
@@ -243,18 +260,22 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-Route::middleware(['auth', 'can:is-pnc'])->group(function () {
-    // Initialize leave credits for all users
+Route::middleware(['auth'])->group(function () {
+
     Route::post('/initiate-leave', [RequestController::class, 'initiateLeave'])
+        ->middleware('permission:leave-credits.initialize')
         ->name('org-settings.initiate-leave');
 
-    // Org settings
     Route::get('/org-settings', [OrgSettingController::class, 'index'])
+        ->middleware('permission:leave-credits.view')
         ->name('org-settings.index');
+
     Route::post('/org-settings', [OrgSettingController::class, 'update'])
+        ->middleware('permission:leave-credits.update')
         ->name('org-settings.update');
 
     Route::put('/users/{user}/leave-credits', [UserController::class, 'updateLeaveCredits'])
+        ->middleware('permission:leave-credits.assign')
         ->name('users.leave-credits.update');
 
 });
