@@ -61,18 +61,37 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
-            @if ($isPNC || $isSuperAdmin)
+            @canany(['users.list', 'attendance.view', 'requests.manage', 'leave-credits.view'])
+
                 <flux:navlist.group heading="P&C" expandable :expanded="false">
-                    <flux:navlist.item href="{{ route('users.index') }}" icon="users">Users</flux:navlist.item>
-                    <flux:navlist.item href="{{ route('attendance.index') }}" icon="user-check">View Staff Attendance
-                    </flux:navlist.item>
-                    <flux:navlist.item href="{{ route('requests.manage-hr') }}" icon="list-filter-plus">View Staff
-                        Requests
-                    </flux:navlist.item>
-                    <flux:navlist.item href="{{ route('org-settings.index') }}" icon="settings">Setup Requests
-                    </flux:navlist.item>
+
+                    @can('users.list')
+                        <flux:navlist.item href="{{ route('users.index') }}" icon="users">
+                            Users
+                        </flux:navlist.item>
+                    @endcan
+
+                    @can('attendance.view')
+                        <flux:navlist.item href="{{ route('attendance.index') }}" icon="user-check">
+                            View Staff Attendance
+                        </flux:navlist.item>
+                    @endcan
+
+                    @can('requests.hr.view')
+                        <flux:navlist.item href="{{ route('requests.manage-hr') }}" icon="list-filter-plus">
+                            View Staff Requests
+                        </flux:navlist.item>
+                    @endcan
+
+                    @can('leave-credits.view')
+                        <flux:navlist.item href="{{ route('org-settings.index') }}" icon="settings">
+                            Setup Requests
+                        </flux:navlist.item>
+                    @endcan
+
                 </flux:navlist.group>
-            @endif
+
+            @endcanany
             @if ($isFinanceAdmin || $isSuperAdmin)
                 <flux:navlist.group heading="Finance" expandable :expanded="false">
                     <flux:navlist.item href="{{ route('payouts.index') }}" icon="hand-coins">Payroll

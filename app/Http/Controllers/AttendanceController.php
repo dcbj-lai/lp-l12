@@ -111,9 +111,6 @@ class AttendanceController extends Controller
 
     public function index(Request $request)
     {
-        if (!Gate::allows('is-pnc')) {
-            abort(403, 'Unauthorized Access.');
-        }
 
         $query = Attendance::with('user.department');
 

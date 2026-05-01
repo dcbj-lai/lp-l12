@@ -709,9 +709,6 @@ class RequestController extends Controller
 
     public function manageHr(Request $request)
     {
-        if (!Gate::allows('is-pnc')) {
-            abort(403, 'Unauthorized Access.');
-        }
 
         // Eager-load user, department, request credits, and approver
         $query = StaffRequest::with(['user.requestCredit', 'user.department', 'approver']);
@@ -778,10 +775,6 @@ class RequestController extends Controller
 
     public function showHr(Request $request, StaffRequest $requestModel)
     {
-        if (!Gate::allows('is-pnc')) {
-            abort(403, 'Unauthorized Access.');
-        }
-
         // HR can view all requests, no restriction by user/supervisor
         return view('requests.show-hr', [
             'request' => $requestModel,
@@ -790,10 +783,6 @@ class RequestController extends Controller
 
     public function purgeCancelled()
     {
-        if (!Gate::allows('is-pnc')) {
-            abort(403, 'Unauthorized Access.');
-        }
-
         $deletedCount = StaffRequest::where('status', 'cancelled')->delete();
 
         return back()->with('info', "{$deletedCount} records deleted.");

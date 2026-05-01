@@ -20,11 +20,6 @@ use App\Http\Controllers\StepController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\VisitorLogController;
-use App\Livewire\Access\PermissionsIndex;
-use App\Livewire\Access\RolesIndex;
-use App\Livewire\Access\UsersIndex;
-use App\Livewire\Resources\ReservationIndex;
-use App\Livewire\Resources\ReservationShow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
@@ -36,24 +31,12 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-// Route::view('dashboard', 'dashboard')
-//     ->middleware(['auth', 'verified'])
-//     ->name('dashboard');
 Route::get('dashboard', function () {
     return view('dashboard');
 })
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-
-// Route::middleware(['auth'])->group(function () {
-//     Route::redirect('settings', 'settings/profile');
-
-//     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
-//     Volt::route('settings/password', 'settings.password')->name('settings.password');
-//     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
-
-// });
 
 Route::middleware(['auth'])->prefix('settings')->name('settings.')->group(function () {
 
@@ -89,20 +72,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])
         ->name('attendance.check_out');
 
-
-    Route::middleware(['can:is-pnc'])
-        ->prefix('attendance')
-        ->name('attendance.')
-        ->controller(AttendanceController::class)
-        ->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::get('/create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
-            Route::get('/{attendance}/edit', 'edit')->name('edit');
-            Route::put('/{attendance}', 'update')->name('update');
-        });
-
-
     // Scan check in/out
     Route::get('/qr_check_in/{token}', [AttendanceController::class, 'qrCheckIn'])->name('attendance.qr_check_in');
     Route::get('/qr_check_out/{token}', [AttendanceController::class, 'qrCheckOut'])->name('attendance.qr_check_out');
@@ -119,7 +88,6 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('attendance.qr-result');
 
-
 });
 
 
@@ -129,12 +97,33 @@ Route::get('/my-attendance', [AttendanceController::class, 'myAttendance'])
 
 
 // HR-Only Routes
-// Route::middleware(['auth', 'can:is-pnc'])->group(function () {
-//     Route::get('/users', [UserController::class, 'index'])->name('users.index');
-//     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-//     Route::put('/users/{user}/payroll', [UserController::class, 'togglePayroll'])->name('users.togglePayroll');
-//     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-// });
+
+Route::middleware(['auth'])
+    ->prefix('attendance')
+    ->name('attendance.')
+    ->controller(AttendanceController::class)
+    ->group(function () {
+
+        Route::get('/', 'index')
+            ->middleware('permission:attendance.view')
+            ->name('index');
+
+        Route::get('/create', 'create')
+            ->middleware('permission:attendance.create')
+            ->name('create');
+
+        Route::post('/', 'store')
+            ->middleware('permission:attendance.create')
+            ->name('store');
+
+        Route::get('/{attendance}/edit', 'edit')
+            ->middleware('permission:attendance.update')
+            ->name('edit');
+
+        Route::put('/{attendance}', 'update')
+            ->middleware('permission:attendance.update')
+            ->name('update');
+    });
 
 
 Route::middleware(['auth'])->group(function () {
@@ -223,12 +212,20 @@ Route::get('/about', [UtilityController::class, 'about'])->name('about');
 
 
 // HR Admin for Leaves
-Route::middleware(['auth', 'can:is-pnc'])->group(function () {
+Route::middleware(['auth'])->group(function () {
+
     Route::get('/requests/manage-hr', [RequestController::class, 'manageHr'])
+        ->middleware('permission:requests.hr.view')
         ->name('requests.manage-hr');
-    Route::get('/requests/hr/{requestModel}', [RequestController::class, 'showHr'])->name('requests.show-hr');
+
+    Route::get('/requests/hr/{requestModel}', [RequestController::class, 'showHr'])
+        ->middleware('permission:requests.hr.view.detail')
+        ->name('requests.show-hr');
+
     Route::delete('/requests/purge-cancelled', [RequestController::class, 'purgeCancelled'])
+        ->middleware('permission:requests.hr.purge')
         ->name('requests.purgeCancelled');
+
 });
 
 
@@ -375,14 +372,6 @@ Route::get('/phpinfo', function () {
     phpinfo();
 });
 
-// HR Admin for Leaves
-Route::middleware(['auth', 'can:is-pnc'])->group(function () {
-    Route::get('/requests/manage-hr', [RequestController::class, 'manageHr'])
-        ->name('requests.manage-hr');
-
-    Route::delete('/requests/purge-cancelled', [RequestController::class, 'purgeCancelled'])
-        ->name('requests.purgeCancelled');
-});
 // HR Admin for Leaves
 
 // Password login routes
