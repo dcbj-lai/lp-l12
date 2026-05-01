@@ -512,11 +512,14 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/resources/reservations', ReservationIndex::class)
-        ->name('resources.reservations.index');
+    Route::prefix('resources')
+        ->name('resources.')
+        ->group(function () {
 
-    Route::get('/resources/reservations/{reservation}', ReservationShow::class)
-        ->name('resources.reservations.show');
+            Route::view('/reservations', 'resources.reservations.index')
+                ->name('reservations.index');
+
+        });
 
 });
 
