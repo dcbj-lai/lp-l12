@@ -15,6 +15,8 @@ class RolesIndex extends Component
     public $name = '';
     public $selectedPermissions = [];
 
+    public $editingRoleId = null;
+
     public function mount()
     {
         $this->loadRoles();
@@ -41,76 +43,83 @@ class RolesIndex extends Component
 
     public function resetForm()
     {
-        $this->reset(['name', 'selectedPermissions']);
+        $this->reset(['name', 'selectedPermissions', 'editingRoleId']);
     }
 
-    public function create()
+    public function openCreateModal()
     {
         $this->resetForm();
+        $this->modal('role-modal')->show();
     }
 
-    public function store()
-    {
-        $this->validate([
-            'name' => 'required|string|max:255|unique:roles,name',
-        ]);
-
-        $normalized = strtolower(str_replace(' ', '.', trim($this->name)));
-
-        $role = Role::create([
-            'name' => $normalized,
-            'guard_name' => 'web',
-        ]);
-
-        $role->syncPermissions($this->selectedPermissions);
-
-        $this->resetForm();
-        $this->loadRoles();
-
-        $this->modal('create-role')->close();
-        $this->dispatch('flash', type: 'success', message: 'Role created.');
-    }
-
-    public function edit($roleId)
+    public function openEditModal($roleId)
     {
         $this->resetForm();
 
         $role = Role::with('permissions')->findOrFail($roleId);
 
+        $this->editingRoleId = $role->id;
         $this->name = $role->name;
 
         $this->selectedPermissions = $role->permissions
             ->pluck('name')
-            ->values()
             ->toArray();
+
+        $this->modal('role-modal')->show();
     }
 
-    public function update($roleId)
+    public function save()
     {
-        $role = Role::findOrFail($roleId);
+        if ($this->editingRoleId) {
+            $role = Role::findOrFail($this->editingRoleId);
 
-        $this->validate([
-            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
-        ]);
+            $this->validate([
+                'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            ]);
 
-        $normalized = strtolower(str_replace(' ', '.', trim($this->name)));
+            $normalized = strtolower(str_replace(' ', '.', trim($this->name)));
 
-        $role->update([
-            'name' => $normalized,
-        ]);
+            $role->update([
+                'name' => $normalized,
+            ]);
 
-        $role->syncPermissions($this->selectedPermissions);
+            $role->syncPermissions($this->selectedPermissions);
+
+            $message = 'Role updated.';
+        } else {
+            $this->validate([
+                'name' => 'required|string|max:255|unique:roles,name',
+            ]);
+
+            $normalized = strtolower(str_replace(' ', '.', trim($this->name)));
+
+            $role = Role::create([
+                'name' => $normalized,
+                'guard_name' => 'web',
+            ]);
+
+            $role->syncPermissions($this->selectedPermissions);
+
+            $message = 'Role created.';
+        }
 
         $this->loadRoles();
         $this->resetForm();
 
-        $this->modal("edit-role-{$roleId}")->close();
-        $this->dispatch('flash', type: 'success', message: 'Role updated.');
+        $this->modal('role-modal')->close();
+
+        $this->dispatch('flash', type: 'success', message: $message);
     }
 
-    public function delete($roleId)
+    public function confirmDelete($roleId)
     {
-        $role = Role::findOrFail($roleId);
+        $this->editingRoleId = $roleId;
+        $this->modal('delete-modal')->show();
+    }
+
+    public function delete()
+    {
+        $role = Role::findOrFail($this->editingRoleId);
 
         if ($role->users()->count() > 0) {
             $this->dispatch('flash', type: 'error', message: 'Role is assigned to users.');
@@ -120,20 +129,11 @@ class RolesIndex extends Component
         $role->delete();
 
         $this->loadRoles();
+        $this->resetForm();
 
-        $this->modal("delete-role-{$roleId}")->close();
+        $this->modal('delete-modal')->close();
+
         $this->dispatch('flash', type: 'info', message: 'Role deleted.');
-    }
-
-    public function togglePermission($permissionName)
-    {
-        if (in_array($permissionName, $this->selectedPermissions)) {
-            $this->selectedPermissions = array_values(
-                array_filter($this->selectedPermissions, fn($p) => $p !== $permissionName)
-            );
-        } else {
-            $this->selectedPermissions[] = $permissionName;
-        }
     }
 
     public function render()
