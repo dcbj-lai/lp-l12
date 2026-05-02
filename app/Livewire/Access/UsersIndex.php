@@ -12,6 +12,7 @@ class UsersIndex extends Component
     public $roles = [];
 
     public $selectedUserId = null;
+    public $selectedUser = null;
     public $selectedRoles = [];
 
     public $search = '';
@@ -44,11 +45,19 @@ class UsersIndex extends Component
 
     public function selectUser($userId)
     {
+        // prevent unnecessary reload
+        if ($this->selectedUserId === $userId)
+            return;
+
         $this->selectedUserId = $userId;
 
-        $user = User::findOrFail($userId);
+        // 🔥 always hydrate fresh
+        $this->selectedUser = User::with('roles.permissions')->findOrFail($userId);
 
-        $this->selectedRoles = $user->roles->pluck('name')->toArray();
+        $this->selectedRoles = $this->selectedUser->roles
+            ->pluck('name')
+            ->values()
+            ->toArray();
     }
 
     public function toggleRole($roleName)
@@ -66,21 +75,21 @@ class UsersIndex extends Component
 
     public function syncRoles()
     {
-        if (!$this->selectedUserId)
+        if (!$this->selectedUser)
             return;
 
-        $user = User::findOrFail($this->selectedUserId);
+        // 🔥 persist
+        $this->selectedUser->syncRoles($this->selectedRoles);
 
-        $user->syncRoles($this->selectedRoles);
+        // 🔥 FULL REFRESH (critical)
+        $this->selectedUser = $this->selectedUser->fresh(['roles.permissions']);
+
+        $this->selectedRoles = $this->selectedUser->roles
+            ->pluck('name')
+            ->values()
+            ->toArray();
 
         $this->dispatch('flash', type: 'success', message: 'Roles updated.');
-    }
-
-    public function getSelectedUserProperty()
-    {
-        return $this->selectedUserId
-            ? User::with('roles.permissions')->find($this->selectedUserId)
-            : null;
     }
 
     public function getDerivedPermissionsProperty()

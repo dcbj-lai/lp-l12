@@ -29,13 +29,15 @@
             </div>
 
             <!-- Users -->
+            <!-- Users -->
             @foreach ($users as $user)
                 <div wire:key="user-{{ $user->id }}" wire:click="selectUser({{ $user->id }})"
-                    class="p-2 rounded cursor-pointer text-sm
-            {{ $selectedUserId === $user->id
-                ? 'bg-lime-100 text-lime-700 ring-1 ring-lime-300 shadow-sm
-                                           dark:bg-lime-400/20 dark:text-lime-200 dark:ring-lime-400/40'
-                : 'hover:bg-zinc-100 dark:hover:bg-zinc-800' }}">
+                    wire:loading.attr="disabled"
+                    class="p-2 rounded cursor-pointer text-sm transition
+        {{ $selectedUserId === $user->id
+            ? 'bg-lime-100 text-lime-700 ring-1 ring-lime-300 shadow-sm
+                       dark:bg-lime-400/20 dark:text-lime-200 dark:ring-lime-400/40'
+            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800' }}">
                     {{ $user->name }}
                 </div>
             @endforeach
@@ -57,7 +59,8 @@
                     @foreach ($roles as $role)
                         <label class="flex items-center gap-2 text-sm">
                             <input type="checkbox" value="{{ $role->name }}"
-                                wire:click="toggleRole('{{ $role->name }}')" @checked(in_array($role->name, $selectedRoles))>
+                                wire:change="toggleRole('{{ $role->name }}')" @checked(in_array($role->name, $selectedRoles))
+                                wire:key="role-{{ $role->name }}-{{ $selectedUserId }}">
                             <span>{{ $role->name }}</span>
                         </label>
                     @endforeach
