@@ -2,13 +2,20 @@
 
 namespace App\Livewire\Resources;
 
-use Livewire\Component;
 use App\Models\Resource;
 use App\Services\ResourceReservationService;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Validate;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class CreateReservation extends Component
 {
+    use WithFileUploads;
+
+    #[Validate('nullable|file|max:5120|mimes:pdf,doc,docx,jpg,png')]
+    public $attachment;
+
     public $rooms = [];
     public $equipment = [];
 
@@ -41,8 +48,24 @@ class CreateReservation extends Component
     public function submitReservation(ResourceReservationService $service)
     {
         $this->validate();
+        $path = null;
 
-        // dd($this->requester_email, $this->resource_id, $this->equipment_ids, $this->title, $this->start_datetime, $this->end_datetime, $this->notes);
+        if ($this->attachment) {
+            $originalName = pathinfo($this->attachment->getClientOriginalName(), PATHINFO_FILENAME);
+            $extension = $this->attachment->getClientOriginalExtension();
+
+            // sanitize filename (important)
+            $safeName = Str::slug($originalName);
+
+            // timestamp prefix
+            $filename = now()->format('Ymd_His') . '_' . $safeName . '.' . $extension;
+
+            $path = $this->attachment->storeAs(
+                'reservations',
+                $filename,
+                's3'
+            );
+        }
 
         try {
             $service->create([
@@ -54,6 +77,7 @@ class CreateReservation extends Component
                 'start_datetime' => $this->start_datetime,
                 'end_datetime' => $this->end_datetime,
                 'notes' => $this->notes,
+                'attachment_path' => $path,
             ]);
 
             $this->dispatch('flash', type: 'success', message: 'Your booking request has been submitted for approval.');
@@ -66,6 +90,7 @@ class CreateReservation extends Component
                 'start_datetime',
                 'end_datetime',
                 'notes',
+                'attachment',
             ]);
 
         } catch (\Throwable $e) {

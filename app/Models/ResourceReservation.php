@@ -22,6 +22,8 @@ class ResourceReservation extends Model
         'approved_at',
         'google_event_id',
         'notes',
+        'attachment_path',
+        'approval_note',
     ];
 
     protected $casts = [

@@ -18,6 +18,6 @@ class ResourceBookingRejected extends Mailable implements ShouldQueue
     public function build()
     {
         return $this->subject('Your Booking was Rejected')
-            ->view('emails.resource-booking.rejected');
+            ->view('emails.resource-booking.requester-rejected');
     }
 }

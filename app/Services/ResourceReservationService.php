@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Mail\ResourceBookingApproved;
+use App\Mail\ResourceBookingRejected;
 use App\Models\ResourceReservation;
 use App\Services\GoogleCalendarService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class ResourceReservationService
 {
@@ -94,6 +96,7 @@ class ResourceReservationService
                 'end_datetime' => $data['end_datetime'],
                 'status' => 'pending',
                 'notes' => $data['notes'] ?? null,
+                'attachment_path' => $data['attachment_path'] ?? null,
             ]);
 
             if (!empty($data['equipment_ids'])) {
@@ -117,30 +120,80 @@ class ResourceReservationService
         return $reservation;
     }
 
-    public function approve(ResourceReservation $reservation, int $approverId): ResourceReservation
-    {
-        if ($reservation->status !== 'pending') {
-            throw new \Exception('Only pending reservations can be approved.');
+    public function approveReservation(
+        ResourceReservation $reservation,
+        int $approverId,
+        ?string $note = null
+    ): ResourceReservation {
+
+        if ($reservation->status === 'approved') {
+            throw new \Exception('Reservation is already approved.');
         }
 
-        // 🔥 Create Google Calendar event FIRST
-        $googleEventId = app(GoogleCalendarService::class)
-            ->createEvent($reservation);
+        // Google Calendar (safe)
+        $googleEventId = null;
 
-        // ✅ Update DB
+        try {
+            $googleEventId = app(GoogleCalendarService::class)
+                ->createEvent($reservation);
+        } catch (\Throwable $e) {
+            \Log::error('Google Calendar event creation failed', [
+                'reservation_id' => $reservation->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         $reservation->update([
             'status' => 'approved',
             'approved_by' => $approverId,
             'approved_at' => now(),
+            'approval_note' => $note,
             'google_event_id' => $googleEventId,
         ]);
 
-        $reservation->load('resource', 'equipment');
+        $reservation->load(['resource', 'equipment']);
 
-        // 🔥 Notify requester
+        if ($reservation->requester_email) {
+            try {
+                \Mail::to($reservation->requester_email)
+                    ->queue(new ResourceBookingApproved($reservation));
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send approval email', [
+                    'reservation_id' => $reservation->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $reservation;
+    }
+
+    public function rejectReservation(
+        ResourceReservation $reservation,
+        int $approverId,
+        ?string $note = null
+    ): ResourceReservation {
+
+        if ($reservation->status === 'rejected') {
+            throw new \Exception('Reservation is already rejected.');
+        }
+
+        if (!$note) {
+            throw new \Exception('Rejection reason is required.');
+        }
+
+        $reservation->update([
+            'status' => 'rejected',
+            'approved_by' => $approverId,
+            'approved_at' => now(),
+            'approval_note' => $note, // ✅ same column
+        ]);
+
+        $reservation->load(['resource', 'equipment']);
+
         if ($reservation->requester_email) {
             \Mail::to($reservation->requester_email)
-                ->queue(new ResourceBookingApproved($reservation));
+                ->send(new ResourceBookingRejected($reservation));
         }
 
         return $reservation;

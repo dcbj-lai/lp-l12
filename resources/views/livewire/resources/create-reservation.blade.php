@@ -169,6 +169,56 @@
 
     </div>
 
+    {{-- Attachment Section --}}
+    <div class="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 shadow-sm">
+
+        <!-- Header -->
+        <div class="mb-3">
+            <h3 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+                Attachment
+            </h3>
+            <p class="text-xs text-gray-500">
+                Optional supporting file (PDF, image, etc.)
+            </p>
+        </div>
+
+        <div class="border-t border-zinc-200 dark:border-zinc-700 mb-3"></div>
+
+        <!-- Hidden Input -->
+        <input type="file" wire:model="attachment" id="attachment" class="hidden">
+
+        <!-- Custom UI -->
+        <label for="attachment"
+            class="flex items-center justify-between w-full cursor-pointer
+               rounded-md border border-dashed border-zinc-300 dark:border-zinc-600
+               px-4 py-3 text-sm
+               hover:bg-zinc-50 dark:hover:bg-zinc-700 transition">
+
+            <span class="font-medium text-[#9E1D20]">Click to upload</span>
+
+            <span class="text-xs text-gray-400">
+                Max 5MB
+            </span>
+        </label>
+
+        <!-- Selected file -->
+        @if ($attachment)
+            <div class="mt-2 text-xs text-green-600">
+                Selected: {{ $attachment->getClientOriginalName() }}
+            </div>
+        @endif
+
+        <!-- Loading -->
+        <div wire:loading wire:target="attachment" class="text-xs text-gray-400 mt-1">
+            Uploading...
+        </div>
+
+        @error('attachment')
+            <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+        @enderror
+
+    </div>
+
     <!-- SECTION: Schedule -->
     <div
         class="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-4 shadow-sm">

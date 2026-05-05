@@ -18,6 +18,6 @@ class ResourceBookingApproved extends Mailable implements ShouldQueue
     public function build()
     {
         return $this->subject('Your Booking is Approved')
-            ->view('emails.resource-booking.approved');
+            ->view('emails.resource-booking.requester-approved');
     }
 }

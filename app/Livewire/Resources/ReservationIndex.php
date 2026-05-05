@@ -2,14 +2,20 @@
 
 namespace App\Livewire\Resources;
 
-use Livewire\Component;
 use App\Models\ResourceReservation;
+use App\Services\ResourceReservationService;
+use Flux\Flux;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Title;
+use Livewire\Component;
 
 #[Title('Resource Reservations')]
 class ReservationIndex extends Component
 {
     public $reservations = [];
+    public ?int $reservationId = null;
+    public string $action = 'approve';
+    public ?string $approvalNote = null;
 
     public function mount()
     {
@@ -28,39 +34,22 @@ class ReservationIndex extends Component
             ->get();
     }
 
-    public function approve($id)
+    public function approve(int $id): void
     {
         try {
-            $reservation = ResourceReservation::with(['resource', 'equipment'])
-                ->findOrFail($id);
+            $reservation = ResourceReservation::findOrFail($id);
 
-            // 🔥 Only block if already approved
-            if ($reservation->status === 'approved') {
-                throw new \Exception('Reservation is already approved.');
-            }
-
-            // 🔥 Create Google Calendar event
-            $googleEventId = app(\App\Services\GoogleCalendarService::class)
-                ->createEvent($reservation);
-
-            // 🔥 Update reservation
-            $reservation->update([
-                'status' => 'approved',
-                'approved_by' => auth()->id(),
-                'approved_at' => now(),
-                'google_event_id' => $googleEventId,
-            ]);
+            app(ResourceReservationService::class)
+                ->approveReservation($reservation, auth()->id());
 
             $this->dispatch(
                 'flash',
                 type: 'success',
-                message: 'Reservation approved and added to calendar.'
+                message: 'Reservation approved.'
             );
 
-            $this->loadReservations();
-
         } catch (\Throwable $e) {
-            \Log::error('Approval failed', [
+            Log::warning('Approval failed', [
                 'reservation_id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -68,7 +57,7 @@ class ReservationIndex extends Component
             $this->dispatch(
                 'flash',
                 type: 'error',
-                message: 'Failed to approve reservation.'
+                message: $e->getMessage()
             );
         }
     }
@@ -174,7 +163,7 @@ class ReservationIndex extends Component
     public function delete($id)
     {
         try {
-            $reservation = \App\Models\ResourceReservation::findOrFail($id);
+            $reservation = ResourceReservation::findOrFail($id);
 
             // 🔥 Delete calendar event if exists
             if ($reservation->google_event_id) {
@@ -185,10 +174,25 @@ class ReservationIndex extends Component
                     \Log::warning('Failed to delete event on reservation delete', [
                         'reservation_id' => $id,
                         'event_id' => $reservation->google_event_id,
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
 
+            // 🔥 Delete attachment from S3
+            if ($reservation->attachment_path) {
+                try {
+                    \Storage::disk('s3')->delete($reservation->attachment_path);
+                } catch (\Throwable $e) {
+                    \Log::warning('Failed to delete attachment from S3', [
+                        'reservation_id' => $id,
+                        'path' => $reservation->attachment_path,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            // 🔥 Delete reservation
             $reservation->delete();
 
             $this->dispatch(
@@ -212,6 +216,55 @@ class ReservationIndex extends Component
             );
         }
     }
+
+    public function confirmApprove(): void
+    {
+        try {
+            $reservation = ResourceReservation::findOrFail($this->reservationId);
+
+            app(ResourceReservationService::class)
+                ->approveReservation(
+                    $reservation,
+                    auth()->id(),
+                    $this->approvalNote
+                );
+
+            $this->dispatch('flash', type: 'success', message: 'Reservation approved.');
+            $this->loadReservations();
+            $this->reset(['reservationId', 'approvalNote']);
+
+        } catch (\Throwable $e) {
+            $this->dispatch('flash', type: 'error', message: $e->getMessage());
+        }
+        $this->modal('approve-reservation')->close();
+    }
+
+    public function confirmReject(): void
+    {
+        try {
+            if (blank($this->approvalNote)) {
+                throw new \Exception('Rejection reason is required.');
+            }
+
+            $reservation = ResourceReservation::findOrFail($this->reservationId);
+
+            app(ResourceReservationService::class)
+                ->rejectReservation(
+                    $reservation,
+                    auth()->id(),
+                    $this->approvalNote
+                );
+
+            $this->loadReservations();
+            $this->dispatch('flash', type: 'info', message: 'Reservation rejected.');
+            $this->reset(['reservationId', 'approvalNote']);
+
+        } catch (\Throwable $e) {
+            $this->dispatch('flash', type: 'error', message: $e->getMessage());
+        }
+        $this->modal('reject-reservation')->close();
+    }
+
 
     public function render()
     {
