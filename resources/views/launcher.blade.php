@@ -132,24 +132,6 @@
                     </span>
                 </a>
 
-                <!-- Learn -->
-                <a href="https://learn.stg.life.edu.ph" target="_blank"
-                    class="app-card flex flex-col items-center justify-center gap-2 p-5">
-                    <div class="icon-wrap">
-                        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png">
-                    </div>
-                    <span class="text-xs font-medium text-zinc-700 dark:text-zinc-200">Learn</span>
-                </a>
-
-                <!-- Auth -->
-                <a href="https://auth.stg.life.edu.ph" target="_blank"
-                    class="app-card flex flex-col items-center justify-center gap-2 p-5">
-                    <div class="icon-wrap">
-                        <img src="https://cdn-icons-png.flaticon.com/512/3064/3064155.png">
-                    </div>
-                    <span class="text-xs font-medium text-zinc-700 dark:text-zinc-200">Auth</span>
-                </a>
-
                 <!-- Skills AI -->
                 <a href="https://skillsai.stg.life.edu.ph" target="_blank"
                     class="app-card flex flex-col items-center justify-center gap-2 p-5">
@@ -166,15 +148,6 @@
                         <img src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png">
                     </div>
                     <span class="text-xs font-medium text-zinc-700 dark:text-zinc-200">Mentor AI</span>
-                </a>
-
-                <!-- Learn Apps -->
-                <a href="https://apps.learn.stg.life.edu.ph" target="_blank"
-                    class="app-card flex flex-col items-center justify-center gap-2 p-5">
-                    <div class="icon-wrap">
-                        <img src="https://cdn-icons-png.flaticon.com/512/1828/1828919.png">
-                    </div>
-                    <span class="text-xs font-medium text-zinc-700 dark:text-zinc-200">Learn Apps</span>
                 </a>
 
                 <!-- Base Manager -->
