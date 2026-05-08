@@ -14,11 +14,22 @@ class UserController extends Controller
     // User Index Page
     public function index(Request $request)
     {
-        $search = $request->input('search');
+        $search = trim($request->input('search'));
 
         $users = User::query()
-            ->when($search, fn($query) => $query->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%"))
+            ->when($search, function ($query) use ($search) {
+
+                $search = mb_strtolower($search);
+
+                $query->where(function ($q) use ($search) {
+
+                    $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                        ->orWhereRaw('LOWER(preferred_name) LIKE ?', ["%{$search}%"])
+                        ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
+
+                });
+
+            })
             ->orderBy('name')
             ->paginate(10);
 

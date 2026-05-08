@@ -37,7 +37,7 @@
                     <tr class="text-left text-zinc-800 dark:text-zinc-100">
                         <th class="border p-2">Name</th>
                         <th class="border p-2">Email</th>
-                        <th class="border p-2">Roles</th>
+                        <th class="border p-2">Preferred Name</th>
                         <th class="border p-2 text-center">Payroll On</th>
                         <th class="border p-2 text-center">Actions</th>
                     </tr>
@@ -47,7 +47,7 @@
                         <tr class="hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300">
                             <td class="border p-2">{{ $user->name }}</td>
                             <td class="border p-2">{{ $user->email }}</td>
-                            <td class="border p-2">{{ implode(', ', $user->legacy_roles ?? []) }}</td>
+                            <td class="border p-2">{{ $user->preferred_name ?? 'N/A' }}</td>
 
                             <!-- Payroll On Checkbox -->
                             <td class="border p-2 text-center">
@@ -56,8 +56,9 @@
                             </td>
 
                             <td class="border p-2 text-center">
-                                <flux:button href="{{ route('users.edit', $user) }}" size="sm" variant="filled">
-                                    Edit
+                                <flux:button href="{{ route('users.edit', $user) }}" size="sm" variant="primary"
+                                    color="lime" icon="eye">
+                                    View
                                 </flux:button>
                             </td>
                         </tr>
