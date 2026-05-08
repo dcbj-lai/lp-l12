@@ -22,7 +22,7 @@ class ClinicConsultationController extends Controller
 
         $query = ClinicConsultation::query()
             ->with(['patient:id,first_name,last_name,email,type'])
-            ->orderBy('id', 'asc');
+            ->orderBy('id', 'desc');
 
         if (!empty($dateFrom)) {
             $query->whereDate('time_in', '>=', $dateFrom);
