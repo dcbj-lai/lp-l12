@@ -31,6 +31,7 @@ class VisitorLogController extends Controller
             'email' => $request->email,
             'otp' => $otp,
             'otp_sent_at' => now(),
+            'visit_date' => now(),
         ]);
 
         // send OTP via email
@@ -108,26 +109,6 @@ class VisitorLogController extends Controller
         return redirect()->route('visitor.thankyou');
     }
 
-
-    // public function frontdeskIndex(Request $request)
-// {
-//     $query = VisitorLog::query()->with('visitedUser');
-
-    //     if ($request->filled('search')) {
-//         $search = strtolower($request->search); // normalize input
-//         $query->where(function($q) use ($search) {
-//             $q->whereRaw('LOWER(full_name) LIKE ?', ["%{$search}%"])
-//               ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
-//               ->orWhereHas('visitedUser', function($q2) use ($search) {
-//                   $q2->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-//               });
-//         });
-//     }
-
-    //     $visitors = $query->latest()->paginate(10)->withQueryString();
-
-    //     return view('frontdesk.visitors', compact('visitors'));
-// }
     public function frontdeskIndex(Request $request)
     {
         $query = VisitorLog::query()->with('visitedUser');
