@@ -420,7 +420,7 @@ class RequestController extends Controller
 
 
 
-        $ccRecipients = [env('REQUESTS_HR_EMAIL'), env('REQUESTS_OP_EMAIL')];
+        $ccRecipients = [env('REQUESTS_HR_EMAIL')];
 
         $requester = $staffRequest->user;
         if ($requester && $requester->email) {
