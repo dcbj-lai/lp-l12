@@ -19,7 +19,7 @@
     </p>
 
     <p>
-        The student has been advised to go home after a health assessment.
+        The student has been cleared to return to class.
     </p>
 
     <p>
