@@ -234,7 +234,7 @@
 
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Temperature (°C)</label>
-                                    <input type="number" step="0.01" name="temperature" value="{{ old('temperature') }}" placeholder="e.g. 36.50"
+                                    <input type="number" step="0.1" name="temperature" value="{{ old('temperature') }}" placeholder="e.g. 36.5"
                                         class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900
                                                 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-600
                                                 focus:outline-none focus:ring-2 focus:ring-indigo-500">
