@@ -138,7 +138,7 @@
                                 Temperature (°C)
                             </label>
                             <input type="number"
-                                step="0.01"
+                                step="0.1"
                                 name="temperature"
                                 value="{{ old('temperature', $consultation->temperature) }}"
                                 class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900
