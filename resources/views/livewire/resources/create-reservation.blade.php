@@ -88,7 +88,7 @@
 
                     @if ($item)
                         <div
-                            class="bg-[#9E1D20]/10 text-[#9E1D20] px-2 py-1 flex items-center gap-2 rounded-md text-xs border border-[#9E1D20]/20">
+                            class="relative group bg-[#9E1D20]/10 text-[#9E1D20] px-2 py-1 flex items-center gap-2 rounded-md text-xs border border-[#9E1D20]/20">
 
                             <div class="flex items-center gap-2">
                                 @if ($item->image_path)
@@ -97,6 +97,16 @@
                                 @endif
 
                                 <span>{{ $item->name }}</span>
+                            </div>
+
+                            <!-- Tooltip -->
+                            <div
+                                class="pointer-events-none absolute left-1/2 bottom-full z-50 mb-2 hidden w-56 -translate-x-1/2 rounded-md bg-zinc-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block">
+                                {{ $item->description ?: 'No description available' }}
+
+                                <div
+                                    class="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-zinc-900">
+                                </div>
                             </div>
 
                             <button type="button" wire:click="removeEquipment({{ $id }})"
