@@ -23,10 +23,11 @@ class CelebrationsCard extends Component
             ->sortBy(fn($user) => optional($user->birthdate)->day)
             ->values();
 
-        // 🎉 Work Anniversaries
+        // 🎉 Work Anniversaries (exclude new hires from this year)
         $this->anniversaries = User::query()
             ->whereNotNull('hire_date')
             ->whereMonth('hire_date', $currentMonth)
+            ->whereYear('hire_date', '<', now()->year)
             ->get()
             ->sortBy(fn($user) => optional($user->hire_date)->day)
             ->values();
