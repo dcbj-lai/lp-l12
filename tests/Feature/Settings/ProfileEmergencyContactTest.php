@@ -84,4 +84,48 @@ class ProfileEmergencyContactTest extends TestCase
             ->call('updateProfileInformation')
             ->assertHasNoErrors();
     }
+
+    public function test_dietary_and_medical_fields_are_hydrated_on_mount(): void
+    {
+        $user = User::factory()->create([
+            'dietary_preference' => 'Vegetarian',
+            'medical_notes' => 'Peanut allergy',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(Profile2::class)
+            ->assertSet('dietary_preference', 'Vegetarian')
+            ->assertSet('medical_notes', 'Peanut allergy');
+    }
+
+    public function test_user_can_save_dietary_and_medical_details(): void
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(Profile2::class)
+            ->set('name', $user->name)
+            ->set('email', $user->email)
+            ->set('dietary_preference', 'Halal')
+            ->set('medical_notes', 'Asthma; carries inhaler')
+            ->call('updateProfileInformation')
+            ->assertHasNoErrors();
+
+        $user->refresh();
+        $this->assertEquals('Halal', $user->dietary_preference);
+        $this->assertEquals('Asthma; carries inhaler', $user->medical_notes);
+    }
+
+    public function test_medical_notes_max_length_is_enforced(): void
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(Profile2::class)
+            ->set('name', $user->name)
+            ->set('email', $user->email)
+            ->set('medical_notes', str_repeat('a', 2001))
+            ->call('updateProfileInformation')
+            ->assertHasErrors(['medical_notes']);
+    }
 }
