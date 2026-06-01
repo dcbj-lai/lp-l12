@@ -19,8 +19,14 @@ class Profile2 extends Component
     public string $preferred_name = '';
     public string $phone_work = '';
     public string $phone_mobile = '';
+    public string $emergency_contact_name = '';
+    public string $emergency_contact_relationship = '';
+    public string $emergency_contact_phone = '';
 
     public $avatar;
+
+    /** Allowed values for the relationship dropdown. */
+    public array $relationshipOptions = ['Father', 'Mother', 'Sister', 'Brother', 'Spouse', 'Others'];
 
     public function mount(): void
     {
@@ -31,6 +37,9 @@ class Profile2 extends Component
         $this->preferred_name = $user->preferred_name ?? '';
         $this->phone_work = $user->phone_work ?? '';
         $this->phone_mobile = $user->phone_mobile ?? '';
+        $this->emergency_contact_name = $user->emergency_contact_name ?? '';
+        $this->emergency_contact_relationship = $user->emergency_contact_relationship ?? '';
+        $this->emergency_contact_phone = $user->emergency_contact_phone ?? '';
     }
 
     public function updateAvatar(): void
@@ -78,6 +87,9 @@ class Profile2 extends Component
             ],
             'phone_work' => ['nullable', 'regex:/^\+?[0-9]{7,15}$/'],
             'phone_mobile' => ['nullable', 'regex:/^\+?[0-9]{7,15}$/'],
+            'emergency_contact_name' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_relationship' => ['nullable', 'string', Rule::in($this->relationshipOptions)],
+            'emergency_contact_phone' => ['nullable', 'regex:/^\+?[0-9]{7,15}$/'],
         ]);
 
         $user->update($validated);
@@ -94,6 +106,9 @@ class Profile2 extends Component
             'preferred_name' => $user->preferred_name ?? '',
             'phone_work' => $user->phone_work ?? '',
             'phone_mobile' => $user->phone_mobile ?? '',
+            'emergency_contact_name' => $user->emergency_contact_name ?? '',
+            'emergency_contact_relationship' => $user->emergency_contact_relationship ?? '',
+            'emergency_contact_phone' => $user->emergency_contact_phone ?? '',
         ]);
 
         $this->dispatch('flash', type: 'success', message: 'Profile updated.');
