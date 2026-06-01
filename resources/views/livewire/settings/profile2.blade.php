@@ -61,6 +61,58 @@
                             class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
                     </div>
 
+                    <!-- Emergency Contact -->
+                    <div class="pt-4 mt-2 border-t border-zinc-200 dark:border-zinc-700">
+                        <h3 class="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
+                            Emergency Contact
+                        </h3>
+
+                        <div class="space-y-4">
+                            <!-- Contact Person -->
+                            <div>
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Contact Person
+                                </label>
+                                <input type="text" wire:model="emergency_contact_name"
+                                    placeholder="Full name"
+                                    class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
+                                @error('emergency_contact_name')
+                                    <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Relationship -->
+                            <div>
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Relationship
+                                </label>
+                                <select wire:model="emergency_contact_relationship"
+                                    class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
+                                    <option value="">Select relationship</option>
+                                    @foreach ($relationshipOptions as $option)
+                                        <option value="{{ $option }}">{{ $option }}</option>
+                                    @endforeach
+                                </select>
+                                @error('emergency_contact_relationship')
+                                    <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Contact Number -->
+                            <div>
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Contact Number
+                                </label>
+                                <input type="text" wire:model="emergency_contact_phone"
+                                    placeholder="+639171234567"
+                                    class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
+                                @error('emergency_contact_phone')
+                                    <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Submit -->
                     <div class="flex items-center gap-4 pt-2">
                         <flux:button type="submit" variant="primary" color="emerald">
