@@ -71,6 +71,13 @@ class UserController extends Controller
                 'phone_mobile' => ['nullable', 'string', 'max:20'],
                 'address' => ['nullable', 'string', 'max:255'], // ✅ added validation for address
 
+                // Event-related profile fields (normalized for event registration)
+                'emergency_contact_name' => ['nullable', 'string', 'max:255'],
+                'emergency_contact_relationship' => ['nullable', 'string', 'max:255'],
+                'emergency_contact_phone' => ['nullable', 'string', 'max:20'],
+                'dietary_preference' => ['nullable', 'string', 'max:255'],
+                'medical_notes' => ['nullable', 'string', 'max:2000'],
+
                 // 🔒 Hardened date fields
                 'birthdate' => [
                     'nullable',
@@ -133,6 +140,13 @@ class UserController extends Controller
                 'phone_work' => $validated['phone_work'] ?? null,
                 'phone_mobile' => $validated['phone_mobile'] ?? null,
                 'address' => $validated['address'] ?? null, // ✅ added address update
+
+                // Event-related profile fields
+                'emergency_contact_name' => $validated['emergency_contact_name'] ?? null,
+                'emergency_contact_relationship' => $validated['emergency_contact_relationship'] ?? null,
+                'emergency_contact_phone' => $validated['emergency_contact_phone'] ?? null,
+                'dietary_preference' => $validated['dietary_preference'] ?? null,
+                'medical_notes' => $validated['medical_notes'] ?? null,
 
                 // Dates (safe null fallback)
                 'birthdate' => $validated['birthdate'] ?? null,

@@ -42,6 +42,11 @@ class User extends Authenticatable
         'phone_work',
         'phone_mobile',
         'address',        // ✅ added
+        'emergency_contact_name',
+        'emergency_contact_relationship',
+        'emergency_contact_phone',
+        'dietary_preference',
+        'medical_notes',
     ];
 
     /**

@@ -36,6 +36,12 @@ class PermissionSeeder extends Seeder
             'requests.hr.view',
             'requests.hr.view.detail',
             'requests.hr.purge',
+
+            // Events (PNC/HR manage; viewing is auth-only)
+            'events.manage',
+
+            // Access management
+            'access.manage',
         ];
 
         foreach ($permissions as $permission) {
