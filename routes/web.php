@@ -549,6 +549,24 @@ Route::get('/launcher', function () {
 });
 
 
+/**Events */
+Route::middleware(['auth'])->group(function () {
+
+    // Staff list + shared detail (any authenticated user)
+    Route::get('/events', fn() => view('events.index'))->name('events.index');
+    Route::get('/events/{event}', [App\Http\Controllers\EventController::class, 'show'])->name('events.show');
+    Route::get('/events/{event}/registrants', [App\Http\Controllers\EventController::class, 'registrants'])
+        ->name('events.registrants');
+    Route::get('/event-attachments/{attachment}', [App\Http\Controllers\EventController::class, 'attachment'])
+        ->name('events.attachment');
+
+    // PNC / HR management (Spatie-gated)
+    Route::middleware('permission:events.manage')->group(function () {
+        Route::view('/manage/events', 'events.manage.index')->name('events.manage');
+    });
+});
+
+
 Route::middleware(['auth', 'role:access.admin'])
     ->prefix('admin/access')
     ->name('admin.access.')

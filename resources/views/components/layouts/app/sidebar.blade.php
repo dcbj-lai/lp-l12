@@ -48,6 +48,9 @@
                 <flux:navlist.item href="{{ route('payslips.index') }}" icon="banknotes">Payslips</flux:navlist.item>
                 <flux:navlist.item href="#" icon="bot-message-square">Notifications</flux:navlist.item>
                 <flux:navlist.item href="{{ route('visitors.mine') }}" icon="book-user">Visitors</flux:navlist.item>
+                <flux:navlist.item href="{{ route('events.index') }}" icon="calendar-days"
+                    :active="request()->routeIs('events.index') || request()->routeIs('events.show') || request()->routeIs('events.registrants')">
+                    Events</flux:navlist.item>
                 <flux:navlist.group heading="Life Steps">
                     <flux:navlist.item href="{{ route('my-steps.index') }}" icon="footprints">My Steps
                     </flux:navlist.item>
@@ -60,13 +63,20 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
-            @canany(['users.list', 'attendance.view', 'requests.hr.view', 'leave-credits.view'])
+            @canany(['users.list', 'attendance.view', 'requests.hr.view', 'leave-credits.view', 'events.manage'])
 
                 <flux:navlist.group heading="P&C" expandable :expanded="false">
 
                     @can('users.list')
                         <flux:navlist.item href="{{ route('users.index') }}" icon="users">
                             Users
+                        </flux:navlist.item>
+                    @endcan
+
+                    @can('events.manage')
+                        <flux:navlist.item href="{{ route('events.manage') }}" icon="calendar-days"
+                            :active="request()->routeIs('events.manage')">
+                            Manage Events
                         </flux:navlist.item>
                     @endcan
 

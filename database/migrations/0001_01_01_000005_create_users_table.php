@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('google_id')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('google_id')->nullable()->unique();
             $table->string('password');
             $table->unsignedBigInteger('supervisor_id')->nullable();
             $table->unsignedBigInteger('department_id')->nullable();
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->string('bank_account')->nullable();
             $table->json('roles')->nullable();
             $table->string('package')->nullable(); // ➜ Add the 'package' field here
+            $table->rememberToken();
             $table->timestamps();
 
             $table->foreign('supervisor_id')->references('id')->on('users')->onDelete('set null');

@@ -219,6 +219,74 @@
 
                 </div>
 
+                <!-- Event / Emergency Information -->
+                <div class="pt-4 border-t border-zinc-300 dark:border-zinc-700 space-y-4">
+
+                    <div class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Event &amp; Emergency Information
+                    </div>
+
+                    <!-- Emergency Contact Name -->
+                    <div>
+                        <label for="emergency_contact_name"
+                            class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Emergency Contact Name
+                        </label>
+                        <input type="text" id="emergency_contact_name" name="emergency_contact_name"
+                            value="{{ old('emergency_contact_name', $user->emergency_contact_name) }}"
+                            placeholder="Full name"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                    </div>
+
+                    <!-- Emergency Contact Relationship -->
+                    <div>
+                        <label for="emergency_contact_relationship"
+                            class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Relationship
+                        </label>
+                        <input type="text" id="emergency_contact_relationship" name="emergency_contact_relationship"
+                            value="{{ old('emergency_contact_relationship', $user->emergency_contact_relationship) }}"
+                            placeholder="e.g. Spouse, Parent"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                    </div>
+
+                    <!-- Emergency Contact Phone -->
+                    <div>
+                        <label for="emergency_contact_phone"
+                            class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Emergency Contact Phone
+                        </label>
+                        <input type="text" id="emergency_contact_phone" name="emergency_contact_phone"
+                            value="{{ old('emergency_contact_phone', $user->emergency_contact_phone) }}"
+                            placeholder="+639171234567"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                    </div>
+
+                    <!-- Dietary Preference -->
+                    <div>
+                        <label for="dietary_preference"
+                            class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Dietary Preference
+                        </label>
+                        <input type="text" id="dietary_preference" name="dietary_preference"
+                            value="{{ old('dietary_preference', $user->dietary_preference) }}"
+                            placeholder="e.g. None, Vegetarian, Halal"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                    </div>
+
+                    <!-- Medical Notes / Allergies -->
+                    <div>
+                        <label for="medical_notes"
+                            class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            Allergies / Medical Notes
+                        </label>
+                        <textarea id="medical_notes" name="medical_notes" rows="3"
+                            placeholder="Allergies or medical conditions relevant to events"
+                            class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full">{{ old('medical_notes', $user->medical_notes) }}</textarea>
+                    </div>
+
+                </div>
+
                 @can('users.compensation.manage')
                     <div class="border border-zinc-300 dark:border-zinc-700 rounded-md p-4 space-y-4">
 

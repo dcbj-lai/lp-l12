@@ -12,7 +12,3 @@ Route::post('/webhook/preapproved-visitor', [VisitorLogController::class, 'webho
 Route::post('/test', function () {
     return ['success' => true];
 });
-
-
-/**Speedtest */
-Route::get('/ping', fn() => response()->noContent());
