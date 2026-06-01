@@ -113,6 +113,41 @@
                         </div>
                     </div>
 
+                    <!-- Health & Dietary -->
+                    <div class="pt-4 mt-2 border-t border-zinc-200 dark:border-zinc-700">
+                        <h3 class="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
+                            Health &amp; Dietary
+                        </h3>
+
+                        <div class="space-y-4">
+                            <!-- Dietary Preference -->
+                            <div>
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Dietary Preference
+                                </label>
+                                <input type="text" wire:model="dietary_preference"
+                                    placeholder="e.g. None, Vegetarian, Halal"
+                                    class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm">
+                                @error('dietary_preference')
+                                    <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Allergies / Medical Notes -->
+                            <div>
+                                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Allergies / Medical Notes
+                                </label>
+                                <textarea wire:model="medical_notes" rows="3"
+                                    placeholder="Allergies or medical conditions relevant to events"
+                                    class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm"></textarea>
+                                @error('medical_notes')
+                                    <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Submit -->
                     <div class="flex items-center gap-4 pt-2">
                         <flux:button type="submit" variant="primary" color="emerald">
