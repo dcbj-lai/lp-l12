@@ -15,7 +15,7 @@ class AttendToggle extends Component
     public Event $event;
     public ?string $status = null; // attending | not_attending | null (no response yet)
     public int $guestCount = 0;
-    public array $customFieldAnswers = ['', '', ''];
+    public array $customFieldAnswers = ['', '', '', ''];
 
     public function mount(Event $event)
     {
@@ -55,7 +55,7 @@ class AttendToggle extends Component
 
         $answers = $status === 'attending'
             ? EventRegistration::normalizeCustomFieldAnswers($this->customFieldAnswers)
-            : ['', '', ''];
+            : EventRegistration::normalizeCustomFieldAnswers([]);
 
         $registration = EventRegistration::updateOrCreate(
             ['event_id' => $this->event->id, 'user_id' => Auth::id()],

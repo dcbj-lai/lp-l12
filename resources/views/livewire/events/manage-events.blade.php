@@ -70,16 +70,34 @@
                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                     Custom RSVP Fields
                 </label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                @php($labelExamples = ['Dietary requirements', 'T-shirt size', 'Transport notes', 'Accessibility needs'])
+                @php($instructionExamples = [
+                    'List any allergies or dietary restrictions.',
+                    'Enter your preferred shirt size.',
+                    'Add carpool, shuttle, or parking notes.',
+                    'Add access needs or seating requests.',
+                ])
+                <div class="space-y-3">
                     @for ($index = 0; $index < \App\Models\Event::MAX_CUSTOM_FIELDS; $index++)
-                        <div>
-                            <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
-                                Field {{ $index + 1 }} Label
-                            </label>
-                            <input type="text" wire:model="customFieldLabels.{{ $index }}"
-                                placeholder="{{ $index === 0 ? 'Dietary requirements' : ($index === 1 ? 'T-shirt size' : 'Transport notes') }}"
-                                class="w-full text-sm border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white" />
-                            @error("customFieldLabels.$index") <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                                    Field {{ $index + 1 }} Label
+                                </label>
+                                <input type="text" wire:model="customFieldLabels.{{ $index }}"
+                                    placeholder="{{ $labelExamples[$index] }}"
+                                    class="w-full text-sm border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white" />
+                                @error("customFieldLabels.$index") <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                                    Instruction / Placeholder
+                                </label>
+                                <input type="text" wire:model="customFieldInstructions.{{ $index }}"
+                                    placeholder="{{ $instructionExamples[$index] }}"
+                                    class="w-full text-sm border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white" />
+                                @error("customFieldInstructions.$index") <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
+                            </div>
                         </div>
                     @endfor
                 </div>

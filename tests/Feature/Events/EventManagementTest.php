@@ -46,7 +46,7 @@ class EventManagementTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_name_three_custom_rsvp_fields(): void
+    public function test_admin_can_name_four_custom_rsvp_fields_with_instructions(): void
     {
         Livewire::actingAs($this->admin)
             ->test(ManageEvents::class)
@@ -55,6 +55,11 @@ class EventManagementTest extends TestCase
             ->set('customFieldLabels.0', 'Dietary requirements')
             ->set('customFieldLabels.1', 'T-shirt size')
             ->set('customFieldLabels.2', 'Transport notes')
+            ->set('customFieldLabels.3', 'Accessibility needs')
+            ->set('customFieldInstructions.0', 'List any allergies or dietary restrictions.')
+            ->set('customFieldInstructions.1', 'Enter your preferred shirt size.')
+            ->set('customFieldInstructions.2', 'Add carpool, shuttle, or parking notes.')
+            ->set('customFieldInstructions.3', 'Add access needs or seating requests.')
             ->call('save')
             ->assertHasNoErrors();
 
@@ -64,7 +69,14 @@ class EventManagementTest extends TestCase
             'Dietary requirements',
             'T-shirt size',
             'Transport notes',
+            'Accessibility needs',
         ], $event->custom_field_labels);
+        $this->assertSame([
+            'List any allergies or dietary restrictions.',
+            'Enter your preferred shirt size.',
+            'Add carpool, shuttle, or parking notes.',
+            'Add access needs or seating requests.',
+        ], $event->custom_field_instructions);
     }
 
     public function test_title_is_required(): void

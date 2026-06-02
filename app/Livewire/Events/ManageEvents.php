@@ -47,7 +47,10 @@ class ManageEvents extends Component
     public string $status = 'draft';
 
     #[Validate(['customFieldLabels' => 'array', 'customFieldLabels.*' => 'nullable|string|max:100'])]
-    public array $customFieldLabels = ['', '', ''];
+    public array $customFieldLabels = ['', '', '', ''];
+
+    #[Validate(['customFieldInstructions' => 'array', 'customFieldInstructions.*' => 'nullable|string|max:255'])]
+    public array $customFieldInstructions = ['', '', '', ''];
 
     #[Validate(['attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png'])]
     public array $attachments = [];
@@ -70,6 +73,7 @@ class ManageEvents extends Component
         $this->rsvp_deadline = optional($event->rsvp_deadline)->format('Y-m-d\TH:i');
         $this->status = $event->status;
         $this->customFieldLabels = Event::normalizeCustomFieldLabels($event->custom_field_labels ?? []);
+        $this->customFieldInstructions = Event::normalizeCustomFieldInstructions($event->custom_field_instructions ?? []);
         $this->attachments = [];
         $this->showForm = true;
     }
@@ -93,6 +97,7 @@ class ManageEvents extends Component
                 'rsvp_deadline' => $this->rsvp_deadline ?: null,
                 'status' => $this->status,
                 'custom_field_labels' => Event::normalizeCustomFieldLabels($this->customFieldLabels),
+                'custom_field_instructions' => Event::normalizeCustomFieldInstructions($this->customFieldInstructions),
                 'created_by' => $existingEvent?->created_by ?? Auth::id(),
             ]
         );
@@ -202,7 +207,8 @@ class ManageEvents extends Component
             'editingId', 'title', 'description', 'location',
             'start_datetime', 'end_datetime', 'rsvp_deadline', 'attachments',
         ]);
-        $this->customFieldLabels = ['', '', ''];
+        $this->customFieldLabels = ['', '', '', ''];
+        $this->customFieldInstructions = ['', '', '', ''];
         $this->status = 'draft';
     }
 

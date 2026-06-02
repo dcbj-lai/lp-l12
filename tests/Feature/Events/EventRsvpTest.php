@@ -49,7 +49,7 @@ class EventRsvpTest extends TestCase
         $event = Event::create([
             'title' => 'TB',
             'status' => 'published',
-            'custom_field_labels' => ['Dietary requirements', 'T-shirt size', ''],
+            'custom_field_labels' => ['Dietary requirements', 'T-shirt size', '', 'Accessibility needs'],
         ]);
         $user = User::factory()->create();
 
@@ -57,13 +57,37 @@ class EventRsvpTest extends TestCase
             ->test(AttendToggle::class, ['event' => $event])
             ->set('customFieldAnswers.0', 'Vegetarian')
             ->set('customFieldAnswers.1', 'Medium')
+            ->set('customFieldAnswers.3', 'Aisle seat')
             ->call('respond', 'attending');
 
         $registration = EventRegistration::where('event_id', $event->id)
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        $this->assertSame(['Vegetarian', 'Medium', ''], $registration->custom_field_answers);
+        $this->assertSame(['Vegetarian', 'Medium', '', 'Aisle seat'], $registration->custom_field_answers);
+    }
+
+    public function test_custom_field_instructions_render_as_attendee_tooltip_text(): void
+    {
+        Mail::fake();
+        $event = Event::create([
+            'title' => 'TB',
+            'status' => 'published',
+            'custom_field_labels' => ['Dietary requirements', '', '', 'Accessibility needs'],
+            'custom_field_instructions' => [
+                'List any allergies or dietary restrictions.',
+                '',
+                '',
+                'Add access needs or seating requests.',
+            ],
+        ]);
+
+        Livewire::actingAs(User::factory()->create())
+            ->test(AttendToggle::class, ['event' => $event])
+            ->assertSee('Dietary requirements')
+            ->assertSee('List any allergies or dietary restrictions.')
+            ->assertSee('Accessibility needs')
+            ->assertSee('Add access needs or seating requests.');
     }
 
     public function test_toggling_sends_acknowledgment_to_user(): void

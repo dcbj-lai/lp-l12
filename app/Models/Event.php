@@ -9,7 +9,7 @@ class Event extends Model
 {
     use HasFactory;
 
-    public const MAX_CUSTOM_FIELDS = 3;
+    public const MAX_CUSTOM_FIELDS = 4;
 
     protected $fillable = [
         'title',
@@ -20,6 +20,7 @@ class Event extends Model
         'rsvp_deadline',
         'status',
         'custom_field_labels',
+        'custom_field_instructions',
         'created_by',
     ];
 
@@ -28,6 +29,7 @@ class Event extends Model
         'end_datetime' => 'datetime',
         'rsvp_deadline' => 'datetime',
         'custom_field_labels' => 'array',
+        'custom_field_instructions' => 'array',
     ];
 
     // 🔗 Creator (PNC/HR)
@@ -75,10 +77,20 @@ class Event extends Model
 
     public static function normalizeCustomFieldLabels(?array $labels): array
     {
+        return self::normalizeCustomFieldValues($labels);
+    }
+
+    public static function normalizeCustomFieldInstructions(?array $instructions): array
+    {
+        return self::normalizeCustomFieldValues($instructions);
+    }
+
+    protected static function normalizeCustomFieldValues(?array $values): array
+    {
         $normalized = [];
 
         for ($index = 0; $index < self::MAX_CUSTOM_FIELDS; $index++) {
-            $normalized[$index] = trim((string) ($labels[$index] ?? ''));
+            $normalized[$index] = trim((string) ($values[$index] ?? ''));
         }
 
         return $normalized;
@@ -95,5 +107,15 @@ class Event extends Model
     public function hasCustomFields(): bool
     {
         return $this->customFieldLabels() !== [];
+    }
+
+    public function customFieldInstructions(): array
+    {
+        return self::normalizeCustomFieldInstructions($this->custom_field_instructions ?? []);
+    }
+
+    public function customFieldInstruction(int $index): string
+    {
+        return $this->customFieldInstructions()[$index] ?? '';
     }
 }
