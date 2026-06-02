@@ -12,7 +12,7 @@
             </p>
         @endif
 
-        @if (!$closed && $status !== 'not_attending' && ($status === 'attending' || $customFieldLabels !== []))
+        @if (!$closed && ($status === 'attending' || $customFieldLabels !== []))
             <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">
@@ -50,6 +50,72 @@
                 @endforeach
             </div>
         @endif
+
+        <div class="mb-4 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3">
+            <h4 class="text-xs font-semibold text-zinc-700 dark:text-zinc-200 mb-3">
+                Emergency &amp; Health
+            </h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">
+                        Emergency Contact Person
+                    </label>
+                    <input type="text" wire:model.live="emergency_contact_name"
+                        placeholder="Full name"
+                        class="w-full text-sm border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white" />
+                    @error('emergency_contact_name') <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">
+                        Relationship
+                    </label>
+                    <select wire:model.live="emergency_contact_relationship"
+                        class="w-full text-sm border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white">
+                        <option value="">Select relationship</option>
+                        @foreach ($relationshipOptions as $option)
+                            <option value="{{ $option }}">{{ $option }}</option>
+                        @endforeach
+                    </select>
+                    @error('emergency_contact_relationship') <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">
+                        Emergency Contact Number
+                    </label>
+                    <input type="text" wire:model.live="emergency_contact_phone"
+                        placeholder="+639171234567"
+                        class="w-full text-sm border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white" />
+                    @error('emergency_contact_phone') <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">
+                        Dietary Preference
+                    </label>
+                    <input type="text" wire:model.live="dietary_preference"
+                        placeholder="e.g. None, Vegetarian, Halal"
+                        class="w-full text-sm border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white" />
+                    @error('dietary_preference') <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">
+                        Allergies / Medical Notes
+                    </label>
+                    <textarea wire:model.live="medical_notes" rows="3"
+                        placeholder="Allergies or medical conditions relevant to events"
+                        class="w-full text-sm border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white"></textarea>
+                    @error('medical_notes') <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
+                </div>
+            </div>
+
+            <flux:button class="mt-3" size="xs" variant="ghost" wire:click="saveProfileDetails">
+                Save details
+            </flux:button>
+        </div>
 
         <div class="flex items-center gap-3">
             <flux:button size="sm" wire:click="respond('attending')" :disabled="$closed"

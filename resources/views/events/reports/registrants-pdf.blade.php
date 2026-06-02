@@ -7,7 +7,7 @@
         body {
             font-family: DejaVu Sans, sans-serif;
             color: #222;
-            font-size: 11px;
+            font-size: 9px;
             line-height: 1.35;
         }
 
@@ -35,7 +35,7 @@
         th,
         td {
             border: 1px solid #d1d5db;
-            padding: 6px;
+            padding: 4px;
             text-align: left;
             vertical-align: top;
         }
@@ -81,6 +81,11 @@
                 <th>Department</th>
                 <th>Position</th>
                 <th>Mobile</th>
+                <th>Emergency Contact</th>
+                <th>Emergency Relationship</th>
+                <th>Emergency Phone</th>
+                <th>Dietary Preference</th>
+                <th>Allergies / Medical Notes</th>
                 <th>Guests</th>
                 @foreach ($customFieldLabels as $label)
                     <th>{{ $label }}</th>
@@ -98,6 +103,11 @@
                     <td>{{ $user?->department?->name ?? '-' }}</td>
                     <td>{{ $user?->position ?? '-' }}</td>
                     <td>{{ $user?->phone_mobile ?? '-' }}</td>
+                    <td>{{ $user?->emergency_contact_name ?? '-' }}</td>
+                    <td>{{ $user?->emergency_contact_relationship ?? '-' }}</td>
+                    <td>{{ $user?->emergency_contact_phone ?? '-' }}</td>
+                    <td>{{ $user?->dietary_preference ?? '-' }}</td>
+                    <td>{{ $user?->medical_notes ?? '-' }}</td>
                     <td>{{ $registration->guest_count }}</td>
                     @foreach ($customFieldLabels as $fieldIndex => $label)
                         <td>{{ $registration->customFieldAnswer((int) $fieldIndex) ?: '-' }}</td>
@@ -106,7 +116,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td class="empty" colspan="{{ 8 + count($customFieldLabels) }}">No attending registrants yet.</td>
+                    <td class="empty" colspan="{{ 13 + count($customFieldLabels) }}">No attending registrants yet.</td>
                 </tr>
             @endforelse
         </tbody>

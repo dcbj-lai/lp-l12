@@ -43,6 +43,11 @@ class EventReportTest extends TestCase
             'department_id' => $department->id,
             'position' => 'Teacher',
             'phone_mobile' => '09171234567',
+            'emergency_contact_name' => 'Maria Santos',
+            'emergency_contact_relationship' => 'Spouse',
+            'emergency_contact_phone' => '+639171234567',
+            'dietary_preference' => 'Vegetarian',
+            'medical_notes' => 'Peanut allergy',
         ]);
         $declined = User::factory()->create(['name' => 'No Person']);
 
@@ -70,6 +75,11 @@ class EventReportTest extends TestCase
         $csv = $response->streamedContent();
 
         $this->assertStringContainsString('Jane Attendee', $csv);
+        $this->assertStringContainsString('Emergency Contact', $csv);
+        $this->assertStringContainsString('Maria Santos', $csv);
+        $this->assertStringContainsString('Spouse', $csv);
+        $this->assertStringContainsString('+639171234567', $csv);
+        $this->assertStringContainsString('Peanut allergy', $csv);
         $this->assertStringContainsString('Dietary requirements', $csv);
         $this->assertStringContainsString('Vegetarian', $csv);
         $this->assertStringContainsString('Medium', $csv);

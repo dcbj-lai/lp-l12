@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\EventRegistration;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class AttendToggle extends Component
@@ -16,10 +17,17 @@ class AttendToggle extends Component
     public ?string $status = null; // attending | not_attending | null (no response yet)
     public int $guestCount = 0;
     public array $customFieldAnswers = ['', '', '', ''];
+    public string $emergency_contact_name = '';
+    public string $emergency_contact_relationship = '';
+    public string $emergency_contact_phone = '';
+    public string $dietary_preference = '';
+    public string $medical_notes = '';
+    public array $relationshipOptions = ['Father', 'Mother', 'Sister', 'Brother', 'Spouse', 'Others'];
 
     public function mount(Event $event)
     {
         $this->event = $event;
+        $this->hydrateProfileFields();
 
         $registration = $this->currentRegistration();
         if ($registration) {
@@ -53,6 +61,8 @@ class AttendToggle extends Component
             'customFieldAnswers.*' => 'nullable|string|max:255',
         ]);
 
+        $this->persistProfileDetails(false);
+
         $answers = $status === 'attending'
             ? EventRegistration::normalizeCustomFieldAnswers($this->customFieldAnswers)
             : EventRegistration::normalizeCustomFieldAnswers([]);
@@ -79,6 +89,55 @@ class AttendToggle extends Component
 
         // Let dashboard / registrant cards refresh
         $this->dispatch('rsvp-updated');
+    }
+
+    public function saveProfileDetails(): void
+    {
+        $this->persistProfileDetails();
+    }
+
+    protected function hydrateProfileFields(): void
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return;
+        }
+
+        $this->emergency_contact_name = $user->emergency_contact_name ?? '';
+        $this->emergency_contact_relationship = $user->emergency_contact_relationship ?? '';
+        $this->emergency_contact_phone = $user->emergency_contact_phone ?? '';
+        $this->dietary_preference = $user->dietary_preference ?? '';
+        $this->medical_notes = $user->medical_notes ?? '';
+    }
+
+    protected function persistProfileDetails(bool $dispatchFlash = true): void
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return;
+        }
+
+        $validated = $this->validate($this->profileRules());
+
+        $user->update($validated);
+        $this->hydrateProfileFields();
+
+        if ($dispatchFlash) {
+            $this->dispatch('flash', type: 'success', message: 'Emergency and health details updated.');
+        }
+    }
+
+    protected function profileRules(): array
+    {
+        return [
+            'emergency_contact_name' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_relationship' => ['nullable', 'string', Rule::in($this->relationshipOptions)],
+            'emergency_contact_phone' => ['nullable', 'regex:/^\+?[0-9]{7,15}$/'],
+            'dietary_preference' => ['nullable', 'string', 'max:255'],
+            'medical_notes' => ['nullable', 'string', 'max:2000'],
+        ];
     }
 
     protected function sendNotifications(EventRegistration $registration): void

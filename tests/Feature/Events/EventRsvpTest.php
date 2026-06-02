@@ -90,6 +90,94 @@ class EventRsvpTest extends TestCase
             ->assertSee('Add access needs or seating requests.');
     }
 
+    public function test_custom_fields_remain_visible_after_user_marks_not_attending(): void
+    {
+        Mail::fake();
+        $event = Event::create([
+            'title' => 'TB',
+            'status' => 'published',
+            'custom_field_labels' => ['Dietary requirements', 'T-shirt size', '', 'Accessibility needs'],
+            'custom_field_instructions' => [
+                'List any allergies or dietary restrictions.',
+                'Enter your preferred shirt size.',
+                '',
+                'Add access needs or seating requests.',
+            ],
+        ]);
+        $user = User::factory()->create();
+
+        EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $user->id,
+            'status' => 'not_attending',
+            'responded_at' => now(),
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(AttendToggle::class, ['event' => $event])
+            ->assertSee('Dietary requirements')
+            ->assertSee('T-shirt size')
+            ->assertSee('Accessibility needs')
+            ->assertSee('Add access needs or seating requests.');
+    }
+
+    public function test_user_can_edit_emergency_and_health_details_from_attendee_view(): void
+    {
+        Mail::fake();
+        $event = Event::create(['title' => 'TB', 'status' => 'published']);
+        $user = User::factory()->create([
+            'emergency_contact_name' => null,
+            'emergency_contact_relationship' => null,
+            'emergency_contact_phone' => null,
+            'dietary_preference' => null,
+            'medical_notes' => null,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(AttendToggle::class, ['event' => $event])
+            ->assertSee('Emergency &amp; Health', false)
+            ->set('emergency_contact_name', 'Maria Santos')
+            ->set('emergency_contact_relationship', 'Spouse')
+            ->set('emergency_contact_phone', '+639171234567')
+            ->set('dietary_preference', 'Vegetarian')
+            ->set('medical_notes', 'Peanut allergy')
+            ->call('saveProfileDetails')
+            ->assertHasNoErrors();
+
+        $user->refresh();
+
+        $this->assertSame('Maria Santos', $user->emergency_contact_name);
+        $this->assertSame('Spouse', $user->emergency_contact_relationship);
+        $this->assertSame('+639171234567', $user->emergency_contact_phone);
+        $this->assertSame('Vegetarian', $user->dietary_preference);
+        $this->assertSame('Peanut allergy', $user->medical_notes);
+    }
+
+    public function test_emergency_and_health_details_are_saved_when_user_responds(): void
+    {
+        Mail::fake();
+        $event = Event::create(['title' => 'TB', 'status' => 'published']);
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(AttendToggle::class, ['event' => $event])
+            ->set('emergency_contact_name', 'Maria Santos')
+            ->set('emergency_contact_relationship', 'Spouse')
+            ->set('emergency_contact_phone', '+639171234567')
+            ->set('dietary_preference', 'Halal')
+            ->set('medical_notes', 'Asthma')
+            ->call('respond', 'attending')
+            ->assertHasNoErrors();
+
+        $user->refresh();
+
+        $this->assertSame('Maria Santos', $user->emergency_contact_name);
+        $this->assertSame('Spouse', $user->emergency_contact_relationship);
+        $this->assertSame('+639171234567', $user->emergency_contact_phone);
+        $this->assertSame('Halal', $user->dietary_preference);
+        $this->assertSame('Asthma', $user->medical_notes);
+    }
+
     public function test_toggling_sends_acknowledgment_to_user(): void
     {
         Mail::fake();

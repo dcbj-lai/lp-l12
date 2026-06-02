@@ -50,6 +50,11 @@ class EventController extends Controller
             'Department',
             'Position',
             'Mobile',
+            'Emergency Contact',
+            'Emergency Relationship',
+            'Emergency Phone',
+            'Dietary Preference',
+            'Allergies / Medical Notes',
             'Guests',
         ], array_values($customFieldLabels), [
             'Responded At',
@@ -67,6 +72,11 @@ class EventController extends Controller
                     $user?->department?->name ?? '-',
                     $user?->position ?? '-',
                     $user?->phone_mobile ?? '-',
+                    $user?->emergency_contact_name ?? '-',
+                    $user?->emergency_contact_relationship ?? '-',
+                    $user?->emergency_contact_phone ?? '-',
+                    $user?->dietary_preference ?? '-',
+                    $user?->medical_notes ?? '-',
                     $registration->guest_count,
                 ];
 
