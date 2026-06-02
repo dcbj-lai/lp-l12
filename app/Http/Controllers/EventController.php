@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\EventAttachment;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EventController extends Controller
 {
@@ -35,6 +38,69 @@ class EventController extends Controller
         return view('events.registrants', compact('event', 'registrations'));
     }
 
+    public function registrantsCsv(Event $event): StreamedResponse
+    {
+        $registrations = $this->registrationsForReport($event);
+        $customFieldLabels = $event->customFieldLabels();
+        $fileName = $this->reportFileName($event, 'csv');
+
+        $columns = array_merge([
+            'Name',
+            'Email',
+            'Department',
+            'Position',
+            'Mobile',
+            'Guests',
+        ], array_values($customFieldLabels), [
+            'Responded At',
+        ]);
+
+        return response()->stream(function () use ($registrations, $customFieldLabels, $columns) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, $columns);
+
+            foreach ($registrations as $registration) {
+                $user = $registration->user;
+                $row = [
+                    $user?->preferred_name ?: $user?->name ?: '-',
+                    $user?->email ?? '-',
+                    $user?->department?->name ?? '-',
+                    $user?->position ?? '-',
+                    $user?->phone_mobile ?? '-',
+                    $registration->guest_count,
+                ];
+
+                foreach ($customFieldLabels as $index => $label) {
+                    $row[] = $registration->customFieldAnswer((int) $index) ?: '-';
+                }
+
+                $row[] = optional($registration->responded_at)->format('Y-m-d H:i') ?? '-';
+
+                fputcsv($handle, $row);
+            }
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
+    }
+
+    public function registrantsPdf(Event $event)
+    {
+        $registrations = $this->registrationsForReport($event);
+        $customFieldLabels = $event->customFieldLabels();
+
+        $pdf = Pdf::loadView('events.reports.registrants-pdf', [
+            'event' => $event,
+            'registrations' => $registrations,
+            'customFieldLabels' => $customFieldLabels,
+            'generatedAt' => now(),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download($this->reportFileName($event, 'pdf'));
+    }
+
     /**
      * Stream a private-S3 instruction attachment to authenticated users.
      */
@@ -57,5 +123,21 @@ class EventController extends Controller
                 'Content-Disposition' => 'inline; filename="' . ($attachment->original_name ?? basename($attachment->file_path)) . '"',
             ]
         );
+    }
+
+    protected function registrationsForReport(Event $event)
+    {
+        return $event->registrations()
+            ->with('user.department')
+            ->where('status', 'attending')
+            ->orderBy('responded_at')
+            ->get();
+    }
+
+    protected function reportFileName(Event $event, string $extension): string
+    {
+        $slug = Str::slug($event->title) ?: 'event';
+
+        return $slug . '_registrants_' . now()->format('Y-m-d_H-i-s') . '.' . $extension;
     }
 }

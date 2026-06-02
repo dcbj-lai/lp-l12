@@ -43,6 +43,29 @@ class EventRsvpTest extends TestCase
         ]);
     }
 
+    public function test_user_custom_field_answers_are_saved_with_attending_rsvp(): void
+    {
+        Mail::fake();
+        $event = Event::create([
+            'title' => 'TB',
+            'status' => 'published',
+            'custom_field_labels' => ['Dietary requirements', 'T-shirt size', ''],
+        ]);
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(AttendToggle::class, ['event' => $event])
+            ->set('customFieldAnswers.0', 'Vegetarian')
+            ->set('customFieldAnswers.1', 'Medium')
+            ->call('respond', 'attending');
+
+        $registration = EventRegistration::where('event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $this->assertSame(['Vegetarian', 'Medium', ''], $registration->custom_field_answers);
+    }
+
     public function test_toggling_sends_acknowledgment_to_user(): void
     {
         Mail::fake();

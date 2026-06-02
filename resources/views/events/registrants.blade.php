@@ -1,16 +1,28 @@
-<x-layouts.app title="Registered — {{ $event->title }}">
-    <div class="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+<x-layouts.app title="Registered - {{ $event->title }}">
+    <div class="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+        @php($customFieldLabels = $event->customFieldLabels())
 
         <flux:button size="sm" variant="ghost" icon="arrow-left" href="{{ route('events.show', $event->id) }}">
             Back to Event
         </flux:button>
 
-        <div>
-            <h1 class="text-2xl font-semibold text-zinc-800 dark:text-zinc-100">Registered Users</h1>
-            <p class="text-sm text-gray-500">{{ $event->title }}</p>
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+            <div>
+                <h1 class="text-2xl font-semibold text-zinc-800 dark:text-zinc-100">Registered Users</h1>
+                <p class="text-sm text-gray-500">{{ $event->title }}</p>
+            </div>
+
+            @can('events.manage')
+                <div class="flex items-center gap-2">
+                    <flux:button size="sm" variant="ghost" icon="download"
+                        href="{{ route('events.registrants.csv', $event->id) }}">CSV</flux:button>
+                    <flux:button size="sm" variant="ghost" icon="download"
+                        href="{{ route('events.registrants.pdf', $event->id) }}">PDF</flux:button>
+                </div>
+            @endcan
         </div>
 
-        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead class="bg-zinc-50 dark:bg-zinc-900 text-left text-gray-500">
                     <tr>
@@ -18,6 +30,9 @@
                         <th class="py-2 px-4">Name</th>
                         <th class="py-2 px-4">Response</th>
                         <th class="py-2 px-4 text-center">Guests</th>
+                        @foreach ($customFieldLabels as $label)
+                            <th class="py-2 px-4">{{ $label }}</th>
+                        @endforeach
                         <th class="py-2 px-4">Responded</th>
                     </tr>
                 </thead>
@@ -47,10 +62,19 @@
                                 @endif
                             </td>
                             <td class="py-2 px-4 text-center">{{ $reg->guest_count }}</td>
-                            <td class="py-2 px-4 text-gray-500">{{ optional($reg->responded_at)->format('M d, g:i A') ?? '—' }}</td>
+                            @foreach ($customFieldLabels as $fieldIndex => $label)
+                                <td class="py-2 px-4 text-gray-500">
+                                    {{ $reg->customFieldAnswer((int) $fieldIndex) ?: '-' }}
+                                </td>
+                            @endforeach
+                            <td class="py-2 px-4 text-gray-500">{{ optional($reg->responded_at)->format('M d, g:i A') ?? '-' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="py-6 text-center text-gray-500">No one has responded yet.</td></tr>
+                        <tr>
+                            <td colspan="{{ 5 + count($customFieldLabels) }}" class="py-6 text-center text-gray-500">
+                                No one has responded yet.
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>

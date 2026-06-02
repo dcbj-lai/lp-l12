@@ -66,6 +66,25 @@
                 </select>
             </div>
 
+            <div>
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Custom RSVP Fields
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    @for ($index = 0; $index < \App\Models\Event::MAX_CUSTOM_FIELDS; $index++)
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                                Field {{ $index + 1 }} Label
+                            </label>
+                            <input type="text" wire:model="customFieldLabels.{{ $index }}"
+                                placeholder="{{ $index === 0 ? 'Dietary requirements' : ($index === 1 ? 'T-shirt size' : 'Transport notes') }}"
+                                class="w-full text-sm border rounded-md px-3 py-2 dark:bg-zinc-700 dark:text-white" />
+                            @error("customFieldLabels.$index") <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
+                        </div>
+                    @endfor
+                </div>
+            </div>
+
             {{-- Existing attachments (edit mode) --}}
             @if ($editingId)
                 @php($current = \App\Models\Event::with('attachments')->find($editingId))
@@ -135,6 +154,10 @@
                             <div class="flex items-center justify-end gap-2">
                                 <flux:button size="xs" variant="ghost" icon="eye"
                                     href="{{ route('events.show', $event->id) }}">View</flux:button>
+                                <flux:button size="xs" variant="ghost" icon="download"
+                                    href="{{ route('events.registrants.csv', $event->id) }}">CSV</flux:button>
+                                <flux:button size="xs" variant="ghost" icon="download"
+                                    href="{{ route('events.registrants.pdf', $event->id) }}">PDF</flux:button>
                                 <flux:button size="xs" variant="ghost" icon="pencil"
                                     wire:click="edit({{ $event->id }})">Edit</flux:button>
                                 <flux:button size="xs" variant="ghost" icon="trash"

@@ -46,6 +46,9 @@ class ManageEvents extends Component
     #[Validate('required|in:draft,published')]
     public string $status = 'draft';
 
+    #[Validate(['customFieldLabels' => 'array', 'customFieldLabels.*' => 'nullable|string|max:100'])]
+    public array $customFieldLabels = ['', '', ''];
+
     #[Validate(['attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png'])]
     public array $attachments = [];
 
@@ -66,6 +69,7 @@ class ManageEvents extends Component
         $this->end_datetime = optional($event->end_datetime)->format('Y-m-d\TH:i');
         $this->rsvp_deadline = optional($event->rsvp_deadline)->format('Y-m-d\TH:i');
         $this->status = $event->status;
+        $this->customFieldLabels = Event::normalizeCustomFieldLabels($event->custom_field_labels ?? []);
         $this->attachments = [];
         $this->showForm = true;
     }
@@ -75,7 +79,8 @@ class ManageEvents extends Component
         $this->validate();
 
         // Track whether this save transitions the event into "published"
-        $previousStatus = $this->editingId ? optional(Event::find($this->editingId))->status : null;
+        $existingEvent = $this->editingId ? Event::find($this->editingId) : null;
+        $previousStatus = $existingEvent?->status;
 
         $event = Event::updateOrCreate(
             ['id' => $this->editingId],
@@ -87,7 +92,8 @@ class ManageEvents extends Component
                 'end_datetime' => $this->end_datetime ?: null,
                 'rsvp_deadline' => $this->rsvp_deadline ?: null,
                 'status' => $this->status,
-                'created_by' => $this->editingId ? $event->created_by ?? Auth::id() : Auth::id(),
+                'custom_field_labels' => Event::normalizeCustomFieldLabels($this->customFieldLabels),
+                'created_by' => $existingEvent?->created_by ?? Auth::id(),
             ]
         );
 
@@ -196,6 +202,7 @@ class ManageEvents extends Component
             'editingId', 'title', 'description', 'location',
             'start_datetime', 'end_datetime', 'rsvp_deadline', 'attachments',
         ]);
+        $this->customFieldLabels = ['', '', ''];
         $this->status = 'draft';
     }
 

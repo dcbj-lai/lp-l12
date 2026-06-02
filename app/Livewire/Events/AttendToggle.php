@@ -15,6 +15,7 @@ class AttendToggle extends Component
     public Event $event;
     public ?string $status = null; // attending | not_attending | null (no response yet)
     public int $guestCount = 0;
+    public array $customFieldAnswers = ['', '', ''];
 
     public function mount(Event $event)
     {
@@ -24,6 +25,7 @@ class AttendToggle extends Component
         if ($registration) {
             $this->status = $registration->status;
             $this->guestCount = $registration->guest_count;
+            $this->customFieldAnswers = $registration->customFieldAnswers();
         }
     }
 
@@ -45,16 +47,29 @@ class AttendToggle extends Component
             return;
         }
 
+        $this->validate([
+            'guestCount' => 'integer|min:0|max:99',
+            'customFieldAnswers' => 'array',
+            'customFieldAnswers.*' => 'nullable|string|max:255',
+        ]);
+
+        $answers = $status === 'attending'
+            ? EventRegistration::normalizeCustomFieldAnswers($this->customFieldAnswers)
+            : ['', '', ''];
+
         $registration = EventRegistration::updateOrCreate(
             ['event_id' => $this->event->id, 'user_id' => Auth::id()],
             [
                 'status' => $status,
                 'guest_count' => $status === 'attending' ? max(0, $this->guestCount) : 0,
+                'custom_field_answers' => $answers,
                 'responded_at' => now(),
             ]
         );
 
         $this->status = $registration->status;
+        $this->guestCount = $registration->guest_count;
+        $this->customFieldAnswers = $registration->customFieldAnswers();
 
         $this->sendNotifications($registration);
 

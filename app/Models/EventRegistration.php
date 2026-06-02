@@ -14,6 +14,7 @@ class EventRegistration extends Model
         'user_id',
         'status',
         'guest_count',
+        'custom_field_answers',
         'shirt_size',
         'responded_at',
     ];
@@ -21,6 +22,7 @@ class EventRegistration extends Model
     protected $casts = [
         'responded_at' => 'datetime',
         'guest_count' => 'integer',
+        'custom_field_answers' => 'array',
     ];
 
     public function event()
@@ -36,5 +38,26 @@ class EventRegistration extends Model
     public function isAttending(): bool
     {
         return $this->status === 'attending';
+    }
+
+    public static function normalizeCustomFieldAnswers(?array $answers): array
+    {
+        $normalized = [];
+
+        for ($index = 0; $index < Event::MAX_CUSTOM_FIELDS; $index++) {
+            $normalized[$index] = trim((string) ($answers[$index] ?? ''));
+        }
+
+        return $normalized;
+    }
+
+    public function customFieldAnswers(): array
+    {
+        return self::normalizeCustomFieldAnswers($this->custom_field_answers ?? []);
+    }
+
+    public function customFieldAnswer(int $index): string
+    {
+        return $this->customFieldAnswers()[$index] ?? '';
     }
 }

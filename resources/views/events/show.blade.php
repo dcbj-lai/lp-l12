@@ -65,8 +65,7 @@
         <livewire:events.attend-toggle :event="$event" />
 
         <p class="text-xs text-gray-400">
-            Your profile details (contact, dietary, emergency contact) are shared with the organizers when you RSVP.
-            Keep them current in <a href="/settings/profile-2" class="underline">Settings</a>.
+            Your RSVP details are shared with the organizers when you respond.
         </p>
     </div>
 </x-layouts.app>

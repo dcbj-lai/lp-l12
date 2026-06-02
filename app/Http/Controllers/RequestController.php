@@ -358,10 +358,12 @@ class RequestController extends Controller
         // Google Calendar
         try {
             if ($staffRequest->status === 'approved') {
+                $calendarDisplayName = $this->calendarDisplayName($staffRequest->user);
+
                 $eventTitle = match ($staffRequest->type) {
-                    'PTO' => "{$staffRequest->user->name} - On Leave",
-                    'WFH' => "{$staffRequest->user->name} - Work From Home",
-                    default => "{$staffRequest->user->name} - Approved Request",
+                    'PTO' => "{$calendarDisplayName} - On Leave",
+                    'WFH' => "{$calendarDisplayName} - Work From Home",
+                    default => "{$calendarDisplayName} - Approved Request",
                 };
 
                 $startDate = Carbon::parse($staffRequest->start_date);
@@ -817,6 +819,23 @@ class RequestController extends Controller
                 'Content-Disposition' => 'inline; filename="' . basename($request->offset_proof_path) . '"',
             ]
         );
+    }
+
+    protected function calendarDisplayName(?User $user): string
+    {
+        if (!$user) {
+            return 'Staff member';
+        }
+
+        foreach (['preferred_name', 'full_name', 'name'] as $attribute) {
+            $name = trim((string) data_get($user, $attribute, ''));
+
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        return 'Staff member';
     }
 
 

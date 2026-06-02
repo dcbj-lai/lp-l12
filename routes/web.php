@@ -5,6 +5,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\ClinicConsultationController;
 use App\Http\Controllers\ConsultationsController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ImportCSVClinicController;
 use App\Http\Controllers\ImportCsvController;
@@ -554,15 +555,19 @@ Route::middleware(['auth'])->group(function () {
 
     // Staff list + shared detail (any authenticated user)
     Route::get('/events', fn() => view('events.index'))->name('events.index');
-    Route::get('/events/{event}', [App\Http\Controllers\EventController::class, 'show'])->name('events.show');
-    Route::get('/events/{event}/registrants', [App\Http\Controllers\EventController::class, 'registrants'])
+    Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
+    Route::get('/events/{event}/registrants', [EventController::class, 'registrants'])
         ->name('events.registrants');
-    Route::get('/event-attachments/{attachment}', [App\Http\Controllers\EventController::class, 'attachment'])
+    Route::get('/event-attachments/{attachment}', [EventController::class, 'attachment'])
         ->name('events.attachment');
 
     // PNC / HR management (Spatie-gated)
     Route::middleware('permission:events.manage')->group(function () {
         Route::view('/manage/events', 'events.manage.index')->name('events.manage');
+        Route::get('/manage/events/{event}/registrants/csv', [EventController::class, 'registrantsCsv'])
+            ->name('events.registrants.csv');
+        Route::get('/manage/events/{event}/registrants/pdf', [EventController::class, 'registrantsPdf'])
+            ->name('events.registrants.pdf');
     });
 });
 
@@ -581,4 +586,3 @@ Route::middleware(['auth', 'role:access.admin'])
         Route::view('/users', 'admin.access.users')
             ->name('users.index');
     });
-

@@ -46,6 +46,27 @@ class EventManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_name_three_custom_rsvp_fields(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(ManageEvents::class)
+            ->call('newEvent')
+            ->set('title', 'Annual Team Building 2026')
+            ->set('customFieldLabels.0', 'Dietary requirements')
+            ->set('customFieldLabels.1', 'T-shirt size')
+            ->set('customFieldLabels.2', 'Transport notes')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $event = Event::where('title', 'Annual Team Building 2026')->firstOrFail();
+
+        $this->assertSame([
+            'Dietary requirements',
+            'T-shirt size',
+            'Transport notes',
+        ], $event->custom_field_labels);
+    }
+
     public function test_title_is_required(): void
     {
         Livewire::actingAs($this->admin)
