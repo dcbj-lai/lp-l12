@@ -32,7 +32,7 @@
                                 <span class="relative inline-flex group">
                                     <button type="button"
                                         aria-label="{{ $label }} instructions"
-                                        class="inline-flex h-4 w-4 items-center justify-center rounded-full text-zinc-400 hover:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:text-zinc-100">
+                                                    class="inline-flex h-4 w-4 items-center justify-center rounded-full text-amber-600 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-amber-400 dark:hover:text-amber-300">
                                         <flux:icon.info class="h-3.5 w-3.5" />
                                     </button>
                                     <span role="tooltip"

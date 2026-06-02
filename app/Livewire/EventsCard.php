@@ -6,7 +6,7 @@ use App\Models\Event;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
-class AnnouncementsCard extends Component
+class EventsCard extends Component
 {
     #[On('rsvp-updated')]
     public function refresh()
@@ -25,6 +25,6 @@ class AnnouncementsCard extends Component
             ->take(4)
             ->get();
 
-        return view('livewire.announcements-card', compact('events'));
+        return view('livewire.events-card', compact('events'));
     }
 }

@@ -4,15 +4,15 @@
         <!-- Title -->
         <div class="absolute top-4 left-4">
             <h2 class="text-sm font-semibold text-gray-400 flex items-center gap-1">
-                <flux:icon.megaphone class="w-4 h-4" />
-                Announcements
+                <flux:icon.calendar-days class="w-4 h-4" />
+                Events
             </h2>
         </div>
 
         <!-- Content -->
         <div class="flex flex-col justify-center flex-grow px-1 pt-10">
             @if ($events->isEmpty())
-                <p class="text-gray-500 text-xs text-center">No announcements right now.</p>
+                <p class="text-gray-500 text-xs text-center">No events right now.</p>
             @else
                 <ul class="space-y-2 w-full text-sm">
                     @foreach ($events as $event)
@@ -38,7 +38,7 @@
         <!-- Footer -->
         <div class="absolute bottom-4 right-4">
             <flux:button size="xs" variant="ghost" href="{{ route('events.index') }}" wire:navigate>
-                See all...
+                See all
             </flux:button>
         </div>
     </div>

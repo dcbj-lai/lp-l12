@@ -1,4 +1,4 @@
-<x-layouts.app title="Registered - {{ $event->title }}">
+<x-layouts.app title="Who else signed up - {{ $event->title }}">
     <div class="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
         @php($customFieldLabels = $event->customFieldLabels())
 
@@ -8,7 +8,7 @@
 
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-semibold text-zinc-800 dark:text-zinc-100">Registered Users</h1>
+                <h1 class="text-2xl font-semibold text-zinc-800 dark:text-zinc-100">Who else signed up</h1>
                 <p class="text-sm text-gray-500">{{ $event->title }}</p>
             </div>
 
@@ -28,7 +28,6 @@
                     <tr>
                         <th class="py-2 px-4 w-10">#</th>
                         <th class="py-2 px-4">Name</th>
-                        <th class="py-2 px-4">Response</th>
                         <th class="py-2 px-4 text-center">Guests</th>
                         @foreach ($customFieldLabels as $label)
                             <th class="py-2 px-4">{{ $label }}</th>
@@ -54,13 +53,6 @@
                                     </span>
                                 </div>
                             </td>
-                            <td class="py-2 px-4">
-                                @if ($reg->status === 'attending')
-                                    <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Attending</span>
-                                @else
-                                    <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600">Not attending</span>
-                                @endif
-                            </td>
                             <td class="py-2 px-4 text-center">{{ $reg->guest_count }}</td>
                             @foreach ($customFieldLabels as $fieldIndex => $label)
                                 <td class="py-2 px-4 text-gray-500">
@@ -71,8 +63,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ 5 + count($customFieldLabels) }}" class="py-6 text-center text-gray-500">
-                                No one has responded yet.
+                            <td colspan="{{ 4 + count($customFieldLabels) }}" class="py-6 text-center text-gray-500">
+                                No one has signed up yet.
                             </td>
                         </tr>
                     @endforelse

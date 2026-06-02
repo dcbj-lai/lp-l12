@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Events;
 
-use App\Livewire\AnnouncementsCard;
-use App\Livewire\EventRegistrantsCard;
+use App\Livewire\Events\EventList;
 use App\Livewire\Events\AttendToggle;
+use App\Livewire\EventsCard;
 use App\Mail\EventRsvpAcknowledgment;
 use App\Mail\EventRsvpReceived;
 use App\Models\Event;
@@ -238,25 +238,27 @@ class EventRsvpTest extends TestCase
         Mail::assertNothingQueued();
     }
 
-    public function test_announcements_card_lists_published_upcoming_events(): void
+    public function test_events_card_lists_published_upcoming_events(): void
     {
         Event::create(['title' => 'Future Fest', 'status' => 'published', 'start_datetime' => now()->addWeek()]);
         Event::create(['title' => 'Hidden Draft', 'status' => 'draft', 'start_datetime' => now()->addWeek()]);
 
         Livewire::actingAs(User::factory()->create())
-            ->test(AnnouncementsCard::class)
+            ->test(EventsCard::class)
+            ->assertSee('Events')
+            ->assertDontSee('Announcements')
             ->assertSee('Future Fest')
             ->assertDontSee('Hidden Draft');
     }
 
-    public function test_registrants_card_shows_attendees(): void
+    public function test_event_list_shows_rsvp_and_signed_up_actions(): void
     {
-        $event = Event::create(['title' => 'TB', 'status' => 'published', 'start_datetime' => now()->addWeek()]);
-        $user = User::factory()->create(['name' => 'Jane Attendee']);
-        EventRegistration::create(['event_id' => $event->id, 'user_id' => $user->id, 'status' => 'attending', 'responded_at' => now()]);
+        Event::create(['title' => 'Future Fest', 'status' => 'published', 'start_datetime' => now()->addWeek()]);
 
         Livewire::actingAs(User::factory()->create())
-            ->test(EventRegistrantsCard::class)
-            ->assertSee('Jane Attendee');
+            ->test(EventList::class)
+            ->assertSee('Future Fest')
+            ->assertSee('RSVP')
+            ->assertSee('Who else signed up');
     }
 }

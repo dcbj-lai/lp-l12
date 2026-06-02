@@ -1,12 +1,13 @@
 <div class="space-y-4">
     @forelse ($events as $event)
-        <a href="{{ route('events.show', $event->id) }}"
-            class="block rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 hover:shadow-md transition">
-            <div class="flex items-start justify-between gap-4">
+        <article
+            class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 hover:shadow-md transition">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
-                    <h3 class="text-base font-semibold text-zinc-800 dark:text-zinc-100 truncate">
+                    <a href="{{ route('events.show', $event->id) }}" wire:navigate
+                        class="block text-base font-semibold text-zinc-800 dark:text-zinc-100 truncate hover:text-blue-600 dark:hover:text-blue-400">
                         {{ $event->title }}
-                    </h3>
+                    </a>
                     <p class="text-xs text-gray-500 mt-1">
                         @if ($event->start_datetime)
                             <flux:icon.calendar class="inline w-3.5 h-3.5 -mt-0.5" />
@@ -22,7 +23,7 @@
                         </p>
                     @endif
                 </div>
-                <div class="text-right shrink-0">
+                <div class="flex flex-col items-start gap-3 shrink-0 md:items-end">
                     @php($mine = $myResponses[$event->id] ?? null)
                     @if ($mine === 'attending')
                         <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Attending</span>
@@ -31,10 +32,22 @@
                     @else
                         <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-200 text-zinc-600">No response</span>
                     @endif
-                    <p class="text-[11px] text-gray-400 mt-2">{{ $event->attending_count }} attending</p>
+
+                    <div class="flex flex-wrap items-center gap-2 md:justify-end">
+                        <flux:button size="xs" variant="primary" icon="calendar"
+                            href="{{ route('events.show', $event->id) }}" wire:navigate>
+                            RSVP
+                        </flux:button>
+                        <flux:button size="xs" variant="ghost" icon="user-check"
+                            href="{{ route('events.registrants', $event->id) }}" wire:navigate>
+                            Who else signed up
+                        </flux:button>
+                    </div>
+
+                    <p class="text-[11px] text-gray-400">{{ $event->attending_count }} attending</p>
                 </div>
             </div>
-        </a>
+        </article>
     @empty
         <div class="rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 p-8 text-center text-gray-500">
             No events right now. Check back soon.

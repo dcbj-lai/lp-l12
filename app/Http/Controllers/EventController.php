@@ -24,14 +24,13 @@ class EventController extends Controller
     }
 
     /**
-     * Full "see more" list of everyone registered for an event.
-     * Public to all authenticated users.
+     * Public list of attendees who signed up for an event.
+     * Available to all authenticated users.
      */
     public function registrants(Event $event)
     {
-        $registrations = $event->registrations()
+        $registrations = $event->attendingRegistrations()
             ->with('user')
-            ->orderBy('status') // 'attending' sorts before 'not_attending'
             ->orderBy('responded_at')
             ->get();
 

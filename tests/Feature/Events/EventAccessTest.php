@@ -3,6 +3,7 @@
 namespace Tests\Feature\Events;
 
 use App\Models\Event;
+use App\Models\EventRegistration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -39,12 +40,31 @@ class EventAccessTest extends TestCase
             ->assertSee('Team Building');
     }
 
-    public function test_registrants_page_is_visible_to_any_authenticated_user(): void
+    public function test_signed_up_page_is_visible_to_any_authenticated_user_and_only_shows_attendees(): void
     {
         $event = Event::create(['title' => 'Team Building', 'status' => 'published']);
+        $attending = User::factory()->create(['name' => 'Jane Attendee']);
+        $declined = User::factory()->create(['name' => 'No Person']);
+
+        EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $attending->id,
+            'status' => 'attending',
+            'responded_at' => now(),
+        ]);
+        EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $declined->id,
+            'status' => 'not_attending',
+            'responded_at' => now(),
+        ]);
 
         $this->actingAs(User::factory()->create());
-        $this->get(route('events.registrants', $event))->assertOk();
+        $this->get(route('events.registrants', $event))
+            ->assertOk()
+            ->assertSee('Who else signed up')
+            ->assertSee('Jane Attendee')
+            ->assertDontSee('No Person');
     }
 
     public function test_manage_page_is_forbidden_without_permission(): void
