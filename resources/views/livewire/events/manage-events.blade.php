@@ -1,9 +1,9 @@
 <div class="space-y-6">
 
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 class="text-2xl font-semibold text-zinc-800 dark:text-zinc-100">Manage Events</h1>
         @unless ($showForm)
-            <flux:button size="sm" variant="primary" icon="plus" wire:click="newEvent">
+            <flux:button class="w-full sm:w-auto" size="sm" variant="primary" icon="plus" wire:click="newEvent">
                 New Event
             </flux:button>
         @endunless
@@ -141,8 +141,54 @@
     @endif
 
     {{-- ============ LIST ============ --}}
-    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-        <table class="min-w-full text-sm">
+    <div class="space-y-3 md:hidden">
+        @forelse ($events as $event)
+            <article class="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 class="text-sm font-semibold text-zinc-800 dark:text-zinc-100 truncate">{{ $event->title }}</h2>
+                        <p class="mt-1 text-xs text-gray-500">{{ $event->formattedDateRange() ?? 'No date set' }}</p>
+                    </div>
+                    <span class="shrink-0 text-xs px-2 py-0.5 rounded-full
+                        {{ $event->status === 'published' ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-200 text-zinc-600' }}">
+                        {{ ucfirst($event->status) }}
+                    </span>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-2 text-xs text-gray-500">
+                    <div class="rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-900/60">
+                        <span class="block text-[11px] uppercase text-gray-400">Attending</span>
+                        <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{{ $event->attending_count }}</span>
+                    </div>
+                    <div class="rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-900/60">
+                        <span class="block text-[11px] uppercase text-gray-400">Files</span>
+                        <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{{ $event->attachments->count() }}</span>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <flux:button size="xs" variant="ghost" icon="eye"
+                        href="{{ route('events.show', $event->id) }}">View</flux:button>
+                    <flux:button size="xs" variant="ghost" icon="download"
+                        href="{{ route('events.registrants.csv', $event->id) }}">CSV</flux:button>
+                    <flux:button size="xs" variant="ghost" icon="download"
+                        href="{{ route('events.registrants.pdf', $event->id) }}">PDF</flux:button>
+                    <flux:button size="xs" variant="ghost" icon="pencil"
+                        wire:click="edit({{ $event->id }})">Edit</flux:button>
+                    <flux:button size="xs" variant="ghost" icon="trash"
+                        wire:click="delete({{ $event->id }})"
+                        wire:confirm="Delete this event? This removes its files and RSVPs.">Delete</flux:button>
+                </div>
+            </article>
+        @empty
+            <div class="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-gray-500 dark:border-zinc-700">
+                No events yet.
+            </div>
+        @endforelse
+    </div>
+
+    <div class="hidden rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-x-auto md:block">
+        <table class="min-w-[920px] w-full text-sm">
             <thead class="bg-zinc-50 dark:bg-zinc-900 text-left text-gray-500">
                 <tr>
                     <th class="py-2 px-4">Title</th>
@@ -158,7 +204,7 @@
                     <tr class="border-t border-zinc-100 dark:border-zinc-800">
                         <td class="py-2 px-4 font-medium text-zinc-800 dark:text-zinc-100">{{ $event->title }}</td>
                         <td class="py-2 px-4 text-gray-500">
-                            {{ optional($event->start_datetime)->format('M d, Y g:i A') ?? '—' }}
+                            {{ $event->formattedDateRange() ?? 'No date set' }}
                         </td>
                         <td class="py-2 px-4">
                             <span class="text-xs px-2 py-0.5 rounded-full
@@ -169,7 +215,7 @@
                         <td class="py-2 px-4 text-center">{{ $event->attending_count }}</td>
                         <td class="py-2 px-4 text-center">{{ $event->attachments->count() }}</td>
                         <td class="py-2 px-4">
-                            <div class="flex items-center justify-end gap-2">
+                            <div class="flex flex-wrap items-center justify-end gap-2">
                                 <flux:button size="xs" variant="ghost" icon="eye"
                                     href="{{ route('events.show', $event->id) }}">View</flux:button>
                                 <flux:button size="xs" variant="ghost" icon="download"

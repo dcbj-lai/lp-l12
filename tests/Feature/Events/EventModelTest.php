@@ -25,6 +25,23 @@ class EventModelTest extends TestCase
         $this->assertTrue((new Event(['rsvp_deadline' => now()->subDay()]))->rsvpClosed());
     }
 
+    public function test_formatted_date_range_handles_same_day_and_multi_day_events(): void
+    {
+        $sameDay = new Event([
+            'start_datetime' => '2026-06-10 09:00:00',
+            'end_datetime' => '2026-06-10 17:00:00',
+        ]);
+        $multiDay = new Event([
+            'start_datetime' => '2026-06-10 09:00:00',
+            'end_datetime' => '2026-06-12 17:00:00',
+        ]);
+
+        $this->assertSame('Jun 10, 2026 9:00 AM - 5:00 PM', $sameDay->formattedDateRange());
+        $this->assertSame('Jun 10, 2026', $sameDay->formattedDateRange(false));
+        $this->assertSame('Jun 10, 2026 9:00 AM - Jun 12, 2026 5:00 PM', $multiDay->formattedDateRange());
+        $this->assertSame('Jun 10, 2026 - Jun 12, 2026', $multiDay->formattedDateRange(false));
+    }
+
     public function test_attending_registrations_relation_excludes_decliners(): void
     {
         $event = Event::create(['title' => 'TB', 'status' => 'published']);

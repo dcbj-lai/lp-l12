@@ -118,4 +118,29 @@ class Event extends Model
     {
         return $this->customFieldInstructions()[$index] ?? '';
     }
+
+    public function formattedDateRange(bool $includeTime = true): ?string
+    {
+        if (!$this->start_datetime) {
+            return null;
+        }
+
+        $startFormat = $includeTime ? 'M d, Y g:i A' : 'M d, Y';
+
+        if (!$this->end_datetime) {
+            return $this->start_datetime->format($startFormat);
+        }
+
+        if (!$includeTime && $this->start_datetime->isSameDay($this->end_datetime)) {
+            return $this->start_datetime->format($startFormat);
+        }
+
+        $endFormat = $includeTime && $this->start_datetime->isSameDay($this->end_datetime)
+            ? 'g:i A'
+            : $startFormat;
+
+        return $this->start_datetime->format($startFormat)
+            . ' - '
+            . $this->end_datetime->format($endFormat);
+    }
 }

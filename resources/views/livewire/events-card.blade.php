@@ -23,9 +23,9 @@
                                     <flux:icon.calendar-days class="w-4 h-4 text-blue-400 shrink-0" />
                                     <span class="text-gray-300 font-medium truncate">{{ $event->title }}</span>
                                 </div>
-                                @if ($event->start_datetime)
-                                    <span class="text-[11px] text-gray-500 ml-6">
-                                        {{ $event->start_datetime->format('M d, Y') }}
+                                @if ($eventDateRange = $event->formattedDateRange(false))
+                                    <span class="block truncate text-[11px] text-gray-500 ml-6">
+                                        {{ $eventDateRange }}
                                     </span>
                                 @endif
                             </a>

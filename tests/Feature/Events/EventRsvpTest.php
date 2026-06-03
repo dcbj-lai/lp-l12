@@ -240,7 +240,12 @@ class EventRsvpTest extends TestCase
 
     public function test_events_card_lists_published_upcoming_events(): void
     {
-        Event::create(['title' => 'Future Fest', 'status' => 'published', 'start_datetime' => now()->addWeek()]);
+        $event = Event::create([
+            'title' => 'Future Fest',
+            'status' => 'published',
+            'start_datetime' => now()->addWeek()->setTime(9, 0),
+            'end_datetime' => now()->addDays(8)->setTime(17, 0),
+        ]);
         Event::create(['title' => 'Hidden Draft', 'status' => 'draft', 'start_datetime' => now()->addWeek()]);
 
         Livewire::actingAs(User::factory()->create())
@@ -248,16 +253,23 @@ class EventRsvpTest extends TestCase
             ->assertSee('Events')
             ->assertDontSee('Announcements')
             ->assertSee('Future Fest')
+            ->assertSee($event->formattedDateRange(false))
             ->assertDontSee('Hidden Draft');
     }
 
     public function test_event_list_shows_rsvp_and_signed_up_actions(): void
     {
-        Event::create(['title' => 'Future Fest', 'status' => 'published', 'start_datetime' => now()->addWeek()]);
+        $event = Event::create([
+            'title' => 'Future Fest',
+            'status' => 'published',
+            'start_datetime' => now()->addWeek()->setTime(9, 0),
+            'end_datetime' => now()->addWeek()->setTime(17, 0),
+        ]);
 
         Livewire::actingAs(User::factory()->create())
             ->test(EventList::class)
             ->assertSee('Future Fest')
+            ->assertSee($event->formattedDateRange())
             ->assertSee('RSVP')
             ->assertSee('Who else signed up');
     }

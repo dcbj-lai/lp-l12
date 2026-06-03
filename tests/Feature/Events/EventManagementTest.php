@@ -104,6 +104,21 @@ class EventManagementTest extends TestCase
         $this->assertDatabaseHas('events', ['id' => $event->id, 'title' => 'New Title', 'status' => 'published']);
     }
 
+    public function test_manage_events_list_shows_start_to_end_date_range(): void
+    {
+        $event = Event::create([
+            'title' => 'Planning Days',
+            'status' => 'published',
+            'start_datetime' => '2026-06-10 09:00:00',
+            'end_datetime' => '2026-06-12 17:00:00',
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(ManageEvents::class)
+            ->assertSee('Planning Days')
+            ->assertSee($event->formattedDateRange());
+    }
+
     public function test_admin_can_delete_an_event(): void
     {
         $event = Event::create(['title' => 'Doomed', 'status' => 'draft']);
