@@ -483,9 +483,9 @@
             @csrf
             @method('PUT')
 
-            <!-- PTO Credits -->
+            <!-- Leave Credits -->
             <div>
-                <label for="pto" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">PTO
+                <label for="pto" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Leave
                     Credits</label>
                 <input type="number" step="0.01" name="pto" id="pto"
                     value="{{ old('pto', $user->requestCredit->pto ?? 0) }}"

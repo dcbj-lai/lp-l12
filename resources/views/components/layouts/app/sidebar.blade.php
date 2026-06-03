@@ -93,8 +93,12 @@
                     @endcan
 
                     @can('leave-credits.view')
+                        <flux:navlist.item href="{{ route('leave-credits.index') }}" icon="file-clock"
+                            :active="request()->routeIs('leave-credits.*')">
+                            Leave Credits
+                        </flux:navlist.item>
                         <flux:navlist.item href="{{ route('org-settings.index') }}" icon="settings">
-                            Setup Requests
+                            Request Settings
                         </flux:navlist.item>
                     @endcan
 

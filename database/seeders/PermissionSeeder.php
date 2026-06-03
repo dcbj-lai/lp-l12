@@ -27,6 +27,7 @@ class PermissionSeeder extends Seeder
             'leave-credits.view',
             'leave-credits.update',
             'leave-credits.assign',
+            'leave-credits.initialize',
 
             'attendance.view',
             'attendance.create',

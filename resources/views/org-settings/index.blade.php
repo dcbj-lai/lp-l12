@@ -11,7 +11,7 @@
 
             <div>
                 <label for="pto_default" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Default PTO Credits
+                    Default Leave Credits
                 </label>
                 <input type="number" step="0.01" name="pto_default" id="pto_default"
                     value="{{ old('pto_default', $settings->pto_default) }}"
@@ -43,7 +43,7 @@
                 Initialize Leave Requests
             </h2>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-                This will reset and assign PTO and WFH credits for
+                This will reset and assign Leave and WFH credits for
                 <strong>all users</strong> based on the default values above.
             </p>
 

@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Gate::define('is-pnc', fn($user) => $user->hasAnyLegacyRole(['pnc.staff', 'pnc.admin', 'super.admin']));
+        Gate::define('is-pnc', fn($user) => $user->hasAnyLegacyRole(['pnc.staff', 'pnc.admin', 'super.admin']));
         Gate::define('is-acad-admin', fn($user) => $user->hasAnyLegacyRole(['acad.admin', 'super.admin']));
         Gate::define('is-admin', fn($user) => $user->hasAnyLegacyRole(['sys.admin', 'super.admin']));
         Gate::define('is-finance', fn($user) => $user->hasAnyLegacyRole(['finance.admin', 'super.admin']));

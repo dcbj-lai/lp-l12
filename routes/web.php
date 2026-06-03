@@ -9,6 +9,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ImportCSVClinicController;
 use App\Http\Controllers\ImportCsvController;
+use App\Http\Controllers\LeaveCreditController;
 use App\Http\Controllers\OnlineDayController;
 use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\PasswordLoginController;
@@ -267,6 +268,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/org-settings', [OrgSettingController::class, 'index'])
         ->middleware('permission:leave-credits.view')
         ->name('org-settings.index');
+
+    Route::get('/leave-credits', [LeaveCreditController::class, 'index'])
+        ->middleware('permission:leave-credits.view')
+        ->name('leave-credits.index');
+
+    Route::get('/leave-credits.csv', [LeaveCreditController::class, 'csv'])
+        ->middleware('permission:leave-credits.view')
+        ->name('leave-credits.csv');
+
+    Route::get('/leave-credits.pdf', [LeaveCreditController::class, 'pdf'])
+        ->middleware('permission:leave-credits.view')
+        ->name('leave-credits.pdf');
 
     Route::post('/org-settings', [OrgSettingController::class, 'update'])
         ->middleware('permission:leave-credits.update')
