@@ -5,6 +5,8 @@ namespace Tests\Feature\Settings;
 use App\Livewire\Settings\Profile2;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -127,5 +129,24 @@ class ProfileEmergencyContactTest extends TestCase
             ->set('medical_notes', str_repeat('a', 2001))
             ->call('updateProfileInformation')
             ->assertHasErrors(['medical_notes']);
+    }
+
+    public function test_user_can_upload_high_resolution_profile_photo(): void
+    {
+        Storage::fake('s3');
+
+        $user = User::factory()->create();
+        $avatar = UploadedFile::fake()->image('avatar.jpg')->size(4096);
+
+        Livewire::actingAs($user)
+            ->test(Profile2::class)
+            ->set('avatar', $avatar)
+            ->call('updateAvatar')
+            ->assertHasNoErrors();
+
+        $user->refresh();
+
+        $this->assertNotNull($user->profile_photo_path);
+        Storage::disk('s3')->assertExists($user->profile_photo_path);
     }
 }

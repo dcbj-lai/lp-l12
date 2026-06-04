@@ -51,7 +51,7 @@ class Profile2 extends Component
         $user = Auth::user();
 
         $this->validate([
-            'avatar' => ['required', 'image', 'max:2048'],
+            'avatar' => ['required', 'image', 'max:10240'],
         ]);
 
         if ($user->profile_photo_path) {

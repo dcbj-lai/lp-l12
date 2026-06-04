@@ -192,6 +192,9 @@
         <form wire:submit.prevent="updateAvatar" class="space-y-6">
 
             <flux:heading size="lg">Update Profile Photo</flux:heading>
+            <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                Upload a high-resolution image up to 10MB.
+            </p>
 
             <div class="flex justify-center">
                 @if ($avatar)
