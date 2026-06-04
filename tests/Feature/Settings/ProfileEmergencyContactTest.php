@@ -49,6 +49,39 @@ class ProfileEmergencyContactTest extends TestCase
         $this->assertEquals('+639170000000', $user->emergency_contact_phone);
     }
 
+    public function test_user_can_update_email_and_verification_is_reset(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'old@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(Profile2::class)
+            ->set('name', $user->name)
+            ->set('email', 'New.Email@Example.COM')
+            ->call('updateProfileInformation')
+            ->assertHasNoErrors();
+
+        $user->refresh();
+
+        $this->assertSame('new.email@example.com', $user->email);
+        $this->assertNull($user->email_verified_at);
+    }
+
+    public function test_email_must_be_unique_when_updated(): void
+    {
+        $existing = User::factory()->create(['email' => 'taken@example.com']);
+        $user = User::factory()->create(['email' => 'original@example.com']);
+
+        Livewire::actingAs($user)
+            ->test(Profile2::class)
+            ->set('name', $user->name)
+            ->set('email', $existing->email)
+            ->call('updateProfileInformation')
+            ->assertHasErrors(['email']);
+    }
+
     public function test_relationship_must_be_from_the_allowed_list(): void
     {
         $user = User::factory()->create();
