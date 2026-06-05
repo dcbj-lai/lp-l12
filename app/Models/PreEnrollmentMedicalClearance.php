@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class PreEnrollmentMedicalClearance extends Model
 {
     public const STATUS_CLEARED = 'cleared';
+    public const STATUS_CLEARED_WITH_CONDITIONS = 'cleared_with_conditions';
     public const STATUS_PENDING = 'pending_requirements';
     public const STATUS_NOT_CLEARED = 'not_cleared';
 
@@ -32,8 +33,9 @@ class PreEnrollmentMedicalClearance extends Model
     public static function statusOptions(): array
     {
         return [
-            self::STATUS_CLEARED => 'Cleared for enrollment',
-            self::STATUS_PENDING => 'Pending requirements',
+            self::STATUS_CLEARED => 'Medically cleared for enrollment',
+            self::STATUS_CLEARED_WITH_CONDITIONS => 'Medically cleared for enrollment subject to following conditions/restrictions',
+            self::STATUS_PENDING => 'Temporarily not cleared pending submission of additional requirements',
             self::STATUS_NOT_CLEARED => 'Not cleared',
         ];
     }

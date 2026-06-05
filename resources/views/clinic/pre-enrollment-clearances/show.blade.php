@@ -1,4 +1,14 @@
 <x-layouts.app title="Pre-enrollment Medical Clearance">
+    @php
+        $findingsHeading = match ($clearance->clearance_status) {
+            \App\Models\PreEnrollmentMedicalClearance::STATUS_CLEARED_WITH_CONDITIONS => 'Conditions / Restrictions',
+            \App\Models\PreEnrollmentMedicalClearance::STATUS_NOT_CLEARED => 'Reason for Not Cleared',
+            default => 'Findings',
+        };
+        $recommendationsHeading = $clearance->clearance_status === \App\Models\PreEnrollmentMedicalClearance::STATUS_PENDING
+            ? 'Additional Requirements'
+            : 'Recommendations / Follow-up Actions';
+    @endphp
     <div class="max-w-5xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -56,11 +66,11 @@
 
             <div class="mt-6 grid gap-5">
                 <div>
-                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Findings</h2>
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ $findingsHeading }}</h2>
                     <p class="mt-2 whitespace-pre-line rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200">{{ $clearance->findings ?: '-' }}</p>
                 </div>
                 <div>
-                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Recommendations / Pending Requirements</h2>
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ $recommendationsHeading }}</h2>
                     <p class="mt-2 whitespace-pre-line rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200">{{ $clearance->recommendations ?: '-' }}</p>
                 </div>
             </div>

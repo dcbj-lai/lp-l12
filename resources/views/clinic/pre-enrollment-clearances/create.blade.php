@@ -33,7 +33,11 @@
                     intendedCourse: @js(old('intended_course', '')),
                     email: @js(old('email', '')),
                     contactNumber: @js(old('contact_number', '')),
+                    clearanceStatus: @js(old('clearance_status', $defaultStatus)),
                     matchedPatient: null,
+                    clearedWithConditionsStatus: @js(\App\Models\PreEnrollmentMedicalClearance::STATUS_CLEARED_WITH_CONDITIONS),
+                    pendingStatus: @js(\App\Models\PreEnrollmentMedicalClearance::STATUS_PENDING),
+                    notClearedStatus: @js(\App\Models\PreEnrollmentMedicalClearance::STATUS_NOT_CLEARED),
 
                     syncApplicant() {
                         const name = this.applicantName.trim().toLowerCase();
@@ -55,6 +59,26 @@
                         if (!this.intendedCourse && this.matchedPatient.course) {
                             this.intendedCourse = this.matchedPatient.course;
                         }
+                    },
+
+                    findingsLabel() {
+                        if (this.clearanceStatus === this.clearedWithConditionsStatus) {
+                            return 'Conditions / Restrictions';
+                        }
+
+                        if (this.clearanceStatus === this.notClearedStatus) {
+                            return 'Reason for Not Cleared';
+                        }
+
+                        return 'Findings';
+                    },
+
+                    recommendationsLabel() {
+                        if (this.clearanceStatus === this.pendingStatus) {
+                            return 'Additional Requirements';
+                        }
+
+                        return 'Recommendations / Follow-up Actions';
                     },
                 }"
                 x-init="syncApplicant()">
@@ -109,7 +133,7 @@
 
                     <div>
                         <label class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-200">Clearance Status *</label>
-                        <select name="clearance_status" required
+                        <select name="clearance_status" x-model="clearanceStatus" required
                             class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100">
                             @foreach ($statusOptions as $value => $label)
                                 <option value="{{ $value }}" @selected(old('clearance_status', $defaultStatus) === $value)>{{ $label }}</option>
@@ -120,13 +144,13 @@
 
                 <div class="grid grid-cols-1 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-200">Findings</label>
+                        <label class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-200" x-text="findingsLabel()">Findings</label>
                         <textarea name="findings" rows="4"
                             class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100">{{ old('findings') }}</textarea>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-200">Recommendations / Pending Requirements</label>
+                        <label class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-200" x-text="recommendationsLabel()">Recommendations / Follow-up Actions</label>
                         <textarea name="recommendations" rows="4"
                             class="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100">{{ old('recommendations') }}</textarea>
                     </div>

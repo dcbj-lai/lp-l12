@@ -44,7 +44,10 @@ class PreEnrollmentMedicalClearanceTest extends TestCase
             ->assertSee('Issue Pre-enrollment Medical Clearance')
             ->assertSee('Ana Santos')
             ->assertSee('Choose an existing student patient or type a new applicant name.')
-            ->assertSee('Cleared for enrollment');
+            ->assertSee('Medically cleared for enrollment')
+            ->assertSee('Medically cleared for enrollment subject to following conditions/restrictions')
+            ->assertSee('Temporarily not cleared pending submission of additional requirements')
+            ->assertSee('Not cleared');
     }
 
     public function test_non_clinic_user_cannot_access_clearances(): void
@@ -80,6 +83,32 @@ class PreEnrollmentMedicalClearanceTest extends TestCase
         $this->assertSame('Clinic Admin Legal Name', $clearance->issued_by_name);
     }
 
+    public function test_clinic_user_can_create_conditional_clearance(): void
+    {
+        $admin = $this->clinicUser();
+
+        $response = $this->actingAs($admin)
+            ->post(route('clinic.pre-enrollment-clearances.store'), [
+                'applicant_name' => 'Ben Santos',
+                'email' => 'ben@example.com',
+                'contact_number' => '+639179876543',
+                'intended_course' => 'BS Biology',
+                'assessment_date' => '2026-06-05',
+                'clearance_status' => PreEnrollmentMedicalClearance::STATUS_CLEARED_WITH_CONDITIONS,
+                'findings' => 'Must submit updated chest x-ray before final enrollment.',
+                'recommendations' => 'Follow up with clinic after submission.',
+            ]);
+
+        $clearance = PreEnrollmentMedicalClearance::where('email', 'ben@example.com')->firstOrFail();
+
+        $response->assertRedirect(route('clinic.pre-enrollment-clearances.show', $clearance));
+
+        $this->assertSame('cleared_with_conditions', $clearance->clearance_status);
+        $this->assertSame('Must submit updated chest x-ray before final enrollment.', $clearance->findings);
+        $this->assertSame('Follow up with clinic after submission.', $clearance->recommendations);
+        $this->assertSame($admin->id, $clearance->issued_by_id);
+    }
+
     public function test_clearance_show_and_pdf_are_available(): void
     {
         $issuer = $this->clinicUser();
@@ -103,7 +132,8 @@ class PreEnrollmentMedicalClearanceTest extends TestCase
             ->get(route('clinic.pre-enrollment-clearances.show', $clearance))
             ->assertOk()
             ->assertSee('Ana Santos')
-            ->assertSee('Pending requirements')
+            ->assertSee('Temporarily not cleared pending submission of additional requirements')
+            ->assertSee('Additional Requirements')
             ->assertSee('Clinic Admin Legal Name')
             ->assertSee('Download PDF');
 
