@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Support\Str;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class PublicCardController extends Controller
 {
@@ -19,6 +20,7 @@ class PublicCardController extends Controller
                 'email',           // REQUIRED
                 'phone_work',      // REQUIRED
                 'phone_mobile',   // optional
+                'address',
                 'profile_photo_path',
             )
             ->get();
@@ -32,8 +34,13 @@ class PublicCardController extends Controller
             abort(404);
         }
 
+        $cardUrl = $user->cardUrl();
+        $qrImage = base64_encode(QrCode::format('svg')->size(260)->margin(1)->generate($cardUrl));
+
         return view('public.card', [
             'user' => $user,
+            'cardUrl' => $cardUrl,
+            'qrImage' => $qrImage,
         ]);
     }
 

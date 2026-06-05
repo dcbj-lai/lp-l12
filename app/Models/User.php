@@ -91,6 +91,16 @@ class User extends Authenticatable
         return Str::of($this->name)->trim()->substr(0, 1)->upper();
     }
 
+    public function cardUrl(): string
+    {
+        return 'https://lp.life.edu.ph/card/' . Str::slug($this->preferred_name ?: $this->name);
+    }
+
+    public function vcardUrl(): string
+    {
+        return $this->cardUrl();
+    }
+
     public function hasAnyLegacyRole(array $roles): bool
     {
         return count(array_intersect($this->legacy_roles ?? [], $roles)) > 0;

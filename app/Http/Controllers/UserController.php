@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Department;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 // use App\Models\RequestCredit;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UserController extends Controller
 {
@@ -16,24 +19,82 @@ class UserController extends Controller
     {
         $search = trim($request->input('search'));
 
-        $users = User::query()
-            ->when($search, function ($query) use ($search) {
-
-                $search = mb_strtolower($search);
-
-                $query->where(function ($q) use ($search) {
-
-                    $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
-                        ->orWhereRaw('LOWER(preferred_name) LIKE ?', ["%{$search}%"])
-                        ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
-
-                });
-
-            })
-            ->orderBy('name')
-            ->paginate(10);
+        $users = $this->filteredUsersQuery($request)
+            ->paginate(10)
+            ->withQueryString();
 
         return view('users.index', compact('users', 'search'));
+    }
+
+    public function exportCsv(Request $request): StreamedResponse
+    {
+        $users = $this->filteredUsersQuery($request)->get();
+        $fileName = $this->exportFileName('csv');
+
+        return response()->stream(function () use ($users) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [
+                'Name',
+                'Email',
+                'Preferred Name',
+                'Vcard URL',
+            ]);
+
+            foreach ($users as $user) {
+                fputcsv($handle, $this->exportRowFor($user));
+            }
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $users = $this->filteredUsersQuery($request)->get();
+
+        $pdf = Pdf::loadView('users.export-pdf', [
+            'users' => $users,
+            'generatedAt' => now(),
+            'search' => trim((string) $request->input('search', '')),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download($this->exportFileName('pdf'));
+    }
+
+    protected function filteredUsersQuery(Request $request)
+    {
+        $search = trim((string) $request->input('search', ''));
+
+        return User::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $search = mb_strtolower($search);
+
+                $query->where(function ($query) use ($search) {
+                    $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                        ->orWhereRaw('LOWER(preferred_name) LIKE ?', ["%{$search}%"])
+                        ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
+                });
+            })
+            ->orderBy('name');
+    }
+
+    protected function exportRowFor(User $user): array
+    {
+        return [
+            $user->name,
+            $user->email,
+            $user->preferred_name ?? '-',
+            $user->cardUrl(),
+        ];
+    }
+
+    protected function exportFileName(string $extension): string
+    {
+        return 'users_' . Str::slug(now()->format('Y-m-d_H-i-s')) . '.' . $extension;
     }
 
     // Edit User Page (placeholder for now)
@@ -213,4 +274,3 @@ class UserController extends Controller
 
 
 }
-

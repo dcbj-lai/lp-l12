@@ -22,11 +22,23 @@
             </form>
 
             <!-- ✅ Tools Button (Right Side) -->
-            <flux:modal.trigger name="tools-modal">
-                <flux:button variant="outline" icon="wrench">
-                    Tools
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <flux:button href="{{ route('users.export.csv', request()->only('search')) }}" variant="outline"
+                    icon="arrow-down-tray">
+                    Export CSV
                 </flux:button>
-            </flux:modal.trigger>
+
+                <flux:button href="{{ route('users.export.pdf', request()->only('search')) }}" variant="outline"
+                    icon="document-text">
+                    Export PDF
+                </flux:button>
+
+                <flux:modal.trigger name="tools-modal">
+                    <flux:button variant="outline" icon="wrench">
+                        Tools
+                    </flux:button>
+                </flux:modal.trigger>
+            </div>
 
         </div>
 
@@ -38,6 +50,7 @@
                         <th class="border p-2">Name</th>
                         <th class="border p-2">Email</th>
                         <th class="border p-2">Preferred Name</th>
+                        <th class="border p-2">Vcard URL</th>
                         <th class="border p-2 text-center">Payroll On</th>
                         <th class="border p-2 text-center">Actions</th>
                     </tr>
@@ -48,6 +61,12 @@
                             <td class="border p-2">{{ $user->name }}</td>
                             <td class="border p-2">{{ $user->email }}</td>
                             <td class="border p-2">{{ $user->preferred_name ?? 'N/A' }}</td>
+                            <td class="border p-2">
+                                <a href="{{ $user->cardUrl() }}" target="_blank" rel="noopener"
+                                    class="break-all text-blue-600 hover:underline dark:text-blue-400">
+                                    {{ $user->cardUrl() }}
+                                </a>
+                            </td>
 
                             <!-- Payroll On Checkbox -->
                             <td class="border p-2 text-center">
@@ -64,7 +83,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center p-4 text-zinc-500">No users found.</td>
+                            <td colspan="6" class="text-center p-4 text-zinc-500">No users found.</td>
                         </tr>
                     @endforelse
                 </tbody>

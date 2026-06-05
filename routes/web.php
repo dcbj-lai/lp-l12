@@ -135,6 +135,14 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:users.list')
         ->name('users.index');
 
+    Route::get('/users/export/csv', [UserController::class, 'exportCsv'])
+        ->middleware('permission:users.list')
+        ->name('users.export.csv');
+
+    Route::get('/users/export/pdf', [UserController::class, 'exportPdf'])
+        ->middleware('permission:users.list')
+        ->name('users.export.pdf');
+
     Route::middleware('permission:users.edit')->group(function () {
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
