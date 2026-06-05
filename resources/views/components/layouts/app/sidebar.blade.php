@@ -157,6 +157,11 @@
                                 icon="clipboard-document-list">
                                 Consultations
                             </flux:navlist.item>
+                            <flux:navlist.item href="{{ route('clinic.pre-enrollment-clearances.index') }}"
+                                icon="clipboard-document-list"
+                                :active="request()->routeIs('clinic.pre-enrollment-clearances.*')">
+                                Pre-enrollment Clearances
+                            </flux:navlist.item>
                             <flux:navlist.item href="{{ route('clinic.import-csv.index') }}" icon="arrow-up-tray">
                                 Import CSV
                             </flux:navlist.item>

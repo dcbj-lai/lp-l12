@@ -50,12 +50,33 @@ class PatientController extends Controller
 
     public function create()
     {
-        //
+        return view('clinic.patients.create');
     }
 
     public function store(Request $request)
     {
-        //
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name'  => ['required', 'string', 'max:255'],
+            'email'      => ['nullable', 'email', 'max:255', 'unique:patients,email'],
+            'course'     => ['nullable', 'string', 'max:255'],
+            'blood_type' => ['nullable', 'string', 'max:10'],
+            'emergency_contact_person' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_number' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $data['type'] = 'student';
+        $data['department'] = null;
+        $data['position'] = null;
+
+        $patient = Patient::create($data);
+
+        return redirect()
+            ->route('clinic.patients.show', ['patient' => $patient, 'tab' => 'students'])
+            ->with('flash', [
+                'type' => 'success',
+                'message' => 'Student patient record created.',
+            ]);
     }
 
     public function show(Patient $patient)

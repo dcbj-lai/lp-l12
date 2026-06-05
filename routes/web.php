@@ -15,6 +15,7 @@ use App\Http\Controllers\OrgSettingController;
 use App\Http\Controllers\PasswordLoginController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\PreEnrollmentMedicalClearanceController;
 use App\Http\Controllers\PrivateRequestDocumentController;
 use App\Http\Controllers\PublicCardController;
 use App\Http\Controllers\RequestController;
@@ -468,6 +469,8 @@ Route::prefix('clinic')
     ->middleware(['auth', 'can:is-clinic'])
     ->group(function () {
         Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');
+        Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
+        Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
         Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
         Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
         Route::put('/patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
@@ -492,6 +495,17 @@ Route::prefix('clinic')
 
         Route::delete('/consultations/{consultation}/archive', [ClinicConsultationController::class, 'archive'])
             ->name('consultations.archive');
+
+        Route::get('/pre-enrollment-clearances', [PreEnrollmentMedicalClearanceController::class, 'index'])
+            ->name('pre-enrollment-clearances.index');
+        Route::get('/pre-enrollment-clearances/create', [PreEnrollmentMedicalClearanceController::class, 'create'])
+            ->name('pre-enrollment-clearances.create');
+        Route::post('/pre-enrollment-clearances', [PreEnrollmentMedicalClearanceController::class, 'store'])
+            ->name('pre-enrollment-clearances.store');
+        Route::get('/pre-enrollment-clearances/{clearance}', [PreEnrollmentMedicalClearanceController::class, 'show'])
+            ->name('pre-enrollment-clearances.show');
+        Route::get('/pre-enrollment-clearances/{clearance}/pdf', [PreEnrollmentMedicalClearanceController::class, 'pdf'])
+            ->name('pre-enrollment-clearances.pdf');
 
         Route::get('/import-csv', [ImportCsvClinicController::class, 'index'])
             ->name('import-csv.index');
