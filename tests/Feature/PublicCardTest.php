@@ -24,7 +24,7 @@ class PublicCardTest extends TestCase
             ->assertDontSee('Show QR')
             ->assertDontSee('Show Card')
             ->assertSee('data:image/svg+xml;base64')
-            ->assertSee('https://lp.life.edu.ph/card/jane-employee')
+            ->assertSee('/card/jane-employee/vcard')
             ->assertSee('pointerdown')
             ->assertSee('pointermove')
             ->assertSee('Learn and Live Fully.');

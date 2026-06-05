@@ -34,12 +34,12 @@ class PublicCardController extends Controller
             abort(404);
         }
 
-        $cardUrl = $user->cardUrl();
-        $qrImage = base64_encode(QrCode::format('svg')->size(260)->margin(1)->generate($cardUrl));
+        $saveContactUrl = route('card.vcard', ['slug' => $slug]);
+        $qrImage = base64_encode(QrCode::format('svg')->size(260)->margin(1)->generate($saveContactUrl));
 
         return view('public.card', [
             'user' => $user,
-            'cardUrl' => $cardUrl,
+            'saveContactUrl' => $saveContactUrl,
             'qrImage' => $qrImage,
         ]);
     }

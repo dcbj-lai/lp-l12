@@ -152,7 +152,7 @@
 
                         <!-- CTA -->
                         <div class="mt-8">
-                            <a href="{{ route('card.vcard', ['slug' => request()->route('slug')]) }}"
+                            <a href="{{ $saveContactUrl }}"
                                 class="block w-full text-center bg-[#9E1D20] hover:bg-[#690F0D] text-white py-2 rounded-md serif text-sm transition">
                                 Save Contact
                             </a>
@@ -210,13 +210,13 @@
                         </div>
 
                         <div class="my-8 rounded-xl bg-white p-4 shadow-lg">
-                            <img src="data:image/svg+xml;base64,{{ $qrImage }}" alt="QR code for {{ $cardUrl }}"
+                            <img src="data:image/svg+xml;base64,{{ $qrImage }}" alt="QR code for {{ $saveContactUrl }}"
                                 class="h-52 w-52">
                         </div>
 
                         <div class="w-full">
                             <div class="mx-auto max-w-xs break-all rounded-md border border-white/30 px-3 py-2 text-xs text-[#F2E8DC]">
-                                {{ $cardUrl }}
+                                {{ $saveContactUrl }}
                             </div>
                             <div class="mt-5 serif text-sm font-semibold text-[#F2E8DC]">
                                 Learn and Live Fully.
