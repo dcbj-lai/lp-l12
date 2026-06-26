@@ -19,6 +19,10 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
         ->middleware('permission:users.edit')
         ->name('users.api.employee-numbers.backfill');
 
+    Route::post('/users/avatar', [UserController::class, 'apiUpdateAvatar'])
+        ->middleware('permission:users.edit')
+        ->name('users.api.avatar.update');
+
     Route::get('/leave-credits', [LeaveCreditController::class, 'apiIndex'])
         ->middleware('permission:leave-credits.view')
         ->name('leave-credits.api.index');

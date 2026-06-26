@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -224,6 +226,38 @@ class UserExportTest extends TestCase
             ->assertJsonPath('results.0.status', 'updated');
 
         $this->assertSame('20230801', $employee->fresh()->employee_number);
+    }
+
+    public function test_sanctum_token_can_update_user_avatar_by_email(): void
+    {
+        Storage::fake('s3');
+
+        $employee = User::factory()->create([
+            'name' => 'Edric Mendoza',
+            'email' => 'edric.mendoza@example.com',
+            'profile_photo_path' => 'avatars/999/old_avatar.jpg',
+        ]);
+
+        Storage::disk('s3')->put($employee->profile_photo_path, 'old');
+
+        $token = $this->admin->createToken('test-user-avatar-token')->plainTextToken;
+        $avatar = UploadedFile::fake()->image('avatar.jpg')->size(4096);
+
+        $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->post('/api/users/avatar', [
+                'email' => 'EDRIC.MENDOZA@example.com',
+                'avatar' => $avatar,
+            ], ['Accept' => 'application/json'])
+            ->assertOk()
+            ->assertJsonPath('updated', true)
+            ->assertJsonPath('user.email', 'edric.mendoza@example.com');
+
+        $employee->refresh();
+
+        $this->assertNotSame('avatars/999/old_avatar.jpg', $employee->profile_photo_path);
+        $this->assertStringStartsWith("avatars/{$employee->id}/avatar_", $employee->profile_photo_path);
+        Storage::disk('s3')->assertMissing('avatars/999/old_avatar.jpg');
+        Storage::disk('s3')->assertExists($employee->profile_photo_path);
     }
 
     public function test_users_pdf_export_is_available(): void

@@ -8,6 +8,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 // use App\Models\RequestCredit;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -178,6 +179,45 @@ class UserController extends Controller
             'received' => count($validated['employees']),
             'updated' => $updated,
             'results' => $results,
+        ]);
+    }
+
+    public function apiUpdateAvatar(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => ['nullable', 'integer', 'required_without:email'],
+            'email' => ['nullable', 'email', 'required_without:user_id'],
+            'avatar' => ['required', 'image', 'max:10240'],
+        ]);
+
+        $user = ! empty($validated['user_id'])
+            ? User::find($validated['user_id'])
+            : User::whereRaw('LOWER(email) = ?', [Str::lower($validated['email'])])->first();
+
+        abort_unless($user, 404, 'No user matched avatar target.');
+
+        if ($user->profile_photo_path) {
+            Storage::disk('s3')->delete($user->profile_photo_path);
+        }
+
+        $avatar = $request->file('avatar');
+        $filename = 'avatar_' . time() . '.' . $avatar->getClientOriginalExtension();
+        $path = $avatar->storeAs('avatars/' . $user->id, $filename, 's3');
+
+        Storage::disk('s3')->setVisibility($path, 'public');
+
+        $user->update([
+            'profile_photo_path' => $path,
+        ]);
+
+        return response()->json([
+            'updated' => true,
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'name' => $user->name,
+                'profile_photo_path' => $user->profile_photo_path,
+            ],
         ]);
     }
 
