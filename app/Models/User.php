@@ -26,6 +26,7 @@ class User extends Authenticatable
         'employee_number',
         'name',
         'email',
+        'is_active',
         'password',
         'google_id',
         'supervisor_id',
@@ -63,6 +64,7 @@ class User extends Authenticatable
 
     protected $attributes = [
         'legacy_roles' => '["user"]',
+        'is_active' => true,
     ];
 
     /**
@@ -76,6 +78,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'legacy_roles' => 'array', // ✅ updated
+            'is_active' => 'boolean',
             'payroll_on' => 'boolean',
             'monthly_rate' => 'decimal:2',
 

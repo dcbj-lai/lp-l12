@@ -43,6 +43,59 @@ class UserExportTest extends TestCase
             ->assertSee('https://lp.life.edu.ph/card/jane-employee');
     }
 
+    public function test_users_index_defaults_to_active_users_and_can_filter_inactive_users(): void
+    {
+        User::factory()->create([
+            'name' => 'Active Employee',
+            'email' => 'active@example.com',
+            'is_active' => true,
+        ]);
+
+        User::factory()->create([
+            'name' => 'Inactive Employee',
+            'email' => 'inactive@example.com',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('users.index'))
+            ->assertOk()
+            ->assertSee('Active Employee')
+            ->assertDontSee('Inactive Employee');
+
+        $this->actingAs($this->admin)
+            ->get(route('users.index', ['status' => 'all']))
+            ->assertOk()
+            ->assertSee('Active Employee')
+            ->assertSee('Inactive Employee');
+
+        $this->actingAs($this->admin)
+            ->get(route('users.index', ['status' => 'inactive']))
+            ->assertOk()
+            ->assertDontSee('Active Employee')
+            ->assertSee('Inactive Employee');
+    }
+
+    public function test_user_detail_can_mark_a_user_inactive(): void
+    {
+        $employee = User::factory()->create([
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('users.update', $employee), [
+                'name' => 'Jane Employee',
+                'email' => 'jane@example.com',
+                'check_in_mode' => 'virtual',
+                'is_active' => '0',
+            ])
+            ->assertRedirect();
+
+        $this->assertFalse($employee->fresh()->is_active);
+    }
+
     public function test_browser_authenticated_users_endpoint_returns_users(): void
     {
         User::factory()->create([
@@ -62,6 +115,33 @@ class UserExportTest extends TestCase
                 'name' => 'Jane Employee',
                 'email' => 'jane@example.com',
             ]);
+    }
+
+    public function test_users_api_defaults_to_active_users_and_can_include_all_statuses(): void
+    {
+        User::factory()->create([
+            'name' => 'Active Employee',
+            'email' => 'active@example.com',
+            'is_active' => true,
+        ]);
+
+        User::factory()->create([
+            'name' => 'Inactive Employee',
+            'email' => 'inactive@example.com',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('users.api.index'))
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Active Employee'])
+            ->assertJsonMissing(['name' => 'Inactive Employee']);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('users.api.index', ['status' => 'all']))
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Active Employee'])
+            ->assertJsonFragment(['name' => 'Inactive Employee']);
     }
 
     public function test_users_csv_export_includes_vcard_url_and_excludes_payroll_on(): void

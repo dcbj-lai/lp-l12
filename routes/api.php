@@ -8,9 +8,9 @@ use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'active.user']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     Route::get('/users', [UserController::class, 'apiIndex'])
         ->middleware('permission:users.list')
         ->name('users.api.index');

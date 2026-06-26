@@ -21,11 +21,21 @@
         </div>
 
         <form method="GET" action="{{ route('leave-credits.index') }}"
-            class="grid grid-cols-1 gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800 lg:grid-cols-[minmax(240px,1fr)_160px_160px_auto_auto] lg:items-end">
+            class="grid grid-cols-1 gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800 lg:grid-cols-[minmax(220px,1fr)_150px_160px_160px_auto_auto] lg:items-end">
             <div>
                 <label for="search" class="mb-1 block text-xs font-medium uppercase text-gray-500">Search</label>
                 <input id="search" type="search" name="search" value="{{ request('search') }}" placeholder="Employee number, name, department, or position"
                     class="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100" />
+            </div>
+
+            <div>
+                <label for="status" class="mb-1 block text-xs font-medium uppercase text-gray-500">Status</label>
+                <select id="status" name="status"
+                    class="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                    <option value="active" @selected(($status ?? request('status', 'active')) === 'active')>Active only</option>
+                    <option value="all" @selected(($status ?? request('status', 'active')) === 'all')>All users</option>
+                    <option value="inactive" @selected(($status ?? request('status', 'active')) === 'inactive')>Inactive only</option>
+                </select>
             </div>
 
             <div>
@@ -41,7 +51,7 @@
             </div>
 
             <flux:button class="w-full justify-center lg:w-auto" type="submit" variant="primary">Apply</flux:button>
-            @if (request('search') || request('date_from') || request('date_to') || request('period_start') || request('as_of'))
+            @if (request('search') || (request('status') && request('status') !== 'active') || request('date_from') || request('date_to') || request('period_start') || request('as_of'))
                 <flux:button class="w-full justify-center lg:w-auto" href="{{ route('leave-credits.index') }}" variant="ghost">Reset</flux:button>
             @endif
         </form>
@@ -63,7 +73,12 @@
                         <tr class="border-t border-zinc-100 dark:border-zinc-700">
                             <td class="px-4 py-3 text-gray-500">{{ $user->employee_number ?? '-' }}</td>
                             <td class="px-4 py-3">
-                                <div class="font-medium text-zinc-800 dark:text-zinc-100">{{ $user->preferred_name ?: $user->name }}</div>
+                                <div class="flex flex-wrap items-center gap-2 font-medium text-zinc-800 dark:text-zinc-100">
+                                    <span>{{ $user->preferred_name ?: $user->name }}</span>
+                                    @if (! $user->is_active)
+                                        <span class="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">Inactive</span>
+                                    @endif
+                                </div>
                                 @if ($user->preferred_name)
                                     <div class="text-xs text-gray-500">{{ $user->name }}</div>
                                 @endif

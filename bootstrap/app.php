@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\EnsureUserIsActive;
 
 // ✅ Add these imports
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -17,9 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->web(append: [
+            EnsureUserIsActive::class,
+        ]);
 
         // ✅ Register Spatie middleware aliases
         $middleware->alias([
+            'active.user' => EnsureUserIsActive::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,

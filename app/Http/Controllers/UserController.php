@@ -20,12 +20,13 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $search = trim($request->input('search'));
+        $status = $this->userStatusFilter($request);
 
         $users = $this->filteredUsersQuery($request)
             ->paginate(10)
             ->withQueryString();
 
-        return view('users.index', compact('users', 'search'));
+        return view('users.index', compact('users', 'search', 'status'));
     }
 
     public function exportCsv(Request $request): StreamedResponse
@@ -79,6 +80,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'preferred_name' => $user->preferred_name,
                 'email' => $user->email,
+                'is_active' => $user->is_active,
                 'department' => $user->department?->name,
                 'position' => $user->position,
                 'rank' => $user->rank,
@@ -182,8 +184,10 @@ class UserController extends Controller
     protected function filteredUsersQuery(Request $request)
     {
         $search = trim((string) $request->input('search', ''));
+        $status = $this->userStatusFilter($request);
 
         return User::query()
+            ->when($status !== 'all', fn ($query) => $query->where('is_active', $status === 'active'))
             ->when($search !== '', function ($query) use ($search) {
                 $search = mb_strtolower($search);
 
@@ -195,6 +199,13 @@ class UserController extends Controller
                 });
             })
             ->orderBy('name');
+    }
+
+    protected function userStatusFilter(Request $request): string
+    {
+        $status = (string) $request->query('status', 'active');
+
+        return in_array($status, ['active', 'inactive', 'all'], true) ? $status : 'active';
     }
 
     protected function findUserForEmployeeNumberRow(array $row, Collection $users): array
@@ -317,7 +328,7 @@ class UserController extends Controller
     {
         $user->load('requestCredit');
         // dd($user);
-        $supervisors = User::where('rank', 'manager')->get();
+        $supervisors = User::where('rank', 'manager')->where('is_active', true)->get();
         $departments = Department::orderBy('name')->get();
         return view('users.edit', compact('user', 'departments', 'supervisors'));
 
@@ -341,6 +352,7 @@ class UserController extends Controller
                     'max:255',
                     Rule::unique('users', 'email')->ignore($user->id),
                 ],
+                'is_active' => ['nullable', 'boolean'],
                 'supervisor_id' => ['nullable', 'exists:users,id'],
                 'department_id' => ['nullable', 'exists:departments,id'],
                 'roles' => ['nullable', 'string'],
@@ -374,6 +386,15 @@ class UserController extends Controller
                 ],
             ]);
 
+            if ($user->id === auth()->id() && ! $request->boolean('is_active')) {
+                return back()
+                    ->withErrors(['is_active' => 'You cannot deactivate your own account.'])
+                    ->withInput()
+                    ->with('flash', [
+                        'type' => 'error',
+                        'message' => 'You cannot deactivate your own account.',
+                    ]);
+            }
 
             // ✅ Safe roles decoding
             $legacy_roles = [];
@@ -412,6 +433,7 @@ class UserController extends Controller
                 'name' => $validated['name'],
                 'preferred_name' => $validated['preferred_name'] ?? null,
                 'email' => $validated['email'],
+                'is_active' => $request->boolean('is_active'),
                 'supervisor_id' => $validated['supervisor_id'] ?? null,
                 'department_id' => $validated['department_id'] ?? null,
                 'legacy_roles' => $legacy_roles,

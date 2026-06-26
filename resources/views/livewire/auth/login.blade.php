@@ -37,6 +37,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
             ]);
         }
 
+        if (!Auth::user()->is_active) {
+            Auth::logout();
+            Session::invalidate();
+            Session::regenerateToken();
+
+            abort(403, 'Your account is inactive.');
+        }
+
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 

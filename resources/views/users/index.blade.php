@@ -11,6 +11,13 @@
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search users or employee number..."
                     class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full md:w-auto" />
 
+                <select name="status"
+                    class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full md:w-auto">
+                    <option value="active" @selected(($status ?? request('status', 'active')) === 'active')>Active only</option>
+                    <option value="all" @selected(($status ?? request('status', 'active')) === 'all')>All users</option>
+                    <option value="inactive" @selected(($status ?? request('status', 'active')) === 'inactive')>Inactive only</option>
+                </select>
+
                 <flux:button type="submit" variant="primary">
                     Search
                 </flux:button>
@@ -23,12 +30,12 @@
 
             <!-- ✅ Tools Button (Right Side) -->
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <flux:button href="{{ route('users.export.csv', request()->only('search')) }}" variant="outline"
+                <flux:button href="{{ route('users.export.csv', request()->only(['search', 'status'])) }}" variant="outline"
                     icon="arrow-down-tray">
                     Export CSV
                 </flux:button>
 
-                <flux:button href="{{ route('users.export.pdf', request()->only('search')) }}" variant="outline"
+                <flux:button href="{{ route('users.export.pdf', request()->only(['search', 'status'])) }}" variant="outline"
                     icon="document-text">
                     Export PDF
                 </flux:button>
@@ -51,6 +58,7 @@
                         <th class="border p-2">Name</th>
                         <th class="border p-2">Email</th>
                         <th class="border p-2">Preferred Name</th>
+                        <th class="border p-2 text-center">Status</th>
                         <th class="border p-2">Vcard URL</th>
                         <th class="border p-2 text-center">Payroll On</th>
                         <th class="border p-2 text-center">Actions</th>
@@ -58,11 +66,16 @@
                 </thead>
                 <tbody>
                     @forelse($users as $user)
-                        <tr class="hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300">
+                        <tr class="hover:bg-zinc-100 dark:hover:bg-zinc-700 {{ $user->is_active ? 'text-zinc-700 dark:text-zinc-300' : 'bg-zinc-50 text-zinc-400 dark:bg-zinc-900/40 dark:text-zinc-500' }}">
                             <td class="border p-2">{{ $user->employee_number ?? '-' }}</td>
                             <td class="border p-2">{{ $user->name }}</td>
                             <td class="border p-2">{{ $user->email }}</td>
                             <td class="border p-2">{{ $user->preferred_name ?? 'N/A' }}</td>
+                            <td class="border p-2 text-center">
+                                <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold {{ $user->is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200' }}">
+                                    {{ $user->is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
                             <td class="border p-2">
                                 <a href="{{ $user->cardUrl() }}" target="_blank" rel="noopener"
                                     class="break-all text-blue-600 hover:underline dark:text-blue-400">
@@ -85,7 +98,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center p-4 text-zinc-500">No users found.</td>
+                            <td colspan="8" class="text-center p-4 text-zinc-500">No users found.</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -51,6 +51,10 @@ class GoogleController extends Controller
 
 
             if ($user) {
+                if (! $user->is_active) {
+                    abort(403, 'Your account is inactive.');
+                }
+
                 Auth::login($user);
                 return redirect()->route('dashboard');
             } else {
@@ -66,6 +70,8 @@ class GoogleController extends Controller
                     return redirect()->route('dashboard');
                 }
             }
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $th) {
+            throw $th;
         } catch (\Throwable $th) {
             dd($th);
         }

@@ -15,6 +15,26 @@
 
             <!-- Left Column: Basic User Info -->
             <div class="space-y-4 pr-4 border-r border-zinc-300 dark:border-zinc-700">
+                <div class="rounded-md border border-zinc-300 p-4 dark:border-zinc-700">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <label for="is_active" class="block text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                                Active User
+                            </label>
+                            <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                Inactive users are hidden from user and leave credit lists and cannot sign in.
+                            </p>
+                        </div>
+                        <input type="hidden" name="is_active" value="0" />
+                        <input type="checkbox" id="is_active" name="is_active" value="1"
+                            {{ old('is_active', $user->is_active) ? 'checked' : '' }}
+                            class="mt-1 rounded border-zinc-300 dark:bg-zinc-700 dark:text-white" />
+                    </div>
+                    @error('is_active')
+                        <p class="mt-2 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Employee Number -->
                 <div>
                     <label for="employee_number"

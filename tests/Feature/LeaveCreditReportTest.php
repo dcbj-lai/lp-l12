@@ -87,6 +87,41 @@ class LeaveCreditReportTest extends TestCase
             ->assertSee('1.00');
     }
 
+    public function test_leave_credit_roster_defaults_to_active_users_and_can_filter_inactive_users(): void
+    {
+        User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Active Employee',
+            'email' => 'active@example.com',
+            'is_active' => true,
+        ]);
+
+        User::factory()->create([
+            'employee_number' => '20250002',
+            'name' => 'Inactive Employee',
+            'email' => 'inactive@example.com',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('leave-credits.index'))
+            ->assertOk()
+            ->assertSee('Active Employee')
+            ->assertDontSee('Inactive Employee');
+
+        $this->actingAs($this->admin)
+            ->get(route('leave-credits.index', ['status' => 'all']))
+            ->assertOk()
+            ->assertSee('Active Employee')
+            ->assertSee('Inactive Employee');
+
+        $this->actingAs($this->admin)
+            ->get(route('leave-credits.index', ['status' => 'inactive']))
+            ->assertOk()
+            ->assertDontSee('Active Employee')
+            ->assertSee('Inactive Employee');
+    }
+
     public function test_leave_credit_api_report_returns_requested_columns(): void
     {
         $employee = User::factory()->create([
@@ -123,6 +158,35 @@ class LeaveCreditReportTest extends TestCase
                 'total_leave_days_used_to_date' => 1,
                 'leave_balance_to_date' => 8,
             ]);
+    }
+
+    public function test_leave_credit_api_defaults_to_active_users_and_can_include_all_statuses(): void
+    {
+        User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Active Employee',
+            'email' => 'active@example.com',
+            'is_active' => true,
+        ]);
+
+        User::factory()->create([
+            'employee_number' => '20250002',
+            'name' => 'Inactive Employee',
+            'email' => 'inactive@example.com',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('leave-credits.api.index'))
+            ->assertOk()
+            ->assertJsonFragment(['employee_name' => 'Active Employee'])
+            ->assertJsonMissing(['employee_name' => 'Inactive Employee']);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('leave-credits.api.index', ['status' => 'all']))
+            ->assertOk()
+            ->assertJsonFragment(['employee_name' => 'Active Employee'])
+            ->assertJsonFragment(['employee_name' => 'Inactive Employee']);
     }
 
     public function test_leave_credit_api_can_update_single_and_bulk_balances(): void

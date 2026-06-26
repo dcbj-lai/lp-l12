@@ -27,6 +27,14 @@ class PasswordLoginController extends Controller
             ]);
         }
 
+        if (! Auth::user()->is_active) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            abort(403, 'Your account is inactive.');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended('/');

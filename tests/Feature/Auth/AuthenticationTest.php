@@ -34,6 +34,34 @@ class AuthenticationTest extends TestCase
         $this->assertAuthenticated();
     }
 
+    public function test_inactive_users_receive_forbidden_when_logging_in(): void
+    {
+        $user = User::factory()->create([
+            'is_active' => false,
+        ]);
+
+        LivewireVolt::test('auth.login')
+            ->set('email', $user->email)
+            ->set('password', 'password')
+            ->call('login')
+            ->assertForbidden();
+
+        $this->assertGuest();
+    }
+
+    public function test_inactive_authenticated_users_are_forbidden_on_next_request(): void
+    {
+        $user = User::factory()->create([
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertForbidden();
+
+        $this->assertGuest();
+    }
+
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
         $user = User::factory()->create();

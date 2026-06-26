@@ -17,8 +17,9 @@ class LeaveCreditController extends Controller
     {
         [$periodStart, $asOf] = $this->reportPeriod($request);
         $users = $this->usersWithCredits($request);
+        $status = $this->userStatusFilter($request);
 
-        return view('leave-credits.index', compact('users', 'periodStart', 'asOf'));
+        return view('leave-credits.index', compact('users', 'periodStart', 'asOf', 'status'));
     }
 
     public function csv(Request $request): StreamedResponse
@@ -176,6 +177,7 @@ class LeaveCreditController extends Controller
     protected function usersWithCredits(Request $request)
     {
         $search = trim((string) $request->query('search', ''));
+        $status = $this->userStatusFilter($request);
         [$periodStart, $asOf] = $this->reportPeriod($request);
 
         return User::query()
@@ -191,6 +193,7 @@ class LeaveCreditController extends Controller
                     ->where('is_offset', true)
                     ->whereBetween('start_date', [$periodStart->toDateString(), $asOf->toDateString()]);
             }], 'number_of_days')
+            ->when($status !== 'all', fn ($query) => $query->where('is_active', $status === 'active'))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('employee_number', 'like', "%{$search}%")
@@ -225,6 +228,7 @@ class LeaveCreditController extends Controller
             'employee_name' => $user->name,
             'preferred_name' => $user->preferred_name,
             'email' => $user->email,
+            'is_active' => $user->is_active,
             'starting_leave_credits' => $this->roundCredit($this->startingLeaveCredits($user)),
             'total_leave_days_used_to_date' => $this->roundCredit($this->leaveDaysUsed($user)),
             'leave_balance_to_date' => $this->roundCredit($this->leaveBalance($user)),
@@ -262,6 +266,13 @@ class LeaveCreditController extends Controller
         }
 
         return [$periodStart, $asOf];
+    }
+
+    protected function userStatusFilter(Request $request): string
+    {
+        $status = (string) $request->query('status', 'active');
+
+        return in_array($status, ['active', 'inactive', 'all'], true) ? $status : 'active';
     }
 
     protected function defaultPeriodStart(CarbonImmutable $asOf): CarbonImmutable
