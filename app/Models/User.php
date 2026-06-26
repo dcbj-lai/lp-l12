@@ -22,6 +22,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'employee_number',
         'name',
         'email',
         'password',
@@ -137,6 +138,11 @@ class User extends Authenticatable
     public function requestCredit()
     {
         return $this->hasOne(RequestCredit::class);
+    }
+
+    public function requests()
+    {
+        return $this->hasMany(Request::class);
     }
 
     public function isManager()

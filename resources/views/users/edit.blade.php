@@ -15,6 +15,15 @@
 
             <!-- Left Column: Basic User Info -->
             <div class="space-y-4 pr-4 border-r border-zinc-300 dark:border-zinc-700">
+                <!-- Employee Number -->
+                <div>
+                    <label for="employee_number"
+                        class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Employee Number</label>
+                    <input type="text" id="employee_number" name="employee_number"
+                        value="{{ old('employee_number', $user->employee_number) }}"
+                        class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full" />
+                </div>
+
                 <!-- Name -->
                 <div>
                     <label for="name"

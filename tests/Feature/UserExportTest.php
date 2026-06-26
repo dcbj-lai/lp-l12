@@ -18,14 +18,16 @@ class UserExportTest extends TestCase
         parent::setUp();
 
         Permission::findOrCreate('users.list', 'web');
+        Permission::findOrCreate('users.edit', 'web');
 
         $this->admin = User::factory()->create();
-        $this->admin->givePermissionTo('users.list');
+        $this->admin->givePermissionTo(['users.list', 'users.edit']);
     }
 
     public function test_users_index_shows_vcard_url_and_export_actions(): void
     {
         User::factory()->create([
+            'employee_number' => '20250001',
             'name' => 'Jane Employee',
             'preferred_name' => 'Jane Employee',
             'email' => 'jane@example.com',
@@ -37,7 +39,29 @@ class UserExportTest extends TestCase
             ->assertSee('Export CSV')
             ->assertSee('Export PDF')
             ->assertSee('Vcard URL')
+            ->assertSee('20250001')
             ->assertSee('https://lp.life.edu.ph/card/jane-employee');
+    }
+
+    public function test_browser_authenticated_users_endpoint_returns_users(): void
+    {
+        User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'preferred_name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+            'position' => 'Coordinator',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('users.api.index'))
+            ->assertOk()
+            ->assertJsonPath('count', 2)
+            ->assertJsonFragment([
+                'employee_number' => '20250001',
+                'name' => 'Jane Employee',
+                'email' => 'jane@example.com',
+            ]);
     }
 
     public function test_users_csv_export_includes_vcard_url_and_excludes_payroll_on(): void
@@ -61,6 +85,40 @@ class UserExportTest extends TestCase
         $this->assertStringContainsString('Vcard URL', $csv);
         $this->assertStringContainsString('https://lp.life.edu.ph/card/jane-employee', $csv);
         $this->assertStringNotContainsString('Payroll On', $csv);
+    }
+
+    public function test_browser_authenticated_employee_number_backfill_endpoint_can_preview_and_apply(): void
+    {
+        $employee = User::factory()->create([
+            'name' => 'Don Balbieran',
+            'email' => 'don.balbieran@example.com',
+        ]);
+
+        $payload = [
+            'employees' => [
+                [
+                    'name' => 'BALBIERAN JR, DELFIN, CHECON',
+                    'employee_number' => 20230801,
+                ],
+            ],
+        ];
+
+        $this->actingAs($this->admin)
+            ->postJson(route('users.api.employee-numbers.backfill'), $payload + ['dry_run' => true])
+            ->assertOk()
+            ->assertJsonPath('dry_run', true)
+            ->assertJsonPath('updated', 0)
+            ->assertJsonPath('results.0.status', 'matched');
+
+        $this->assertNull($employee->fresh()->employee_number);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('users.api.employee-numbers.backfill'), $payload)
+            ->assertOk()
+            ->assertJsonPath('updated', 1)
+            ->assertJsonPath('results.0.status', 'updated');
+
+        $this->assertSame('20230801', $employee->fresh()->employee_number);
     }
 
     public function test_users_pdf_export_is_available(): void

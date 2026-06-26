@@ -8,7 +8,7 @@
             <!-- Search Form -->
             <form method="GET" action="{{ route('users.index') }}"
                 class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search users..."
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search users or employee number..."
                     class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white w-full md:w-auto" />
 
                 <flux:button type="submit" variant="primary">
@@ -47,6 +47,7 @@
             <table class="min-w-full table-auto border-collapse border border-gray-300 dark:border-zinc-700">
                 <thead class="bg-gray-100 dark:bg-zinc-700">
                     <tr class="text-left text-zinc-800 dark:text-zinc-100">
+                        <th class="border p-2">Employee #</th>
                         <th class="border p-2">Name</th>
                         <th class="border p-2">Email</th>
                         <th class="border p-2">Preferred Name</th>
@@ -58,6 +59,7 @@
                 <tbody>
                     @forelse($users as $user)
                         <tr class="hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300">
+                            <td class="border p-2">{{ $user->employee_number ?? '-' }}</td>
                             <td class="border p-2">{{ $user->name }}</td>
                             <td class="border p-2">{{ $user->email }}</td>
                             <td class="border p-2">{{ $user->preferred_name ?? 'N/A' }}</td>
@@ -83,7 +85,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center p-4 text-zinc-500">No users found.</td>
+                            <td colspan="7" class="text-center p-4 text-zinc-500">No users found.</td>
                         </tr>
                     @endforelse
                 </tbody>

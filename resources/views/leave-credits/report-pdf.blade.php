@@ -66,8 +66,9 @@
 
 <body>
     <div class="header">
-        <h1>Leave Credits</h1>
+        <h1>Leave Balance Report</h1>
         <p class="meta">Employees: {{ $users->count() }}</p>
+        <p class="meta">Period: {{ $periodStart->format('Y-m-d') }} to {{ $asOf->format('Y-m-d') }}</p>
         <p class="meta">Generated {{ $generatedAt->format('Y-m-d H:i') }}</p>
     </div>
 
@@ -75,30 +76,28 @@
         <thead>
             <tr>
                 <th>#</th>
-                <th>Employee</th>
-                <th>Email</th>
-                <th>Department</th>
-                <th>Position</th>
-                <th class="number">Leave</th>
-                <th class="number">WFH</th>
-                <th>Updated</th>
+                <th>Employee number</th>
+                <th>Employee name</th>
+                <th class="number">Starting leave credits</th>
+                <th class="number">Total leave days used to-date</th>
+                <th class="number">Leave balance to-date</th>
+                <th class="number">Compensatory time-off total</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($users as $index => $user)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $user->preferred_name ?: $user->name }}</td>
-                    <td>{{ $user->email }}</td>
-                    <td>{{ $user->department?->name ?? '-' }}</td>
-                    <td>{{ $user->position ?? '-' }}</td>
+                    <td>{{ $user->employee_number ?? '-' }}</td>
+                    <td>{{ $user->name }}</td>
+                    <td class="number">{{ number_format((float) ($user->requestCredit?->pto ?? 0) + (float) ($user->leave_days_used_to_date ?? 0), 2) }}</td>
+                    <td class="number">{{ number_format((float) ($user->leave_days_used_to_date ?? 0), 2) }}</td>
                     <td class="number">{{ number_format((float) ($user->requestCredit?->pto ?? 0), 2) }}</td>
-                    <td class="number">{{ number_format((float) ($user->requestCredit?->wfh ?? 0), 2) }}</td>
-                    <td>{{ optional($user->requestCredit?->updated_at)->format('Y-m-d H:i') ?? '-' }}</td>
+                    <td class="number">{{ number_format((float) ($user->compensatory_time_off_total ?? 0), 2) }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td class="empty" colspan="8">No employees found.</td>
+                    <td class="empty" colspan="7">No employees found.</td>
                 </tr>
             @endforelse
         </tbody>
