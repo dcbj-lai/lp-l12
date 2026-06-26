@@ -122,6 +122,38 @@ class LeaveCreditReportTest extends TestCase
             ->assertSee('Inactive Employee');
     }
 
+    public function test_leave_credit_search_is_case_insensitive(): void
+    {
+        $department = Department::create(['name' => 'People & Culture']);
+
+        User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+            'department_id' => $department->id,
+            'position' => 'Coordinator',
+        ]);
+
+        User::factory()->create([
+            'employee_number' => '20250002',
+            'name' => 'Other Employee',
+            'email' => 'other@example.com',
+            'position' => 'Assistant',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('leave-credits.index', ['search' => 'jAnE']))
+            ->assertOk()
+            ->assertSee('Jane Employee')
+            ->assertDontSee('Other Employee');
+
+        $this->actingAs($this->admin)
+            ->get(route('leave-credits.index', ['search' => 'people']))
+            ->assertOk()
+            ->assertSee('Jane Employee')
+            ->assertDontSee('Other Employee');
+    }
+
     public function test_leave_credit_api_report_returns_requested_columns(): void
     {
         $employee = User::factory()->create([

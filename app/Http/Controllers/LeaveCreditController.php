@@ -177,6 +177,7 @@ class LeaveCreditController extends Controller
     protected function usersWithCredits(Request $request)
     {
         $search = trim((string) $request->query('search', ''));
+        $normalizedSearch = mb_strtolower($search);
         $status = $this->userStatusFilter($request);
         [$periodStart, $asOf] = $this->reportPeriod($request);
 
@@ -194,14 +195,16 @@ class LeaveCreditController extends Controller
                     ->whereBetween('start_date', [$periodStart->toDateString(), $asOf->toDateString()]);
             }], 'number_of_days')
             ->when($status !== 'all', fn ($query) => $query->where('is_active', $status === 'active'))
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('employee_number', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%")
-                        ->orWhere('preferred_name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('position', 'like', "%{$search}%")
-                        ->orWhereHas('department', fn ($department) => $department->where('name', 'like', "%{$search}%"));
+            ->when($search !== '', function ($query) use ($normalizedSearch) {
+                $query->where(function ($query) use ($normalizedSearch) {
+                    $like = "%{$normalizedSearch}%";
+
+                    $query->whereRaw('LOWER(employee_number) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(name) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(preferred_name) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(position) LIKE ?', [$like])
+                        ->orWhereHas('department', fn ($department) => $department->whereRaw('LOWER(name) LIKE ?', [$like]));
                 });
             })
             ->orderBy('name')
