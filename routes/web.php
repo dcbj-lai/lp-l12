@@ -143,14 +143,6 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:users.list')
         ->name('users.export.pdf');
 
-    Route::get('/api/users', [UserController::class, 'apiIndex'])
-        ->middleware('permission:users.list')
-        ->name('users.api.index');
-
-    Route::post('/api/users/employee-numbers/backfill', [UserController::class, 'apiBackfillEmployeeNumbers'])
-        ->middleware('permission:users.edit')
-        ->name('users.api.employee-numbers.backfill');
-
     Route::middleware('permission:users.edit')->group(function () {
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
@@ -297,18 +289,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/leave-credits.pdf', [LeaveCreditController::class, 'pdf'])
         ->middleware('permission:leave-credits.view')
         ->name('leave-credits.pdf');
-
-    Route::get('/api/leave-credits', [LeaveCreditController::class, 'apiIndex'])
-        ->middleware('permission:leave-credits.view')
-        ->name('leave-credits.api.index');
-
-    Route::patch('/api/leave-credits', [LeaveCreditController::class, 'apiBulkUpdate'])
-        ->middleware('permission:leave-credits.assign')
-        ->name('leave-credits.api.bulk-update');
-
-    Route::patch('/api/leave-credits/{user}', [LeaveCreditController::class, 'apiUpdate'])
-        ->middleware('permission:leave-credits.assign')
-        ->name('leave-credits.api.update');
 
     Route::post('/org-settings', [OrgSettingController::class, 'update'])
         ->middleware('permission:leave-credits.update')

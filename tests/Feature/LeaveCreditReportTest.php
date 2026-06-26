@@ -192,6 +192,35 @@ class LeaveCreditReportTest extends TestCase
         ]);
     }
 
+    public function test_sanctum_token_can_read_and_update_leave_credits(): void
+    {
+        $employee = User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+        ]);
+
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 8, 'wfh' => 4]);
+
+        $token = $this->admin->createToken('test-pnc-token')->plainTextToken;
+
+        $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/leave-credits?date_from=2026-06-01&date_to=2026-06-26')
+            ->assertOk()
+            ->assertJsonFragment([
+                'employee_number' => '20250001',
+                'employee_name' => 'Jane Employee',
+            ]);
+
+        $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->patchJson('/api/leave-credits/' . $employee->id, [
+                'pto' => 15,
+            ])
+            ->assertOk()
+            ->assertJsonPath('updated', true)
+            ->assertJsonPath('user.pto', 15);
+    }
+
     public function test_leave_credit_csv_download_is_available(): void
     {
         $employee = User::factory()->create([

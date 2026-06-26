@@ -121,6 +121,31 @@ class UserExportTest extends TestCase
         $this->assertSame('20230801', $employee->fresh()->employee_number);
     }
 
+    public function test_sanctum_token_can_backfill_employee_numbers(): void
+    {
+        $employee = User::factory()->create([
+            'name' => 'Don Balbieran',
+            'email' => 'don.balbieran@example.com',
+        ]);
+
+        $token = $this->admin->createToken('test-pnc-token')->plainTextToken;
+
+        $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/users/employee-numbers/backfill', [
+                'employees' => [
+                    [
+                        'name' => 'BALBIERAN JR, DELFIN, CHECON',
+                        'employee_number' => 20230801,
+                    ],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('updated', 1)
+            ->assertJsonPath('results.0.status', 'updated');
+
+        $this->assertSame('20230801', $employee->fresh()->employee_number);
+    }
+
     public function test_users_pdf_export_is_available(): void
     {
         User::factory()->create([
