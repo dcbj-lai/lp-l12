@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Life Staff Portal v2 - UX Mockup 01</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --life-crimson: #9e1d20;
+      --life-maroon: #690f0d;
+      --life-ivory: #f2e8dc;
+      --life-silver: #c9c9c9;
+      --life-steel: #969696;
+      --life-burgundy: #4b1211;
+      --life-khaki: #cc9a71;
+      --life-sand: #e2cfb3;
+      --life-mustard: #c68408;
+      --life-jade: #68968e;
+      --life-teal: #00a5b7;
+      --life-cinnamon: #ad4a38;
+      --life-scarlet: #d22027;
+      --surface: #fffaf4;
+      --paper: #ffffff;
+      --ink: #241716;
+      --muted: #6d5b56;
+      --line: #e2d2c5;
+      --shadow: 0 16px 40px rgba(75, 18, 17, .10);
+      --font-brand: "Crimson Pro", Georgia, serif;
+      --font-data: "Crimson Pro", Georgia, serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--font-data);
+      font-size: 17px;
+      line-height: 1.45;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 22px 18px;
+      background: var(--life-maroon);
+      color: var(--life-ivory);
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: grid;
+      gap: 8px;
+      padding: 6px 8px 22px;
+      border-bottom: 1px solid rgba(242, 232, 220, .18);
+    }
+
+    .wordmark {
+      display: inline-grid;
+      width: 104px;
+      height: 64px;
+      place-items: center;
+      border: 2px solid var(--life-ivory);
+      color: var(--life-ivory);
+      font-family: var(--font-brand);
+      font-size: 34px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .brand small {
+      color: rgba(242, 232, 220, .76);
+      font-size: 14px;
+      line-height: 1.25;
+    }
+
+    .nav {
+      display: grid;
+      gap: 18px;
+      padding: 22px 0;
+    }
+
+    .nav-group {
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav-heading {
+      padding: 0 8px;
+      color: rgba(242, 232, 220, .60);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .nav button {
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 10px;
+      background: transparent;
+      color: rgba(242, 232, 220, .88);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .nav button[aria-current="page"],
+    .nav button:hover {
+      background: rgba(242, 232, 220, .12);
+      color: #fff;
+    }
+
+    .content {
+      min-width: 0;
+      padding: 26px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .page-title {
+      display: grid;
+      gap: 2px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-family: var(--font-brand);
+      font-size: clamp(34px, 5vw, 54px);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    h2 {
+      font-family: var(--font-brand);
+      font-size: 30px;
+      line-height: 1.05;
+    }
+
+    h3 {
+      font-family: var(--font-brand);
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .eyebrow {
+      color: var(--life-crimson);
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .profile-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 220px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+    }
+
+    .avatar {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--life-crimson);
+      color: var(--life-ivory);
+      font-weight: 700;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.is-active {
+      display: grid;
+      gap: 22px;
+    }
+
+    .hero-band {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: linear-gradient(90deg, var(--life-ivory), #fffaf4);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-band p {
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 19px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 9px 14px;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      background: var(--life-crimson);
+      color: #fff;
+    }
+
+    .btn.secondary {
+      border-color: var(--line);
+      background: var(--paper);
+      color: var(--life-burgundy);
+    }
+
+    .btn.ghost {
+      border-color: rgba(158, 29, 32, .28);
+      background: transparent;
+      color: var(--life-crimson);
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 10px 28px rgba(75, 18, 17, .06);
+    }
+
+    .card.pad {
+      padding: 18px;
+    }
+
+    .metric {
+      display: grid;
+      gap: 10px;
+      min-height: 166px;
+    }
+
+    .metric-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .metric-value {
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .metric-note {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 10px;
+    }
+
+    .queue {
+      display: grid;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .queue-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      min-height: 76px;
+      padding: 14px 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .queue-row:first-child {
+      border-top: 0;
+    }
+
+    .queue-row strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.good {
+      background: rgba(104, 150, 142, .16);
+      color: #315f57;
+    }
+
+    .badge.warn {
+      background: rgba(198, 132, 8, .18);
+      color: #6f4700;
+    }
+
+    .badge.hot {
+      background: rgba(158, 29, 32, .12);
+      color: var(--life-crimson);
+    }
+
+    .module-card {
+      display: grid;
+      gap: 12px;
+      min-height: 202px;
+      padding: 18px;
+    }
+
+    .module-card .kicker {
+      color: var(--life-crimson);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .module-card ul {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .element-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      color: var(--life-burgundy);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 12px;
+    }
+
+    textarea {
+      min-height: 94px;
+      resize: vertical;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 26px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      margin-top: 8px;
+      border-radius: 50%;
+      background: var(--life-crimson);
+      box-shadow: 0 0 0 5px rgba(158, 29, 32, .12);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      font-size: 16px;
+    }
+
+    .data-table th,
+    .data-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .data-table th {
+      color: var(--life-burgundy);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .mobile-frame {
+      width: min(100%, 340px);
+      min-height: 580px;
+      margin-inline: auto;
+      border: 10px solid var(--life-burgundy);
+      border-radius: 28px;
+      background: var(--surface);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .mobile-head {
+      padding: 20px 18px;
+      background: var(--life-crimson);
+      color: #fff;
+    }
+
+    .mobile-body {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .mobile-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+    }
+
+    .mobile-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .mobile-tabs span {
+      padding: 10px 4px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .mobile-tabs span:first-child {
+      color: var(--life-crimson);
+      font-weight: 700;
+    }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .swatch {
+      min-height: 90px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .swatch-color {
+      height: 48px;
+    }
+
+    .swatch span {
+      display: block;
+      padding: 7px 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.15;
+    }
+
+    @media (max-width: 1120px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        height: auto;
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .content {
+        padding: 16px;
+      }
+
+      .topbar,
+      .hero-band,
+      .section-head {
+        display: grid;
+        align-items: start;
+      }
+
+      .profile-chip {
+        min-width: 0;
+      }
+
+      .grid-4,
+      .grid-3,
+      .grid-2,
+      .swatches,
+      .nav {
+        grid-template-columns: 1fr;
+      }
+
+      .queue-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="wordmark">LIFE</div>
+        <small>Staff Portal<br>Learn and Live Fully.</small>
+      </div>
+
+      <nav class="nav" aria-label="Prototype navigation">
+        <div class="nav-group">
+          <div class="nav-heading">Today</div>
+          <button type="button" data-view="dashboard" aria-current="page">Staff Home</button>
+          <button type="button" data-view="modules">Module Map</button>
+          <button type="button" data-view="elements">Elements</button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-heading">Self Service</div>
+          <button type="button">Attendance</button>
+          <button type="button">Requests</button>
+          <button type="button">Steps</button>
+          <button type="button">Payslips</button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-heading">Operations</div>
+          <button type="button">Approvals</button>
+          <button type="button">Visitors</button>
+          <button type="button">Resources</button>
+          <button type="button">Events</button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-heading">Admin</div>
+          <button type="button">People</button>
+          <button type="button">Access</button>
+          <button type="button">Reports</button>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div class="page-title">
+          <span class="eyebrow">Life Staff Portal v2</span>
+          <h1>Staff Home</h1>
+        </div>
+        <div class="profile-chip">
+          <div class="avatar">DV</div>
+          <div>
+            <strong>Don Vrancila</strong>
+            <div class="muted">P&C Manager</div>
+          </div>
+        </div>
+      </header>
+
+      <section id="dashboard" class="view is-active" aria-label="Staff Home">
+        <div class="hero-band">
+          <div>
+            <span class="eyebrow">Good morning</span>
+            <h2>Three things need your attention.</h2>
+            <p>Start with today's check-in, review approvals waiting on you, then close the one visitor request before noon.</p>
+          </div>
+          <div class="actions">
+            <button class="btn primary" type="button">Check In</button>
+            <button class="btn secondary" type="button">File Request</button>
+            <button class="btn secondary" type="button">Log Steps</button>
+          </div>
+        </div>
+
+        <div class="grid-4">
+          <article class="card pad metric">
+            <div class="metric-top">
+              <span>Attendance</span>
+              <span class="badge warn">Due</span>
+            </div>
+            <div class="metric-value">8:45</div>
+            <div class="metric-note">Pasig campus mode. Official check-in is 9:00 AM PHT.</div>
+          </article>
+
+          <article class="card pad metric">
+            <div class="metric-top">
+              <span>Request Credits</span>
+              <span class="badge good">Ready</span>
+            </div>
+            <div class="metric-value">9.5</div>
+            <div class="metric-note">Leave days available. WFH balance is 3.0 days.</div>
+          </article>
+
+          <article class="card pad metric">
+            <div class="metric-top">
+              <span>Approvals</span>
+              <span class="badge hot">3 open</span>
+            </div>
+            <div class="metric-value">2</div>
+            <div class="metric-note">Schedule requests and one resource reservation.</div>
+          </article>
+
+          <article class="card pad metric">
+            <div class="metric-top">
+              <span>Steps</span>
+              <span class="badge good">Synced</span>
+            </div>
+            <div class="metric-value">6,240</div>
+            <div class="metric-note">62 percent of today's 10,000-step goal.</div>
+          </article>
+        </div>
+
+        <section>
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Work Queue</span>
+              <h2>For You</h2>
+            </div>
+            <button class="btn ghost" type="button">View All</button>
+          </div>
+          <div class="card queue">
+            <div class="queue-row">
+              <div>
+                <strong>Leave request from Ava Santos</strong>
+                <span class="muted">June 10 to June 11, 2.0 weekdays, no overlap found.</span>
+              </div>
+              <div class="actions">
+                <button class="btn secondary" type="button">Review</button>
+              </div>
+            </div>
+            <div class="queue-row">
+              <div>
+                <strong>Visitor approval for Mateo Cruz</strong>
+                <span class="muted">Arriving today at 1:30 PM PHT. Purpose: supplier meeting at Ortigas East.</span>
+              </div>
+              <div class="actions">
+                <button class="btn secondary" type="button">Approve</button>
+                <button class="btn ghost" type="button">Decline</button>
+              </div>
+            </div>
+            <div class="queue-row">
+              <div>
+                <strong>Ortigas Boardroom reservation</strong>
+                <span class="muted">Tomorrow, 9:00 AM to 11:00 AM PHT. No resource conflicts.</span>
+              </div>
+              <div class="actions">
+                <button class="btn secondary" type="button">Open</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="modules" class="view" aria-label="Module Map">
+        <div class="hero-band">
+          <div>
+            <span class="eyebrow">Functional Scope</span>
+            <h2>V1 workflows, new experience.</h2>
+            <p>The portal keeps the useful workflows from lp-l12, but organizes them around staff tasks, approvals, and operational consoles.</p>
+          </div>
+          <button class="btn primary" type="button">Prioritize MVP</button>
+        </div>
+
+        <div class="grid-3">
+          <article class="card module-card">
+            <span class="kicker">Staff</span>
+            <h3>My Portal</h3>
+            <ul>
+              <li>Attendance and QR check-in</li>
+              <li>Schedule requests and credits</li>
+              <li>Steps, events, payslips</li>
+            </ul>
+          </article>
+          <article class="card module-card">
+            <span class="kicker">Managers and P&C</span>
+            <h3>Approvals</h3>
+            <ul>
+              <li>Request approval queue</li>
+              <li>Attendance corrections</li>
+              <li>People and leave settings</li>
+            </ul>
+          </article>
+          <article class="card module-card">
+            <span class="kicker">Front Desk</span>
+            <h3>Visitors</h3>
+            <ul>
+              <li>OTP visitor flow</li>
+              <li>Host approval and check-in</li>
+              <li>Pre-approved batches and QR</li>
+            </ul>
+          </article>
+          <article class="card module-card">
+            <span class="kicker">Facilities</span>
+            <h3>Resources</h3>
+            <ul>
+              <li>Rooms and equipment</li>
+              <li>Conflict-safe reservations</li>
+              <li>Approval notes and calendar sync</li>
+            </ul>
+          </article>
+          <article class="card module-card">
+            <span class="kicker">P&C</span>
+            <h3>Events</h3>
+            <ul>
+              <li>Published event list</li>
+              <li>RSVP and profile completion</li>
+              <li>Registrants export</li>
+            </ul>
+          </article>
+          <article class="card module-card">
+            <span class="kicker">Sensitive</span>
+            <h3>Finance and Wellness</h3>
+            <ul>
+              <li>Payroll and payslips</li>
+              <li>Guidance consultations</li>
+              <li>Clinic consultations</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="elements" class="view" aria-label="Elements">
+        <div class="hero-band">
+          <div>
+            <span class="eyebrow">Brand System</span>
+            <h2>Operational, warm, collegiate.</h2>
+            <p>Life Crimson anchors decisions and actions. Ivory and white keep the workspace calm. Jade, mustard, and teal are limited status accents.</p>
+          </div>
+          <div class="actions">
+            <button class="btn primary" type="button">Primary</button>
+            <button class="btn secondary" type="button">Secondary</button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <article class="card pad">
+            <div class="section-head">
+              <div>
+                <span class="eyebrow">Palette</span>
+                <h2>Core Colors</h2>
+              </div>
+            </div>
+            <div class="swatches">
+              <div class="swatch"><div class="swatch-color" style="background:#9e1d20"></div><span>Crimson<br>#9E1D20</span></div>
+              <div class="swatch"><div class="swatch-color" style="background:#690f0d"></div><span>Maroon<br>#690F0D</span></div>
+              <div class="swatch"><div class="swatch-color" style="background:#f2e8dc"></div><span>Ivory<br>#F2E8DC</span></div>
+              <div class="swatch"><div class="swatch-color" style="background:#c9c9c9"></div><span>Silver<br>#C9C9C9</span></div>
+              <div class="swatch"><div class="swatch-color" style="background:#68968e"></div><span>Jade<br>#68968E</span></div>
+              <div class="swatch"><div class="swatch-color" style="background:#c68408"></div><span>Mustard<br>#C68408</span></div>
+            </div>
+          </article>
+
+          <article class="card pad">
+            <div class="section-head">
+              <div>
+                <span class="eyebrow">Controls</span>
+                <h2>Actions and Status</h2>
+              </div>
+            </div>
+            <div class="element-strip">
+              <button class="btn primary" type="button">Approve</button>
+              <button class="btn secondary" type="button">Review</button>
+              <button class="btn ghost" type="button">Cancel</button>
+              <span class="badge good">Approved</span>
+              <span class="badge warn">Pending</span>
+              <span class="badge hot">Needs Review</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="grid-2">
+          <article class="card pad">
+            <span class="eyebrow">Form Pattern</span>
+            <h2>Schedule Request</h2>
+            <div class="grid-2" style="margin-top:14px">
+              <div class="field">
+                <label for="request-type">Type</label>
+                <select id="request-type">
+                  <option>Leave</option>
+                  <option>WFH</option>
+                  <option>LWOP</option>
+                  <option>Offset</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="request-date">Start Date</label>
+                <input id="request-date" type="date" value="2026-06-10">
+              </div>
+            </div>
+            <div class="field" style="margin-top:14px">
+              <label for="reason">Reason</label>
+              <textarea id="reason">Family matter in Quezon City.</textarea>
+            </div>
+          </article>
+
+          <article class="card pad">
+            <span class="eyebrow">State Pattern</span>
+            <h2>Approval Trail</h2>
+            <div class="timeline" style="margin-top:14px">
+              <div class="timeline-item">
+                <div class="dot"></div>
+                <div>
+                  <strong>Submitted</strong>
+                  <div class="muted">Ava Santos filed a leave request.</div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="dot"></div>
+                <div>
+                  <strong>Checked</strong>
+                  <div class="muted">No overlap. Credits available.</div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="dot"></div>
+                <div>
+                  <strong>Waiting</strong>
+                  <div class="muted">Manager decision required.</div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="grid-2">
+          <article class="card">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>Request</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Ava Santos</td>
+                  <td>Leave, 2.0 days</td>
+                  <td><span class="badge warn">Pending</span></td>
+                  <td><button class="btn secondary" type="button">Open</button></td>
+                </tr>
+                <tr>
+                  <td>Marco Reyes</td>
+                  <td>WFH, half day</td>
+                  <td><span class="badge good">Approved</span></td>
+                  <td><button class="btn secondary" type="button">Open</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article>
+            <div class="mobile-frame" aria-label="Mobile preview">
+              <div class="mobile-head">
+                <span class="eyebrow" style="color:#f2e8dc">Mobile</span>
+                <h2>Today</h2>
+              </div>
+              <div class="mobile-body">
+                <div class="mobile-card">
+                  <strong>Attendance</strong>
+                  <p class="muted">Pasig campus check-in available until 9:00 AM PHT.</p>
+                  <button class="btn primary" type="button" style="width:100%; margin-top:12px">Check In</button>
+                </div>
+                <div class="mobile-card">
+                  <strong>Visitor Approval</strong>
+                  <p class="muted">Mateo Cruz is scheduled for 1:30 PM.</p>
+                  <div class="actions" style="margin-top:12px">
+                    <button class="btn secondary" type="button">Approve</button>
+                    <button class="btn ghost" type="button">Decline</button>
+                  </div>
+                </div>
+                <div class="mobile-card">
+                  <strong>Steps</strong>
+                  <p class="muted">6,240 of 10,000 steps.</p>
+                </div>
+              </div>
+              <div class="mobile-tabs">
+                <span>Home</span>
+                <span>Requests</span>
+                <span>Steps</span>
+                <span>Profile</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const navButtons = document.querySelectorAll("[data-view]");
+    const views = document.querySelectorAll(".view");
+
+    navButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.dataset.view;
+        views.forEach((view) => {
+          view.classList.toggle("is-active", view.id === target);
+        });
+        navButtons.forEach((item) => item.removeAttribute("aria-current"));
+        button.setAttribute("aria-current", "page");
+      });
+    });
+  </script>
+</body>
+</html>
