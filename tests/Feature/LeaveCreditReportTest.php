@@ -22,9 +22,10 @@ class LeaveCreditReportTest extends TestCase
 
         Permission::findOrCreate('leave-credits.view', 'web');
         Permission::findOrCreate('leave-credits.assign', 'web');
+        Permission::findOrCreate('requests.hr.view', 'web');
 
         $this->admin = User::factory()->create();
-        $this->admin->givePermissionTo(['leave-credits.view', 'leave-credits.assign']);
+        $this->admin->givePermissionTo(['leave-credits.view', 'leave-credits.assign', 'requests.hr.view']);
     }
 
     public function test_leave_credit_roster_shows_all_employee_balances(): void
@@ -186,6 +187,187 @@ class LeaveCreditReportTest extends TestCase
             ->assertJsonFragment([
                 'employee_number' => '20250001',
                 'employee_name' => 'Jane Employee',
+                'starting_leave_credits' => 9,
+                'total_leave_days_used_to_date' => 1,
+                'leave_balance_to_date' => 8,
+            ]);
+    }
+
+    public function test_leave_request_api_returns_raw_leave_requests_for_reconciliation(): void
+    {
+        $department = Department::create(['name' => 'People & Culture']);
+        $employee = User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+            'department_id' => $department->id,
+        ]);
+        $approver = User::factory()->create([
+            'name' => 'Pnc Approver',
+            'email' => 'pnc@example.com',
+        ]);
+
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 8, 'wfh' => 4]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'approver_id' => $approver->id,
+            'type' => 'PTO',
+            'reason' => 'Vacation',
+            'start_date' => '2026-06-08',
+            'end_date' => '2026-06-08',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'approved',
+            'remarks' => 'Approved for audit',
+        ]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => 'PTO',
+            'reason' => 'Cancelled vacation',
+            'start_date' => '2026-06-10',
+            'end_date' => '2026-06-10',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'cancelled',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('leave-requests.api.index', [
+                'date_from' => '2026-06-01',
+                'date_to' => '2026-06-30',
+            ]))
+            ->assertOk()
+            ->assertJsonPath('count', 2)
+            ->assertJsonFragment([
+                'employee_number' => '20250001',
+                'employee_name' => 'Jane Employee',
+                'department' => 'People & Culture',
+                'type' => 'PTO',
+                'status' => 'approved',
+                'number_of_days' => 1,
+            ])
+            ->assertJsonFragment([
+                'status' => 'cancelled',
+                'reason' => 'Cancelled vacation',
+            ])
+            ->assertJsonPath('data.1.current_credit_snapshot.pto', 8);
+    }
+
+    public function test_leave_request_api_can_filter_cancelled_requests(): void
+    {
+        $employee = User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+        ]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => 'PTO',
+            'reason' => 'Vacation',
+            'start_date' => '2026-06-08',
+            'end_date' => '2026-06-08',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'approved',
+        ]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => 'PTO',
+            'reason' => 'Cancelled vacation',
+            'start_date' => '2026-06-10',
+            'end_date' => '2026-06-10',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'cancelled',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('leave-requests.api.index', [
+                'status' => 'cancelled',
+                'employee_number' => '20250001',
+            ]))
+            ->assertOk()
+            ->assertJsonPath('count', 1)
+            ->assertJsonPath('data.0.status', 'cancelled')
+            ->assertJsonPath('data.0.reason', 'Cancelled vacation');
+    }
+
+    public function test_sanctum_token_can_read_leave_requests(): void
+    {
+        $employee = User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+        ]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => 'PTO',
+            'reason' => 'Production pull test',
+            'start_date' => '2026-06-08',
+            'end_date' => '2026-06-08',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'approved',
+        ]);
+
+        $token = $this->admin->createToken('test-pnc-token')->plainTextToken;
+
+        $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/leave-requests?date_from=2026-06-01&date_to=2026-06-30')
+            ->assertOk()
+            ->assertJsonPath('count', 1)
+            ->assertJsonFragment([
+                'employee_number' => '20250001',
+                'reason' => 'Production pull test',
+                'status' => 'approved',
+            ]);
+    }
+
+    public function test_cancelled_requests_are_exported_but_do_not_increase_leave_credit_usage(): void
+    {
+        $employee = User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+        ]);
+
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 8, 'wfh' => 4]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => 'PTO',
+            'reason' => 'Approved vacation',
+            'start_date' => '2026-06-08',
+            'end_date' => '2026-06-08',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'approved',
+        ]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => 'PTO',
+            'reason' => 'Cancelled vacation',
+            'start_date' => '2026-06-10',
+            'end_date' => '2026-06-10',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'cancelled',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('leave-credits.api.index', [
+                'date_from' => '2026-06-01',
+                'date_to' => '2026-06-30',
+            ]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'employee_number' => '20250001',
                 'starting_leave_credits' => 9,
                 'total_leave_days_used_to_date' => 1,
                 'leave_balance_to_date' => 8,

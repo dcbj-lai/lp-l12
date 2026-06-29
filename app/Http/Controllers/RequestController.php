@@ -23,6 +23,90 @@ use Illuminate\Support\Facades\Storage;
 
 class RequestController extends Controller
 {
+    public function apiIndex(Request $request)
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'employee_number' => ['nullable'],
+            'email' => ['nullable', 'email'],
+            'department_id' => ['nullable', 'integer'],
+            'type' => ['nullable', 'in:PTO,WFH,LWOP'],
+            'status' => ['nullable', 'in:pending,approved,rejected,cancelled,all'],
+            'is_offset' => ['nullable', 'boolean'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'updated_since' => ['nullable', 'date'],
+            'created_since' => ['nullable', 'date'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:5000'],
+        ]);
+
+        $status = $validated['status'] ?? 'all';
+        $limit = (int) ($validated['limit'] ?? 1000);
+
+        $query = StaffRequest::query()
+            ->with(['user.department:id,name', 'user.requestCredit', 'approver:id,name,email'])
+            ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+            ->when(isset($validated['type']), fn ($query) => $query->where('type', $validated['type']))
+            ->when(array_key_exists('is_offset', $validated), fn ($query) => $query->where('is_offset', $request->boolean('is_offset')))
+            ->when(isset($validated['date_from']), fn ($query) => $query->whereDate('start_date', '>=', $validated['date_from']))
+            ->when(isset($validated['date_to']), fn ($query) => $query->whereDate('start_date', '<=', $validated['date_to']))
+            ->when(isset($validated['updated_since']), fn ($query) => $query->where('updated_at', '>=', $validated['updated_since']))
+            ->when(isset($validated['created_since']), fn ($query) => $query->where('created_at', '>=', $validated['created_since']))
+            ->when(isset($validated['employee_number']), function ($query) use ($validated) {
+                $employeeNumber = trim((string) $validated['employee_number']);
+
+                $query->whereHas('user', fn ($userQuery) => $userQuery->where('employee_number', $employeeNumber));
+            })
+            ->when(isset($validated['email']), function ($query) use ($validated) {
+                $email = strtolower($validated['email']);
+
+                $query->whereHas('user', fn ($userQuery) => $userQuery->whereRaw('LOWER(email) = ?', [$email]));
+            })
+            ->when(isset($validated['department_id']), function ($query) use ($validated) {
+                $query->whereHas('user', fn ($userQuery) => $userQuery->where('department_id', $validated['department_id']));
+            })
+            ->when(isset($validated['search']), function ($query) use ($validated) {
+                $search = mb_strtolower(trim((string) $validated['search']));
+
+                if ($search === '') {
+                    return;
+                }
+
+                $query->where(function ($query) use ($search) {
+                    $like = "%{$search}%";
+
+                    $query->whereRaw('LOWER(reason) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(remarks) LIKE ?', [$like])
+                        ->orWhereHas('user', function ($userQuery) use ($like) {
+                            $userQuery->whereRaw('LOWER(employee_number) LIKE ?', [$like])
+                                ->orWhereRaw('LOWER(name) LIKE ?', [$like])
+                                ->orWhereRaw('LOWER(preferred_name) LIKE ?', [$like])
+                                ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
+                        });
+                });
+            })
+            ->orderByDesc('start_date')
+            ->orderByDesc('id')
+            ->limit($limit);
+
+        $requests = $query->get();
+
+        return response()->json([
+            'filters' => [
+                'date_from' => $validated['date_from'] ?? null,
+                'date_to' => $validated['date_to'] ?? null,
+                'status' => $status,
+                'type' => $validated['type'] ?? null,
+                'is_offset' => array_key_exists('is_offset', $validated) ? $request->boolean('is_offset') : null,
+                'updated_since' => $validated['updated_since'] ?? null,
+                'created_since' => $validated['created_since'] ?? null,
+                'limit' => $limit,
+            ],
+            'count' => $requests->count(),
+            'data' => $requests->map(fn (StaffRequest $staffRequest) => $this->apiRowFor($staffRequest))->values(),
+        ]);
+    }
+
     public function index()
     {
         $requests = StaffRequest::with('approver')
@@ -836,6 +920,42 @@ class RequestController extends Controller
         }
 
         return 'Staff member';
+    }
+
+    protected function apiRowFor(StaffRequest $staffRequest): array
+    {
+        $user = $staffRequest->user;
+
+        return [
+            'id' => $staffRequest->id,
+            'user_id' => $staffRequest->user_id,
+            'employee_number' => $user?->employee_number,
+            'employee_name' => $user?->name,
+            'preferred_name' => $user?->preferred_name,
+            'email' => $user?->email,
+            'department' => $user?->department?->name,
+            'department_id' => $user?->department_id,
+            'type' => $staffRequest->type,
+            'is_offset' => (bool) $staffRequest->is_offset,
+            'reason' => $staffRequest->reason,
+            'start_date' => $staffRequest->start_date ? (string) $staffRequest->start_date : null,
+            'end_date' => $staffRequest->end_date ? (string) $staffRequest->end_date : null,
+            'end_date_type' => $staffRequest->end_date_type,
+            'number_of_days' => round((float) $staffRequest->number_of_days, 2),
+            'status' => $staffRequest->status,
+            'remarks' => $staffRequest->remarks,
+            'approver' => $staffRequest->approver ? [
+                'id' => $staffRequest->approver->id,
+                'name' => $staffRequest->approver->name,
+                'email' => $staffRequest->approver->email,
+            ] : null,
+            'current_credit_snapshot' => [
+                'pto' => round((float) ($user?->requestCredit?->pto ?? 0), 2),
+                'wfh' => round((float) ($user?->requestCredit?->wfh ?? 0), 2),
+            ],
+            'created_at' => optional($staffRequest->created_at)->toISOString(),
+            'updated_at' => optional($staffRequest->updated_at)->toISOString(),
+        ];
     }
 
 

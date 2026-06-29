@@ -30,6 +30,7 @@ class IssuePncApiToken extends Command
         $permissions = [
             'users.list',
             'users.edit',
+            'requests.hr.view',
             'leave-credits.view',
             'leave-credits.assign',
         ];
@@ -63,6 +64,7 @@ class IssuePncApiToken extends Command
         $token = $user->createToken($tokenName, [
             'users:list',
             'users:edit',
+            'leave-requests:view',
             'leave-credits:view',
             'leave-credits:assign',
         ], $expiresAt);

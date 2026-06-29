@@ -3,6 +3,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VisitorLogController;
 use App\Http\Controllers\LeaveCreditController;
+use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UserController;
 
 
@@ -26,6 +27,10 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     Route::get('/leave-credits', [LeaveCreditController::class, 'apiIndex'])
         ->middleware('permission:leave-credits.view')
         ->name('leave-credits.api.index');
+
+    Route::get('/leave-requests', [RequestController::class, 'apiIndex'])
+        ->middleware('permission:requests.hr.view')
+        ->name('leave-requests.api.index');
 
     Route::patch('/leave-credits', [LeaveCreditController::class, 'apiBulkUpdate'])
         ->middleware('permission:leave-credits.assign')

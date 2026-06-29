@@ -22,6 +22,7 @@ class Request extends Model
         'end_date_type',
         'number_of_days',
         'status',
+        'remarks',
     ];
 
 
@@ -67,4 +68,3 @@ class Request extends Model
         return $this->belongsTo(User::class, 'approver_id');
     }
 }
-
