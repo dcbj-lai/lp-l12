@@ -85,7 +85,7 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-right font-semibold text-zinc-800 dark:text-zinc-100">
-                                {{ number_format((float) ($user->requestCredit?->pto ?? 0) + (float) ($user->leave_days_used_to_date ?? 0), 2) }}
+                                {{ number_format((float) ($user->starting_leave_credits_to_date ?? 0), 2) }}
                             </td>
                             <td class="px-4 py-3 text-right font-semibold text-amber-700 dark:text-amber-300">
                                 {{ number_format((float) ($user->leave_days_used_to_date ?? 0), 2) }}

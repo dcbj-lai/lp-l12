@@ -144,6 +144,11 @@ class User extends Authenticatable
         return $this->hasOne(RequestCredit::class);
     }
 
+    public function leaveReplenishmentRunItems()
+    {
+        return $this->hasMany(LeaveReplenishmentRunItem::class);
+    }
+
     public function requests()
     {
         return $this->hasMany(Request::class);

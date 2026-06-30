@@ -91,7 +91,7 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $user->employee_number ?? '-' }}</td>
                     <td>{{ $user->name }}</td>
-                    <td class="number">{{ number_format((float) ($user->requestCredit?->pto ?? 0) + (float) ($user->leave_days_used_to_date ?? 0), 2) }}</td>
+                    <td class="number">{{ number_format((float) ($user->starting_leave_credits_to_date ?? 0), 2) }}</td>
                     <td class="number">{{ number_format((float) ($user->leave_days_used_to_date ?? 0), 2) }}</td>
                     <td class="number">{{ number_format((float) ($user->requestCredit?->pto ?? 0), 2) }}</td>
                     <td class="number">{{ number_format((float) ($user->requestCredit?->approved_carry_over ?? 0), 2) }}</td>

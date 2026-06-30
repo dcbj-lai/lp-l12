@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\LeaveReplenishmentRun;
 use App\Models\OrgSetting;
 use App\Models\RequestCredit;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -205,9 +206,16 @@ class LeaveCreditController extends Controller
         $normalizedSearch = mb_strtolower($search);
         $status = $this->userStatusFilter($request);
         [$periodStart, $asOf] = $this->reportPeriod($request);
+        $startingRunId = $this->startingLeaveCreditRunId($periodStart);
 
-        return User::query()
+        $users = User::query()
             ->with(['department', 'requestCredit'])
+            ->when($startingRunId, function ($query) use ($startingRunId) {
+                $query->with([
+                    'leaveReplenishmentRunItems' => fn ($items) => $items
+                        ->where('leave_replenishment_run_id', $startingRunId),
+                ]);
+            })
             ->withSum(['requests as leave_days_used_to_date' => function ($query) use ($periodStart, $asOf) {
                 $query->where('status', 'approved')
                     ->where('type', 'PTO')
@@ -234,6 +242,10 @@ class LeaveCreditController extends Controller
             })
             ->orderBy('name')
             ->get();
+
+        return $users->each(function (User $user) {
+            $user->setAttribute('starting_leave_credits_to_date', $this->startingLeaveCredits($user));
+        });
     }
 
     protected function rowFor(User $user): array
@@ -323,7 +335,23 @@ class LeaveCreditController extends Controller
 
     protected function startingLeaveCredits(User $user): float
     {
+        if ($user->relationLoaded('leaveReplenishmentRunItems')) {
+            $snapshot = $user->leaveReplenishmentRunItems->first();
+
+            if ($snapshot) {
+                return (float) $snapshot->initialized_pto;
+            }
+        }
+
         return $this->leaveBalance($user) + $this->leaveDaysUsed($user);
+    }
+
+    protected function startingLeaveCreditRunId(CarbonImmutable $periodStart): ?int
+    {
+        return LeaveReplenishmentRun::query()
+            ->whereDate('run_date', $periodStart->toDateString())
+            ->latest('id')
+            ->value('id');
     }
 
     protected function leaveDaysUsed(User $user): float

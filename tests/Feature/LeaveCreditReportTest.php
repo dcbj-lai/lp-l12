@@ -198,6 +198,77 @@ class LeaveCreditReportTest extends TestCase
             ]);
     }
 
+    public function test_leave_credit_report_uses_replenishment_snapshot_for_starting_leave_credits(): void
+    {
+        OrgSetting::query()->update(['last_leave_replenished_on' => '2026-06-01']);
+
+        $employee = User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+        ]);
+
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 8, 'wfh' => 4]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => 'PTO',
+            'reason' => 'Vacation',
+            'start_date' => '2026-06-08',
+            'end_date' => '2026-06-08',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'approved',
+        ]);
+
+        $run = LeaveReplenishmentRun::create([
+            'run_date' => '2026-06-01',
+            'pto_default' => 15,
+            'wfh_default' => 5,
+            'users_count' => 1,
+            'total_approved_carry_over' => 1,
+            'run_by' => $this->admin->id,
+        ]);
+
+        LeaveReplenishmentRunItem::create([
+            'leave_replenishment_run_id' => $run->id,
+            'user_id' => $employee->id,
+            'employee_number' => '20250001',
+            'employee_name' => 'Jane Employee',
+            'employee_email' => 'jane@example.com',
+            'previous_pto' => 4,
+            'previous_wfh' => 2,
+            'pto_default' => 15,
+            'wfh_default' => 5,
+            'approved_carry_over_applied' => 1,
+            'initialized_pto' => 16,
+            'initialized_wfh' => 5,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('leave-credits.index', [
+                'date_from' => '2026-06-01',
+                'date_to' => '2026-06-30',
+            ]))
+            ->assertOk()
+            ->assertSee('Leave balance report from Jun 01, 2026 to Jun 30, 2026')
+            ->assertSee('16.00')
+            ->assertSee('8.00');
+
+        $this->actingAs($this->admin)
+            ->getJson(route('leave-credits.api.index', [
+                'date_from' => '2026-06-01',
+                'date_to' => '2026-06-30',
+            ]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'employee_number' => '20250001',
+                'starting_leave_credits' => 16,
+                'total_leave_days_used_to_date' => 1,
+                'leave_balance_to_date' => 8,
+            ]);
+    }
+
     public function test_leave_request_api_returns_raw_leave_requests_for_reconciliation(): void
     {
         $department = Department::create(['name' => 'People & Culture']);
@@ -587,9 +658,9 @@ class LeaveCreditReportTest extends TestCase
             OrgSetting::first()->last_leave_replenished_on->toDateString()
         );
 
-        $this->assertSame(1, LeaveReplenishmentRun::count());
+        $this->assertSame(1, LeaveReplenishmentRun::where('run_by', $this->admin->id)->count());
 
-        $run = LeaveReplenishmentRun::first();
+        $run = LeaveReplenishmentRun::where('run_by', $this->admin->id)->first();
         $this->assertSame(now()->toDateString(), $run->run_date->toDateString());
         $this->assertEquals(15, (float) $run->pto_default);
         $this->assertEquals(5, (float) $run->wfh_default);
