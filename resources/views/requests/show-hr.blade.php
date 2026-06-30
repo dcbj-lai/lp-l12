@@ -24,13 +24,7 @@
                     <strong>Type:</strong>
 
                     <span>
-                        @if ($request->type === 'PTO')
-                            Leave
-                        @elseif ($request->type === 'WFH')
-                            Work From Home
-                        @else
-                            {{ ucfirst($request->type) }}
-                        @endif
+                        {{ $request->typeLabel() }}
                     </span>
 
                     @if ($request->is_offset)
@@ -87,9 +81,11 @@
 
                 </p>
 
-                <p><strong>Start Date:</strong> {{ $request->start_date }}</p>
-                <p><strong>End Date:</strong> {{ $request->end_date }}</p>
-                <p><strong>Number of Days:</strong> {{ $request->number_of_days }}</p>
+                @unless ($request->isCreditCarryOver())
+                    <p><strong>Start Date:</strong> {{ $request->start_date }}</p>
+                    <p><strong>End Date:</strong> {{ $request->end_date }}</p>
+                @endunless
+                <p><strong>{{ $request->isCreditCarryOver() ? 'Carry Over Credits' : 'Number of Days' }}:</strong> {{ $request->number_of_days }}</p>
                 <p><strong>Reason:</strong> {{ $request->reason }}</p>
 
                 @php
@@ -119,6 +115,10 @@
                 @elseif ($request->type === 'WFH')
                     <p><strong>Remaining WFH Credits:</strong>
                         {{ optional($request->user->requestCredit)->wfh ?? 'N/A' }}
+                    </p>
+                @elseif ($request->type === 'CREDIT_CARRY_OVER')
+                    <p><strong>Approved Carry Over:</strong>
+                        {{ optional($request->user->requestCredit)->approved_carry_over ?? '0.00' }}
                     </p>
                 @endif
             </div>

@@ -29,7 +29,7 @@
                         <strong>Type:</strong>
 
                         <span>
-                            {{ $request->type === 'PTO' ? 'Leave' : ($request->type === 'WFH' ? 'Work from Home' : ucfirst($request->type)) }}
+                            {{ $request->typeLabel() }}
                         </span>
 
                         @if ($request->is_offset)
@@ -42,9 +42,11 @@
                         @endif
                     </p>
 
-                    <p><strong>Start Date:</strong> {{ $request->start_date }}</p>
-                    <p><strong>End Date:</strong> {{ $request->end_date }}</p>
-                    <p><strong>Number of Days:</strong> {{ $request->number_of_days }}</p>
+                    @unless ($request->isCreditCarryOver())
+                        <p><strong>Start Date:</strong> {{ $request->start_date }}</p>
+                        <p><strong>End Date:</strong> {{ $request->end_date }}</p>
+                    @endunless
+                    <p><strong>{{ $request->isCreditCarryOver() ? 'Carry Over Credits' : 'Number of Days' }}:</strong> {{ $request->number_of_days }}</p>
                     <p><strong>Reason:</strong> {{ $request->reason }}</p>
 
                     {{-- 🔥 OFFSET PROOF (SUPERVISOR VIEW) --}}
@@ -125,6 +127,10 @@
                         @if (!$request->is_offset && in_array($request->type, ['PTO', 'WFH']))
                             <p class="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
                                 This request will deduct from the available balance upon approval.
+                            </p>
+                        @elseif ($request->isCreditCarryOver())
+                            <p class="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
+                                This request will add to approved carry over upon approval.
                             </p>
                         @endif
                     </div>

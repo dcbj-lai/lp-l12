@@ -7,6 +7,7 @@ use App\Models\User;
 use Carbon\CarbonPeriod;
 use App\Mail\RequestMade;
 use App\Models\OrgSetting;
+use App\Models\LeaveReplenishmentRun;
 use Illuminate\Http\Request;
 use App\Models\RequestCredit;
 use App\Mail\RequestCancelled;
@@ -14,6 +15,7 @@ use App\Mail\ResponseReceived;
 use Spatie\GoogleCalendar\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 // use App\Mail\RequestStatusNotification;
@@ -30,7 +32,7 @@ class RequestController extends Controller
             'employee_number' => ['nullable'],
             'email' => ['nullable', 'email'],
             'department_id' => ['nullable', 'integer'],
-            'type' => ['nullable', 'in:PTO,WFH,LWOP'],
+            'type' => ['nullable', 'in:PTO,WFH,LWOP,CREDIT_CARRY_OVER'],
             'status' => ['nullable', 'in:pending,approved,rejected,cancelled,all'],
             'is_offset' => ['nullable', 'boolean'],
             'date_from' => ['nullable', 'date'],
@@ -117,19 +119,68 @@ class RequestController extends Controller
         return view('requests.my-requests', compact('requests'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $user = Auth::user();
 
         // Fetch current request credits
         $credits = $user->requestCredit; // Assuming relationship exists
 
-        return view('requests.create', compact('credits'));
+        $requestKind = $request->query('kind') === 'credit-carry-over'
+            ? 'credit-carry-over'
+            : 'leave';
+
+        return view('requests.create', compact('credits', 'requestKind'));
     }
 
 
     public function store(Request $request)
     {
+        if ($request->input('request_kind') === 'credit-carry-over') {
+            $validated = $request->validate([
+                'carry_over_days' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
+                'reason' => ['required', 'string', 'max:500'],
+            ], [
+                'carry_over_days.required' => 'Please enter the carry-over credits requested.',
+                'carry_over_days.min' => 'Carry-over credits must be greater than zero.',
+                'reason.required' => 'Please provide a reason for your request.',
+            ]);
+
+            $user = Auth::user();
+            $today = now()->toDateString();
+
+            $requestRecord = StaffRequest::create([
+                'user_id' => $user->id,
+                'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+                'is_offset' => false,
+                'reason' => $validated['reason'],
+                'start_date' => $today,
+                'end_date' => $today,
+                'end_date_type' => 'full',
+                'number_of_days' => $validated['carry_over_days'],
+                'status' => 'pending',
+            ]);
+
+            $supervisor = $user->supervisor;
+            if ($supervisor?->email) {
+                $mail = Mail::to($supervisor->email);
+                $ccRecipients = $this->requestHrRecipients();
+
+                if ($ccRecipients !== []) {
+                    $mail->cc($ccRecipients);
+                }
+
+                $mail->queue(new RequestMade($requestRecord));
+            }
+
+            return redirect()
+                ->route('my-requests')
+                ->with('flash', [
+                    'type' => 'success',
+                    'message' => 'Credit carry-over request submitted.',
+                ]);
+        }
+
         $validated = $request->validate(
             [
                 'type' => 'required|in:PTO,WFH,LWOP',
@@ -294,9 +345,14 @@ class RequestController extends Controller
          */
         $supervisor = $user->supervisor;
         if ($supervisor?->email) {
-            Mail::to($supervisor->email)
-                ->cc(env('REQUESTS_HR_EMAIL'))
-                ->queue(new RequestMade($requestRecord));
+            $mail = Mail::to($supervisor->email);
+            $ccRecipients = $this->requestHrRecipients();
+
+            if ($ccRecipients !== []) {
+                $mail->cc($ccRecipients);
+            }
+
+            $mail->queue(new RequestMade($requestRecord));
         }
 
         return redirect()
@@ -374,6 +430,7 @@ class RequestController extends Controller
 
         if (
             $staffRequest->status === 'approved'
+            && ! $staffRequest->isCreditCarryOver()
             && !in_array($staffRequest->type, ['LWOP'])
             && !$staffRequest->is_offset
         ) {
@@ -402,8 +459,19 @@ class RequestController extends Controller
         }
 
         if (
+            $staffRequest->status === 'approved'
+            && $staffRequest->isCreditCarryOver()
+            && $originalStatus !== 'approved'
+        ) {
+            $credit = $staffRequest->user->requestCredit()->firstOrCreate(['user_id' => $staffRequest->user_id]);
+            $credit->approved_carry_over = (float) ($credit->approved_carry_over ?? 0) + (float) $staffRequest->number_of_days;
+            $credit->save();
+        }
+
+        if (
             $originalStatus === 'approved' &&
             $staffRequest->status === 'rejected' &&
+            ! $staffRequest->isCreditCarryOver() &&
             !in_array($staffRequest->type, ['LWOP'])
             && !$staffRequest->is_offset
         ) {
@@ -426,6 +494,22 @@ class RequestController extends Controller
             }
         }
 
+        if (
+            $originalStatus === 'approved' &&
+            $staffRequest->status === 'rejected' &&
+            $staffRequest->isCreditCarryOver()
+        ) {
+            $credit = $staffRequest->user->requestCredit;
+
+            if ($credit) {
+                $credit->approved_carry_over = max(
+                    0,
+                    (float) ($credit->approved_carry_over ?? 0) - (float) $staffRequest->number_of_days
+                );
+                $credit->save();
+            }
+        }
+
         $withHalfDay = '';
 
         $endType = strtolower($staffRequest->end_date_type ?? '');
@@ -441,7 +525,7 @@ class RequestController extends Controller
 
         // Google Calendar
         try {
-            if ($staffRequest->status === 'approved') {
+            if ($staffRequest->status === 'approved' && ! $staffRequest->isCreditCarryOver()) {
                 $calendarDisplayName = $this->calendarDisplayName($staffRequest->user);
 
                 $eventTitle = match ($staffRequest->type) {
@@ -506,13 +590,17 @@ class RequestController extends Controller
 
 
 
-        $ccRecipients = [env('REQUESTS_HR_EMAIL')];
+        $ccRecipients = $this->requestHrRecipients();
 
         $requester = $staffRequest->user;
         if ($requester && $requester->email) {
-            Mail::to($requester->email)
-                ->cc($ccRecipients)
-                ->queue(new ResponseReceived($staffRequest));
+            $mail = Mail::to($requester->email);
+
+            if ($ccRecipients !== []) {
+                $mail->cc($ccRecipients);
+            }
+
+            $mail->queue(new ResponseReceived($staffRequest));
         }
 
         return redirect()->route('requests.manage')
@@ -573,9 +661,16 @@ class RequestController extends Controller
         $user = auth()->user();
         $supervisor = $user->supervisor;
 
-        Mail::to($supervisor?->email)
-            ->cc(env('REQUESTS_HR_EMAIL'))
-            ->queue(new RequestCancelled($staffRequest));
+        if ($supervisor?->email) {
+            $mail = Mail::to($supervisor->email);
+            $ccRecipients = $this->requestHrRecipients();
+
+            if ($ccRecipients !== []) {
+                $mail->cc($ccRecipients);
+            }
+
+            $mail->queue(new RequestCancelled($staffRequest));
+        }
 
         return redirect()
             ->route('my-requests')
@@ -602,6 +697,25 @@ class RequestController extends Controller
             ]);
         }
 
+
+        if ($requestModel->isCreditCarryOver()) {
+            $validated = $request->validate([
+                'carry_over_days' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
+                'reason' => ['required', 'string', 'max:500'],
+            ]);
+
+            $requestModel->fill([
+                'reason' => $validated['reason'],
+                'number_of_days' => $validated['carry_over_days'],
+            ])->save();
+
+            return redirect()
+                ->route('my-requests')
+                ->with('flash', [
+                    'type' => 'success',
+                    'message' => 'Request updated.',
+                ]);
+        }
 
         $validated = $request->validate([
             'type' => 'required|in:PTO,WFH,LWOP',
@@ -761,23 +875,43 @@ class RequestController extends Controller
     public function initiateLeave()
     {
         $settings = OrgSetting::firstOrFail();
+        $runDate = now()->toDateString();
+        $usersCount = 0;
+        $totalCarryOver = 0;
 
-        // loop through all users
-        $users = User::all();
+        DB::transaction(function () use ($settings, $runDate, &$usersCount, &$totalCarryOver) {
+            $users = User::with('requestCredit')->get();
 
-        foreach ($users as $user) {
-            RequestCredit::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'pto' => $settings->pto_default,
-                    'wfh' => $settings->wfh_default,
-                ]
-            );
-        }
+            foreach ($users as $user) {
+                $carryOver = (float) ($user->requestCredit?->approved_carry_over ?? 0);
+                $totalCarryOver += $carryOver;
+                $usersCount++;
+
+                RequestCredit::updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'pto' => (float) $settings->pto_default + $carryOver,
+                        'wfh' => $settings->wfh_default,
+                        'approved_carry_over' => 0,
+                    ]
+                );
+            }
+
+            $settings->update(['last_leave_replenished_on' => $runDate]);
+
+            LeaveReplenishmentRun::create([
+                'run_date' => $runDate,
+                'pto_default' => $settings->pto_default,
+                'wfh_default' => $settings->wfh_default,
+                'users_count' => $usersCount,
+                'total_approved_carry_over' => $totalCarryOver,
+                'run_by' => auth()->id(),
+            ]);
+        });
 
         return redirect()->back()->with('flash', [
             'type' => 'success',
-            'message' => 'Leave credits updated for all users.',
+            'message' => 'Leave credits replenished for all users.',
         ]);
     }
 
@@ -922,6 +1056,11 @@ class RequestController extends Controller
         return 'Staff member';
     }
 
+    protected function requestHrRecipients(): array
+    {
+        return array_values(array_filter([env('REQUESTS_HR_EMAIL')]));
+    }
+
     protected function apiRowFor(StaffRequest $staffRequest): array
     {
         $user = $staffRequest->user;
@@ -936,6 +1075,7 @@ class RequestController extends Controller
             'department' => $user?->department?->name,
             'department_id' => $user?->department_id,
             'type' => $staffRequest->type,
+            'type_label' => $staffRequest->typeLabel(),
             'is_offset' => (bool) $staffRequest->is_offset,
             'reason' => $staffRequest->reason,
             'start_date' => $staffRequest->start_date ? (string) $staffRequest->start_date : null,
@@ -952,6 +1092,7 @@ class RequestController extends Controller
             'current_credit_snapshot' => [
                 'pto' => round((float) ($user?->requestCredit?->pto ?? 0), 2),
                 'wfh' => round((float) ($user?->requestCredit?->wfh ?? 0), 2),
+                'approved_carry_over' => round((float) ($user?->requestCredit?->approved_carry_over ?? 0), 2),
             ],
             'created_at' => optional($staffRequest->created_at)->toISOString(),
             'updated_at' => optional($staffRequest->updated_at)->toISOString(),

@@ -10,6 +10,11 @@ class Request extends Model
 {
     use HasFactory;
 
+    public const TYPE_PTO = 'PTO';
+    public const TYPE_WFH = 'WFH';
+    public const TYPE_LWOP = 'LWOP';
+    public const TYPE_CREDIT_CARRY_OVER = 'CREDIT_CARRY_OVER';
+
     protected $fillable = [
         'user_id',
         'approver_id',
@@ -55,6 +60,22 @@ class Request extends Model
         ) {
             Storage::disk('private_s3')->delete($this->offset_proof_path);
         }
+    }
+
+    public function isCreditCarryOver(): bool
+    {
+        return $this->type === self::TYPE_CREDIT_CARRY_OVER;
+    }
+
+    public function typeLabel(): string
+    {
+        return match ($this->type) {
+            self::TYPE_PTO => 'Leave',
+            self::TYPE_WFH => 'Work from Home',
+            self::TYPE_LWOP => 'Leave w/o Pay',
+            self::TYPE_CREDIT_CARRY_OVER => 'Credit Carry Over',
+            default => ucfirst(strtolower(str_replace('_', ' ', $this->type))),
+        };
     }
 
     // Relationships

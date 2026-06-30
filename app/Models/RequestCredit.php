@@ -14,7 +14,17 @@ class RequestCredit extends Model
         'pto',
         'wfh',
         'offset',
+        'approved_carry_over',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'pto' => 'decimal:2',
+            'wfh' => 'decimal:2',
+            'approved_carry_over' => 'decimal:2',
+        ];
+    }
 
     public function user()
     {

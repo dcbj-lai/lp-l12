@@ -81,6 +81,7 @@
                 <th class="number">Starting leave credits</th>
                 <th class="number">Total leave days used to-date</th>
                 <th class="number">Leave balance to-date</th>
+                <th class="number">Approved carry over</th>
                 <th class="number">Compensatory time-off total</th>
             </tr>
         </thead>
@@ -93,11 +94,12 @@
                     <td class="number">{{ number_format((float) ($user->requestCredit?->pto ?? 0) + (float) ($user->leave_days_used_to_date ?? 0), 2) }}</td>
                     <td class="number">{{ number_format((float) ($user->leave_days_used_to_date ?? 0), 2) }}</td>
                     <td class="number">{{ number_format((float) ($user->requestCredit?->pto ?? 0), 2) }}</td>
+                    <td class="number">{{ number_format((float) ($user->requestCredit?->approved_carry_over ?? 0), 2) }}</td>
                     <td class="number">{{ number_format((float) ($user->compensatory_time_off_total ?? 0), 2) }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td class="empty" colspan="7">No employees found.</td>
+                    <td class="empty" colspan="8">No employees found.</td>
                 </tr>
             @endforelse
         </tbody>

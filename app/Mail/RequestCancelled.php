@@ -24,13 +24,7 @@ class RequestCancelled extends Mailable
 
 public function build()
 {
-    $typeLabel = $this->request->type === 'PTO'
-        ? 'Leave'
-        : ($this->request->type === 'WFH'
-            ? 'Work from home'
-            : strtolower($this->request->type));
-
-    return $this->subject('Request Cancelled: ' . ucfirst($typeLabel))
+    return $this->subject('Request Cancelled: ' . $this->request->typeLabel())
                 ->markdown('emails.request.cancelled');
 }
 

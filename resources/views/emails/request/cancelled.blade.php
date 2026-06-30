@@ -2,13 +2,17 @@
 # Request Cancelled
 
 **{{ $request->user->name }}** has cancelled their
-{{ $request->type === 'PTO' ? 'Leave' : ($request->type === 'WFH' ? 'Work from home' : strtolower($request->type)) }}
+{{ $request->typeLabel() }}
 request.<br>
 
 **Reason:** {{ $request->reason }}<br>
+@if ($request->isCreditCarryOver())
+**Carry Over Credits:** {{ $request->number_of_days }}<br>
+@else
 **From:** {{ \Carbon\Carbon::parse($request->start_date)->toFormattedDateString() }}<br>
 **To:** {{ \Carbon\Carbon::parse($request->end_date)->toFormattedDateString() }}<br>
 **Days:** {{ $request->number_of_days }}<br>
+@endif
 
 
 @component('mail::button', ['url' => route('requests.show', $request->id)])

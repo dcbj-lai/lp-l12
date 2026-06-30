@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Department;
+use App\Models\LeaveReplenishmentRun;
+use App\Models\OrgSetting;
 use App\Models\Request as StaffRequest;
 use App\Models\RequestCredit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -22,6 +25,7 @@ class LeaveCreditReportTest extends TestCase
 
         Permission::findOrCreate('leave-credits.view', 'web');
         Permission::findOrCreate('leave-credits.assign', 'web');
+        Permission::findOrCreate('leave-credits.initialize', 'web');
         Permission::findOrCreate('requests.hr.view', 'web');
 
         $this->admin = User::factory()->create();
@@ -468,6 +472,128 @@ class LeaveCreditReportTest extends TestCase
             'pto' => 20,
             'wfh' => 6,
         ]);
+    }
+
+    public function test_pnc_admin_can_update_leave_balance_from_report(): void
+    {
+        $this->admin->forceFill(['legacy_roles' => ['user', 'pnc.admin']])->save();
+
+        $employee = User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+        ]);
+
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 8, 'wfh' => 4]);
+
+        $this->actingAs($this->admin)
+            ->patch(route('leave-credits.balance.update', $employee), [
+                'pto' => 12.5,
+                'status' => 'all',
+                'date_from' => '2026-06-01',
+                'date_to' => '2026-06-30',
+            ])
+            ->assertRedirect(route('leave-credits.index', [
+                'status' => 'all',
+                'date_from' => '2026-06-01',
+                'date_to' => '2026-06-30',
+            ]));
+
+        $this->assertDatabaseHas('request_credits', [
+            'user_id' => $employee->id,
+            'pto' => 12.5,
+        ]);
+    }
+
+    public function test_credit_carry_over_request_approval_adds_to_approved_carry_over_without_calendar(): void
+    {
+        Mail::fake();
+
+        $manager = User::factory()->create([
+            'rank' => 'manager',
+            'email' => 'manager@example.com',
+        ]);
+        $employee = User::factory()->create([
+            'supervisor_id' => $manager->id,
+            'email' => 'employee@example.com',
+        ]);
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 8, 'wfh' => 4]);
+
+        $this->actingAs($employee)
+            ->post(route('requests.store'), [
+                'request_kind' => 'credit-carry-over',
+                'carry_over_days' => 2.5,
+                'reason' => 'Unused approved leave from prior cycle',
+            ])
+            ->assertRedirect(route('my-requests'));
+
+        $staffRequest = StaffRequest::where('user_id', $employee->id)->firstOrFail();
+
+        $this->assertSame(StaffRequest::TYPE_CREDIT_CARRY_OVER, $staffRequest->type);
+        $this->assertSame('pending', $staffRequest->status);
+        $this->assertEquals(2.5, (float) $staffRequest->number_of_days);
+
+        $this->actingAs($manager)
+            ->post(route('requests.process', $staffRequest), [
+                'action_type' => 'approve',
+                'remarks' => 'Approved carry over.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $staffRequest->refresh();
+        $employee->refresh();
+
+        $this->assertSame('approved', $staffRequest->status);
+        $this->assertNull($staffRequest->google_event_id);
+        $this->assertEquals(2.5, (float) $employee->requestCredit->approved_carry_over);
+    }
+
+    public function test_replenishment_adds_approved_carry_over_resets_it_and_records_run_history(): void
+    {
+        $this->admin->givePermissionTo('leave-credits.initialize');
+        OrgSetting::query()->update([
+            'pto_default' => 15,
+            'wfh_default' => 5,
+            'last_leave_replenished_on' => null,
+        ]);
+
+        $employee = User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'email' => 'jane@example.com',
+        ]);
+
+        RequestCredit::create([
+            'user_id' => $employee->id,
+            'pto' => 3,
+            'wfh' => 1,
+            'approved_carry_over' => 4.5,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('org-settings.initiate-leave'))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('request_credits', [
+            'user_id' => $employee->id,
+            'pto' => 19.5,
+            'wfh' => 5,
+            'approved_carry_over' => 0,
+        ]);
+
+        $this->assertSame(
+            now()->toDateString(),
+            OrgSetting::first()->last_leave_replenished_on->toDateString()
+        );
+
+        $this->assertSame(1, LeaveReplenishmentRun::count());
+
+        $run = LeaveReplenishmentRun::first();
+        $this->assertSame(now()->toDateString(), $run->run_date->toDateString());
+        $this->assertEquals(15, (float) $run->pto_default);
+        $this->assertEquals(5, (float) $run->wfh_default);
+        $this->assertEquals(4.5, (float) $run->total_approved_carry_over);
+        $this->assertSame($this->admin->id, $run->run_by);
     }
 
     public function test_sanctum_token_can_read_and_update_leave_credits(): void

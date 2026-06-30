@@ -2,9 +2,19 @@
     <div class="flex items-center justify-between mt-4 px-4 sm:px-6 lg:px-8">
         <h2 class="text-xl font-bold text-neutral-800 dark:text-neutral-200">My Requests</h2>
 
-        <flux:button variant="primary" type="submit" variant="outline" href="{{ route('requests.create') }}">
-            + New Request
-        </flux:button>
+        <flux:dropdown>
+            <flux:button variant="primary" icon-trailing="chevron-down">
+                + New Request
+            </flux:button>
+            <flux:menu>
+                <flux:menu.item href="{{ route('requests.create') }}">
+                    Leave Request
+                </flux:menu.item>
+                <flux:menu.item href="{{ route('requests.create', ['kind' => 'credit-carry-over']) }}">
+                    Credit Carry Over
+                </flux:menu.item>
+            </flux:menu>
+        </flux:dropdown>
     </div>
 
     <div class="overflow-x-auto mt-4 px-4 sm:px-6 lg:px-8">
@@ -30,13 +40,7 @@
                         <td class="border px-4 py-2">
                             <div class="flex items-center gap-2">
                                 <span>
-                                    @if ($request->type === 'PTO')
-                                        Leave
-                                    @elseif ($request->type === 'WFH')
-                                        Work From Home
-                                    @else
-                                        {{ ucfirst($request->type) }}
-                                    @endif
+                                    {{ $request->typeLabel() }}
                                 </span>
 
                                 @if ($request->is_offset)

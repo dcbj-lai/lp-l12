@@ -290,6 +290,10 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:leave-credits.view')
         ->name('leave-credits.pdf');
 
+    Route::patch('/leave-credits/{user}/balance', [LeaveCreditController::class, 'updateBalance'])
+        ->middleware('permission:leave-credits.assign')
+        ->name('leave-credits.balance.update');
+
     Route::post('/org-settings', [OrgSettingController::class, 'update'])
         ->middleware('permission:leave-credits.update')
         ->name('org-settings.update');

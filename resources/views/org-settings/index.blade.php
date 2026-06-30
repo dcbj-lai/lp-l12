@@ -27,6 +27,18 @@
                     class="mt-1 block w-full rounded-md bg-neutral-100 border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring focus:ring-blue-500/30 p-2">
             </div>
 
+            <div>
+                <p class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Last Leave Replenishment Date
+                </p>
+                <p class="mt-1 rounded-md bg-neutral-100 p-2 text-sm text-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                    {{ $settings?->last_leave_replenished_on?->format('Y-m-d') ?? now()->toDateString() }}
+                </p>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    If no run has been recorded yet, leave-credit reports use today as the default reference date unless filters are applied.
+                </p>
+            </div>
+
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
                 <flux:button type="submit" class="w-full sm:w-auto" variant="primary">
                     Save Settings
@@ -43,17 +55,63 @@
                 Initialize Leave Requests
             </h2>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-                This will reset and assign Leave and WFH credits for
-                <strong>all users</strong> based on the default values above.
+                This will replenish Leave and WFH credits for
+                <strong>all users</strong>. Leave credits will be set to the default value plus each user's approved carry over.
+                The run date will be stored for leave-credit report defaults.
             </p>
 
             <form action="{{ route('org-settings.initiate-leave') }}" method="POST"
-                onsubmit="return confirm('Are you sure you want to initialize leave credits for all users? This will overwrite current balances.');">
+                onsubmit="return confirm('Are you sure you want to replenish leave credits for all users? Approved carry over will be applied and then cleared for the next run.');">
                 @csrf
                 <flux:button type="submit" variant="danger" class="w-full sm:w-auto">
                     Initialize All Leaves
                 </flux:button>
             </form>
+        </div>
+
+        {{-- Divider --}}
+        <div class="my-10 border-t border-gray-200 dark:border-gray-700"></div>
+
+        {{-- Replenishment Run History --}}
+        <div class="space-y-4 bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                Replenishment Run History
+            </h2>
+
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[720px] text-sm">
+                    <thead class="bg-gray-100 text-left text-xs font-semibold uppercase text-gray-600 dark:bg-gray-900 dark:text-gray-300">
+                        <tr>
+                            <th class="px-4 py-3">Run Date</th>
+                            <th class="px-4 py-3 text-right">Default Leave</th>
+                            <th class="px-4 py-3 text-right">Default WFH</th>
+                            <th class="px-4 py-3 text-right">Users</th>
+                            <th class="px-4 py-3 text-right">Carry Over Applied</th>
+                            <th class="px-4 py-3">Run By</th>
+                            <th class="px-4 py-3">Recorded</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($replenishmentRuns as $run)
+                            <tr class="border-t border-gray-100 dark:border-gray-700">
+                                <td class="px-4 py-3">{{ $run->run_date?->format('Y-m-d') }}</td>
+                                <td class="px-4 py-3 text-right">{{ number_format((float) $run->pto_default, 2) }}</td>
+                                <td class="px-4 py-3 text-right">{{ number_format((float) $run->wfh_default, 2) }}</td>
+                                <td class="px-4 py-3 text-right">{{ number_format($run->users_count) }}</td>
+                                <td class="px-4 py-3 text-right">{{ number_format((float) $run->total_approved_carry_over, 2) }}</td>
+                                <td class="px-4 py-3">{{ $run->runner?->name ?? '—' }}</td>
+                                <td class="px-4 py-3">{{ $run->created_at?->timezone('Asia/Manila')->format('Y-m-d h:i A') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                    No replenishment runs recorded yet.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </x-layouts.app>

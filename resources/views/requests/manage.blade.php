@@ -24,13 +24,7 @@
                                 <td class="border px-4 py-2">
                                     <div class="flex items-center gap-2">
                                         <span>
-                                            @if ($r->type === 'PTO')
-                                                Leave
-                                            @elseif ($r->type === 'WFH')
-                                                Work From Home
-                                            @else
-                                                {{ ucfirst($r->type) }}
-                                            @endif
+                                            {{ $r->typeLabel() }}
                                         </span>
 
                                         @if ($r->is_offset)

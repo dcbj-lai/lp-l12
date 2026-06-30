@@ -31,6 +31,42 @@
                         </div>
                     @endif
 
+                    @if ($request->isCreditCarryOver())
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block font-medium text-sm text-gray-700 dark:text-gray-300">
+                                    Carry Over Credits
+                                </label>
+
+                                <input type="number" step="0.01" min="0.01" name="carry_over_days"
+                                    value="{{ old('carry_over_days', $request->number_of_days) }}"
+                                    class="mt-1 block w-full rounded-md shadow-sm
+                       border-gray-300 dark:border-gray-600
+                       dark:bg-gray-800 dark:text-gray-100
+                       focus:border-sky-500 focus:ring-sky-500">
+
+                                @error('carry_over_days')
+                                    <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block font-medium text-sm text-gray-700 dark:text-gray-300">
+                                    Reason
+                                </label>
+
+                                <input type="text" name="reason" value="{{ old('reason', $request->reason) }}"
+                                    class="mt-1 block w-full rounded-md shadow-sm
+                       border-gray-300 dark:border-gray-600
+                       dark:bg-gray-800 dark:text-gray-100
+                       focus:border-sky-500 focus:ring-sky-500">
+
+                                @error('reason')
+                                    <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+                    @else
                     {{-- Other Fields --}}
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
@@ -135,6 +171,7 @@
                         </div>
 
                     </div>
+                    @endif
 
 
 
@@ -170,13 +207,15 @@
 
             <p>
                 <strong>Type:</strong>
-                {{ ucfirst($request->type) }}
+                {{ $request->typeLabel() }}
             </p>
 
-            <p>
-                <strong>Offset:</strong>
-                {{ $request->is_offset ? 'Yes' : 'No' }}
-            </p>
+            @unless ($request->isCreditCarryOver())
+                <p>
+                    <strong>Offset:</strong>
+                    {{ $request->is_offset ? 'Yes' : 'No' }}
+                </p>
+            @endunless
 
             {{-- Reason --}}
             <div>
@@ -225,13 +264,15 @@
                 </div>
             @endif
 
-            <p>
-                <strong>Date Range:</strong>
-                {{ $request->start_date }} → {{ $request->end_date }}
-            </p>
+            @unless ($request->isCreditCarryOver())
+                <p>
+                    <strong>Date Range:</strong>
+                    {{ $request->start_date }} → {{ $request->end_date }}
+                </p>
+            @endunless
 
             <p>
-                <strong>Days:</strong>
+                <strong>{{ $request->isCreditCarryOver() ? 'Carry Over Credits' : 'Days' }}:</strong>
                 {{ $request->number_of_days }}
             </p>
 

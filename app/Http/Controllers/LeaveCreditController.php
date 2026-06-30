@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\OrgSetting;
 use App\Models\RequestCredit;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -36,6 +38,7 @@ class LeaveCreditController extends Controller
                 'Starting leave credits',
                 'Total leave days used to-date',
                 'Leave balance to-date',
+                'Approved carry over',
                 'Compensatory time-off total',
             ]);
 
@@ -75,6 +78,7 @@ class LeaveCreditController extends Controller
             'starting_leave_credits' => $users->sum(fn (User $user) => $this->startingLeaveCredits($user)),
             'leave_days_used' => $users->sum(fn (User $user) => $this->leaveDaysUsed($user)),
             'leave_balance' => $users->sum(fn (User $user) => $this->leaveBalance($user)),
+            'approved_carry_over' => $users->sum(fn (User $user) => $this->approvedCarryOver($user)),
             'compensatory_time_off' => $users->sum(fn (User $user) => $this->compensatoryTimeOff($user)),
         ];
 
@@ -91,8 +95,9 @@ class LeaveCreditController extends Controller
     public function apiUpdate(Request $request, User $user)
     {
         $validated = $request->validate([
-            'pto' => ['required_without:wfh', 'numeric', 'min:0'],
-            'wfh' => ['required_without:pto', 'numeric', 'min:0'],
+            'pto' => ['required_without_all:wfh,approved_carry_over', 'numeric', 'min:0'],
+            'wfh' => ['required_without_all:pto,approved_carry_over', 'numeric', 'min:0'],
+            'approved_carry_over' => ['required_without_all:pto,wfh', 'numeric', 'min:0'],
         ]);
 
         $credit = $this->updateCreditFor($user, $validated);
@@ -113,6 +118,7 @@ class LeaveCreditController extends Controller
             'credits.*.employee_number' => ['nullable'],
             'credits.*.pto' => ['nullable', 'numeric', 'min:0'],
             'credits.*.wfh' => ['nullable', 'numeric', 'min:0'],
+            'credits.*.approved_carry_over' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $dryRun = (bool) ($validated['dry_run'] ?? false);
@@ -134,7 +140,7 @@ class LeaveCreditController extends Controller
                 }
 
                 $creditValues = collect($row)
-                    ->only(['pto', 'wfh'])
+                    ->only(['pto', 'wfh', 'approved_carry_over'])
                     ->reject(fn ($value) => $value === null)
                     ->all();
 
@@ -162,6 +168,7 @@ class LeaveCreditController extends Controller
                     'status' => $dryRun ? 'matched' : 'updated',
                     'pto' => array_key_exists('pto', $creditValues) ? (float) $creditValues['pto'] : null,
                     'wfh' => array_key_exists('wfh', $creditValues) ? (float) $creditValues['wfh'] : null,
+                    'approved_carry_over' => array_key_exists('approved_carry_over', $creditValues) ? (float) $creditValues['approved_carry_over'] : null,
                 ];
             }
         });
@@ -172,6 +179,24 @@ class LeaveCreditController extends Controller
             'updated' => $updated,
             'results' => $results,
         ]);
+    }
+
+    public function updateBalance(Request $request, User $user)
+    {
+        Gate::authorize('pnc-admin');
+
+        $validated = $request->validate([
+            'pto' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $this->updateCreditFor($user, ['pto' => $validated['pto']]);
+
+        return redirect()
+            ->route('leave-credits.index', $request->only(['search', 'status', 'date_from', 'date_to', 'period_start', 'as_of']))
+            ->with('flash', [
+                'type' => 'success',
+                'message' => 'Leave balance updated for ' . $user->name . '.',
+            ]);
     }
 
     protected function usersWithCredits(Request $request)
@@ -219,6 +244,7 @@ class LeaveCreditController extends Controller
             $this->formatCredit($this->startingLeaveCredits($user)),
             $this->formatCredit($this->leaveDaysUsed($user)),
             $this->formatCredit($this->leaveBalance($user)),
+            $this->formatCredit($this->approvedCarryOver($user)),
             $this->formatCredit($this->compensatoryTimeOff($user)),
         ];
     }
@@ -239,6 +265,7 @@ class LeaveCreditController extends Controller
             'starting_leave_credits' => $this->roundCredit($this->startingLeaveCredits($user)),
             'total_leave_days_used_to_date' => $this->roundCredit($this->leaveDaysUsed($user)),
             'leave_balance_to_date' => $this->roundCredit($this->leaveBalance($user)),
+            'approved_carry_over' => $this->roundCredit($this->approvedCarryOver($user)),
             'compensatory_time_off_total' => $this->roundCredit($this->compensatoryTimeOff($user)),
         ];
     }
@@ -250,6 +277,7 @@ class LeaveCreditController extends Controller
             'starting_leave_credits' => $this->roundCredit($totals['starting_leave_credits']),
             'leave_days_used' => $this->roundCredit($totals['leave_days_used']),
             'leave_balance' => $this->roundCredit($totals['leave_balance']),
+            'approved_carry_over' => $this->roundCredit($totals['approved_carry_over']),
             'compensatory_time_off' => $this->roundCredit($totals['compensatory_time_off']),
         ];
     }
@@ -284,15 +312,13 @@ class LeaveCreditController extends Controller
 
     protected function defaultPeriodStart(CarbonImmutable $asOf): CarbonImmutable
     {
-        $firstAnnualCycle = CarbonImmutable::create(2026, 7, 1)->startOfDay();
+        $replenishedOn = OrgSetting::query()->value('last_leave_replenished_on');
 
-        if ($asOf->lt($firstAnnualCycle)) {
-            return CarbonImmutable::create(2025, 10, 1)->startOfDay();
+        if ($replenishedOn) {
+            return CarbonImmutable::parse($replenishedOn)->startOfDay();
         }
 
-        $year = $asOf->month >= 7 ? $asOf->year : $asOf->year - 1;
-
-        return CarbonImmutable::create($year, 7, 1)->startOfDay();
+        return CarbonImmutable::today()->startOfDay();
     }
 
     protected function startingLeaveCredits(User $user): float
@@ -310,6 +336,11 @@ class LeaveCreditController extends Controller
         return (float) ($user->requestCredit?->pto ?? 0);
     }
 
+    protected function approvedCarryOver(User $user): float
+    {
+        return (float) ($user->requestCredit?->approved_carry_over ?? 0);
+    }
+
     protected function compensatoryTimeOff(User $user): float
     {
         return (float) ($user->compensatory_time_off_total ?? 0);
@@ -325,6 +356,10 @@ class LeaveCreditController extends Controller
 
         if (array_key_exists('wfh', $values)) {
             $credit->wfh = $values['wfh'];
+        }
+
+        if (array_key_exists('approved_carry_over', $values)) {
+            $credit->approved_carry_over = $values['approved_carry_over'];
         }
 
         $credit->save();
@@ -351,6 +386,7 @@ class LeaveCreditController extends Controller
             'email' => $user->email,
             'pto' => $this->roundCredit($credit->pto),
             'wfh' => $this->roundCredit($credit->wfh),
+            'approved_carry_over' => $this->roundCredit($credit->approved_carry_over),
         ];
     }
 

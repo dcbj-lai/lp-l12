@@ -37,6 +37,7 @@
                 <option value="PTO" @selected(request('type') === 'PTO')>Leave</option>
                 <option value="WFH" @selected(request('type') === 'WFH')>Work From Home</option>
                 <option value="LWOP" @selected(request('type') === 'LWOP')>Leave Without Pay</option>
+                <option value="CREDIT_CARRY_OVER" @selected(request('type') === 'CREDIT_CARRY_OVER')>Credit Carry Over</option>
             </select>
 
             <!-- Status -->
@@ -131,13 +132,7 @@
                                 <td class="border px-4 py-2">
                                     <div class="flex items-center gap-2">
                                         <span>
-                                            @if ($r->type === 'PTO')
-                                                Leave
-                                            @elseif ($r->type === 'WFH')
-                                                Work From Home
-                                            @else
-                                                {{ ucfirst($r->type) }}
-                                            @endif
+                                            {{ $r->typeLabel() }}
                                         </span>
 
                                         @if ($r->is_offset)
@@ -159,6 +154,8 @@
                                         {{ optional($r->user->requestCredit)->pto ?? 'N/A' }}
                                     @elseif ($r->type === 'WFH')
                                         {{ optional($r->user->requestCredit)->wfh ?? 'N/A' }}
+                                    @elseif ($r->type === 'CREDIT_CARRY_OVER')
+                                        {{ optional($r->user->requestCredit)->approved_carry_over ?? '0.00' }}
                                     @else
                                         N/A
                                     @endif

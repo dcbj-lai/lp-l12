@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LeaveReplenishmentRun;
 use App\Models\OrgSetting;
 use Illuminate\Http\Request;
 
@@ -10,7 +11,13 @@ class OrgSettingController extends Controller
     public function index()
     {
         $settings = OrgSetting::first(); // single row table
-        return view('org-settings.index', compact('settings'));
+        $replenishmentRuns = LeaveReplenishmentRun::with('runner')
+            ->latest('run_date')
+            ->latest('id')
+            ->take(20)
+            ->get();
+
+        return view('org-settings.index', compact('settings', 'replenishmentRuns'));
     }
 
     public function update(Request $request)

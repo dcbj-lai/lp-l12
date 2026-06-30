@@ -57,7 +57,7 @@
         </form>
 
         <div class="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
-            <table class="min-w-[920px] w-full text-sm">
+            <table class="min-w-[1080px] w-full text-sm">
                 <thead class="bg-zinc-50 text-left text-xs font-semibold uppercase text-gray-500 dark:bg-zinc-900">
                     <tr>
                         <th class="px-4 py-3">Employee Number</th>
@@ -65,6 +65,7 @@
                         <th class="px-4 py-3 text-right">Starting Leave Credits</th>
                         <th class="px-4 py-3 text-right">Total Leave Days Used To-Date</th>
                         <th class="px-4 py-3 text-right">Leave Balance To-Date</th>
+                        <th class="px-4 py-3 text-right">Approved Carry Over</th>
                         <th class="px-4 py-3 text-right">Compensatory Time-Off Total</th>
                     </tr>
                 </thead>
@@ -89,8 +90,21 @@
                             <td class="px-4 py-3 text-right font-semibold text-amber-700 dark:text-amber-300">
                                 {{ number_format((float) ($user->leave_days_used_to_date ?? 0), 2) }}
                             </td>
-                            <td class="px-4 py-3 text-right font-semibold text-emerald-700 dark:text-emerald-300">
-                                {{ number_format((float) ($user->requestCredit?->pto ?? 0), 2) }}
+                            <td class="px-4 py-3">
+                                <div class="flex items-center justify-end gap-2 font-semibold text-emerald-700 dark:text-emerald-300">
+                                    <span>{{ number_format((float) ($user->requestCredit?->pto ?? 0), 2) }}</span>
+
+                                    @can('pnc-admin')
+                                        <flux:modal.trigger name="edit-leave-balance-{{ $user->id }}">
+                                            <flux:button size="xs" variant="ghost" icon="pencil" title="Edit leave balance">
+                                                Edit
+                                            </flux:button>
+                                        </flux:modal.trigger>
+                                    @endcan
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-right font-semibold text-violet-700 dark:text-violet-300">
+                                {{ number_format((float) ($user->requestCredit?->approved_carry_over ?? 0), 2) }}
                             </td>
                             <td class="px-4 py-3 text-right font-semibold text-blue-700 dark:text-blue-300">
                                 {{ number_format((float) ($user->compensatory_time_off_total ?? 0), 2) }}
@@ -98,11 +112,57 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">No employees found.</td>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">No employees found.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+
+        @can('pnc-admin')
+            @foreach ($users as $user)
+                <flux:modal name="edit-leave-balance-{{ $user->id }}" class="md:w-[420px]">
+                    <div class="p-6 space-y-5">
+                        <div>
+                            <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                                Edit Leave Balance
+                            </h2>
+                            <p class="mt-1 text-sm text-zinc-500">
+                                {{ $user->preferred_name ?: $user->name }}
+                            </p>
+                        </div>
+
+                        <form method="POST" action="{{ route('leave-credits.balance.update', $user) }}" class="space-y-5">
+                            @csrf
+                            @method('PATCH')
+
+                            @foreach (request()->only(['search', 'status', 'date_from', 'date_to', 'period_start', 'as_of']) as $key => $value)
+                                @if ($value !== null && $value !== '')
+                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                @endif
+                            @endforeach
+
+                            <div>
+                                <label for="pto-{{ $user->id }}" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                    Leave Balance To-Date
+                                </label>
+                                <input id="pto-{{ $user->id }}" name="pto" type="number" step="0.01" min="0"
+                                    value="{{ old('pto', number_format((float) ($user->requestCredit?->pto ?? 0), 2, '.', '')) }}"
+                                    class="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                            </div>
+
+                            <div class="flex justify-end gap-3">
+                                <flux:modal.close>
+                                    <flux:button type="button" variant="ghost">Cancel</flux:button>
+                                </flux:modal.close>
+                                <flux:button type="submit" variant="primary" icon="save">
+                                    Save
+                                </flux:button>
+                            </div>
+                        </form>
+                    </div>
+                </flux:modal>
+            @endforeach
+        @endcan
     </div>
 </x-layouts.app>
