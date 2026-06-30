@@ -30,4 +30,9 @@ class LeaveReplenishmentRun extends Model
     {
         return $this->belongsTo(User::class, 'run_by');
     }
+
+    public function items()
+    {
+        return $this->hasMany(LeaveReplenishmentRunItem::class);
+    }
 }

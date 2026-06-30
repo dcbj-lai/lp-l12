@@ -11,7 +11,10 @@ class OrgSettingController extends Controller
     public function index()
     {
         $settings = OrgSetting::first(); // single row table
-        $replenishmentRuns = LeaveReplenishmentRun::with('runner')
+        $replenishmentRuns = LeaveReplenishmentRun::with([
+            'runner',
+            'items' => fn ($query) => $query->orderBy('employee_name'),
+        ])
             ->latest('run_date')
             ->latest('id')
             ->take(20)

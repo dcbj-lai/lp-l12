@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Department;
 use App\Models\LeaveReplenishmentRun;
+use App\Models\LeaveReplenishmentRunItem;
 use App\Models\OrgSetting;
 use App\Models\Request as StaffRequest;
 use App\Models\RequestCredit;
@@ -594,6 +595,22 @@ class LeaveCreditReportTest extends TestCase
         $this->assertEquals(5, (float) $run->wfh_default);
         $this->assertEquals(4.5, (float) $run->total_approved_carry_over);
         $this->assertSame($this->admin->id, $run->run_by);
+
+        $this->assertSame(User::count(), LeaveReplenishmentRunItem::count());
+
+        $item = LeaveReplenishmentRunItem::where('user_id', $employee->id)->firstOrFail();
+        $this->assertSame($run->id, $item->leave_replenishment_run_id);
+        $this->assertSame($employee->id, $item->user_id);
+        $this->assertSame('20250001', $item->employee_number);
+        $this->assertSame('Jane Employee', $item->employee_name);
+        $this->assertSame('jane@example.com', $item->employee_email);
+        $this->assertEquals(3, (float) $item->previous_pto);
+        $this->assertEquals(1, (float) $item->previous_wfh);
+        $this->assertEquals(15, (float) $item->pto_default);
+        $this->assertEquals(5, (float) $item->wfh_default);
+        $this->assertEquals(4.5, (float) $item->approved_carry_over_applied);
+        $this->assertEquals(19.5, (float) $item->initialized_pto);
+        $this->assertEquals(5, (float) $item->initialized_wfh);
     }
 
     public function test_sanctum_token_can_read_and_update_leave_credits(): void

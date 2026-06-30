@@ -882,30 +882,54 @@ class RequestController extends Controller
         DB::transaction(function () use ($settings, $runDate, &$usersCount, &$totalCarryOver) {
             $users = User::with('requestCredit')->get();
 
+            $run = LeaveReplenishmentRun::create([
+                'run_date' => $runDate,
+                'pto_default' => $settings->pto_default,
+                'wfh_default' => $settings->wfh_default,
+                'users_count' => 0,
+                'total_approved_carry_over' => 0,
+                'run_by' => auth()->id(),
+            ]);
+
             foreach ($users as $user) {
+                $previousPto = (float) ($user->requestCredit?->pto ?? 0);
+                $previousWfh = (float) ($user->requestCredit?->wfh ?? 0);
                 $carryOver = (float) ($user->requestCredit?->approved_carry_over ?? 0);
+                $initializedPto = (float) $settings->pto_default + $carryOver;
+                $initializedWfh = (float) $settings->wfh_default;
+
                 $totalCarryOver += $carryOver;
                 $usersCount++;
 
                 RequestCredit::updateOrCreate(
                     ['user_id' => $user->id],
                     [
-                        'pto' => (float) $settings->pto_default + $carryOver,
+                        'pto' => $initializedPto,
                         'wfh' => $settings->wfh_default,
                         'approved_carry_over' => 0,
                     ]
                 );
+
+                $run->items()->create([
+                    'user_id' => $user->id,
+                    'employee_number' => $user->employee_number,
+                    'employee_name' => $user->name,
+                    'employee_email' => $user->email,
+                    'previous_pto' => $previousPto,
+                    'previous_wfh' => $previousWfh,
+                    'pto_default' => $settings->pto_default,
+                    'wfh_default' => $settings->wfh_default,
+                    'approved_carry_over_applied' => $carryOver,
+                    'initialized_pto' => $initializedPto,
+                    'initialized_wfh' => $initializedWfh,
+                ]);
             }
 
             $settings->update(['last_leave_replenished_on' => $runDate]);
 
-            LeaveReplenishmentRun::create([
-                'run_date' => $runDate,
-                'pto_default' => $settings->pto_default,
-                'wfh_default' => $settings->wfh_default,
+            $run->update([
                 'users_count' => $usersCount,
                 'total_approved_carry_over' => $totalCarryOver,
-                'run_by' => auth()->id(),
             ]);
         });
 
