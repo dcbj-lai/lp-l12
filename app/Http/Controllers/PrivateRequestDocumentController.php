@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Request as StaffRequest;
 
@@ -24,25 +23,11 @@ class PrivateRequestDocumentController extends Controller
             abort(403);
         }
 
-        /*
-         |-------------------------------------------------
-         | Authorization
-         |-------------------------------------------------
-         | HR / PNC can view all
-         | Request owner can view own proof
-         */
-        $isPnc = Gate::allows('is-pnc');
+        $staffRequest = StaffRequest::with('user')
+            ->where('offset_proof_path', $path)
+            ->first();
 
-        if (!$isPnc) {
-            // Check ownership via DB
-            $owns = StaffRequest::where('offset_proof_path', $path)
-                ->where('user_id', $user->id)
-                ->exists();
-
-            if (!$owns) {
-                abort(403);
-            }
-        }
+        abort_unless($staffRequest?->canViewOffsetProof($user), 403);
 
         $disk = Storage::disk('private_s3');
 
@@ -52,7 +37,7 @@ class PrivateRequestDocumentController extends Controller
 
         $stream = $disk->readStream($path);
 
-        $mime = Storage::mimeType($path) ?? 'application/octet-stream';
+        $mime = $disk->mimeType($path) ?: 'application/octet-stream';
 
         return response()->stream(
             fn() => fpassthru($stream),

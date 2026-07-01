@@ -1036,13 +1036,9 @@ class RequestController extends Controller
 
     public function previewOffsetProof(StaffRequest $request)
     {
-        // Owner OR HR/PNC
-        if (
-            auth()->id() !== $request->user_id &&
-            !Gate::allows('is-pnc')
-        ) {
-            abort(403);
-        }
+        $request->loadMissing('user');
+
+        abort_unless($request->canViewOffsetProof(auth()->user()), 403);
 
         abort_unless($request->offset_proof_path, 404);
 
@@ -1056,8 +1052,8 @@ class RequestController extends Controller
             fn() => fpassthru($stream),
             200,
             [
-                'Content-Type' => Storage::mimeType($request->offset_proof_path)
-                    ?? 'application/octet-stream',
+                'Content-Type' => $disk->mimeType($request->offset_proof_path)
+                    ?: 'application/octet-stream',
                 'Content-Disposition' => 'inline; filename="' . basename($request->offset_proof_path) . '"',
             ]
         );

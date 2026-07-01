@@ -88,6 +88,23 @@ class Request extends Model
         };
     }
 
+    public function canViewOffsetProof(User $user): bool
+    {
+        if ($user->hasAnyLegacyRole(['pnc.staff', 'pnc.admin', 'super.admin'])) {
+            return true;
+        }
+
+        if ((int) $this->user_id === (int) $user->id) {
+            return true;
+        }
+
+        if ($this->approver_id && (int) $this->approver_id === (int) $user->id) {
+            return true;
+        }
+
+        return (int) ($this->user?->supervisor_id ?? 0) === (int) $user->id;
+    }
+
     // Relationships
     public function user()
     {

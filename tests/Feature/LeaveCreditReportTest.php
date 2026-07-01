@@ -11,6 +11,7 @@ use App\Models\RequestCredit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -624,6 +625,53 @@ class LeaveCreditReportTest extends TestCase
         $this->assertSame('approved', $staffRequest->status);
         $this->assertNull($staffRequest->google_event_id);
         $this->assertEquals(2.5, (float) $employee->requestCredit->approved_carry_over);
+    }
+
+    public function test_approving_manager_can_view_offset_leave_proof(): void
+    {
+        Storage::fake('private_s3');
+
+        $manager = User::factory()->create([
+            'rank' => 'manager',
+            'email' => 'manager@example.com',
+        ]);
+        $otherManager = User::factory()->create([
+            'rank' => 'manager',
+            'email' => 'other.manager@example.com',
+        ]);
+        $employee = User::factory()->create([
+            'supervisor_id' => $manager->id,
+            'email' => 'employee@example.com',
+        ]);
+
+        $proofPath = 'requests/' . $employee->id . '-Employee/offset-proof.pdf';
+        Storage::disk('private_s3')->put($proofPath, 'offset proof content');
+
+        $staffRequest = StaffRequest::create([
+            'user_id' => $employee->id,
+            'approver_id' => $manager->id,
+            'type' => 'PTO',
+            'is_offset' => true,
+            'offset_proof_path' => $proofPath,
+            'reason' => 'Weekend school event',
+            'start_date' => '2026-06-08',
+            'end_date' => '2026-06-08',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($manager)
+            ->get(route('requests.documents.show', ['path' => $proofPath]))
+            ->assertOk();
+
+        $this->actingAs($manager)
+            ->get(route('requests.offset-proof', $staffRequest))
+            ->assertOk();
+
+        $this->actingAs($otherManager)
+            ->get(route('requests.documents.show', ['path' => $proofPath]))
+            ->assertForbidden();
     }
 
     public function test_replenishment_adds_approved_carry_over_resets_it_and_records_run_history(): void
