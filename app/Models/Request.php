@@ -78,6 +78,16 @@ class Request extends Model
         };
     }
 
+    public function detailTitle(): string
+    {
+        return match ($this->type) {
+            self::TYPE_CREDIT_CARRY_OVER => 'Credit Carry Over Details',
+            self::TYPE_WFH => 'Work from Home Request Details',
+            self::TYPE_LWOP => 'Leave Without Pay Request Details',
+            default => 'Leave Request Details',
+        };
+    }
+
     // Relationships
     public function user()
     {

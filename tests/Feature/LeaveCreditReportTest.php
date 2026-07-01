@@ -606,6 +606,12 @@ class LeaveCreditReportTest extends TestCase
         $this->assertEquals(2.5, (float) $staffRequest->number_of_days);
 
         $this->actingAs($manager)
+            ->get(route('requests.show', $staffRequest))
+            ->assertOk()
+            ->assertSee('Credit Carry Over Details')
+            ->assertDontSee('Leave Request Details');
+
+        $this->actingAs($manager)
             ->post(route('requests.process', $staffRequest), [
                 'action_type' => 'approve',
                 'remarks' => 'Approved carry over.',

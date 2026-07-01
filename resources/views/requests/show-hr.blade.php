@@ -1,11 +1,11 @@
-<x-layouts.app title="Request Details (HR)">
+<x-layouts.app title="{{ $request->detailTitle() }} (HR)">
     <div class="max-w-3xl mx-auto py-10 sm:px-6 lg:px-8">
         <div class="bg-white dark:bg-neutral-900 shadow-xl sm:rounded-lg p-6">
 
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">
-                    Request Details
+                    {{ $request->detailTitle() }}
                 </h2>
 
                 <a href="{{ route('requests.manage-hr') }}"

@@ -1,11 +1,11 @@
-<x-layouts.app title="Leave Request Details">
+<x-layouts.app title="{{ $request->detailTitle() }}">
     <div class="max-w-3xl mx-auto py-10 sm:px-6 lg:px-8">
         <div class="bg-white dark:bg-neutral-900 shadow-xl sm:rounded-lg p-6">
 
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">
-                    Leave Request Details
+                    {{ $request->detailTitle() }}
                 </h2>
 
                 <flux:button variant="ghost" href="{{ route('requests.manage') }}">
