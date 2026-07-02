@@ -2,6 +2,23 @@
     <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <h1 class="text-xl md:text-2xl font-bold mb-6">All Requests</h1>
         <div class="overflow-hidden shadow-xl sm:rounded-lg p-6">
+            <form method="GET" action="{{ route('requests.manage') }}"
+                class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div class="flex-1">
+                    <label for="search" class="mb-1 block text-xs font-medium uppercase text-neutral-500">Employee</label>
+                    <input id="search" type="search" name="search" value="{{ $search ?? request('search') }}"
+                        placeholder="Search name, preferred name, email, or employee number"
+                        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100" />
+                </div>
+
+                <div class="flex gap-2">
+                    <flux:button type="submit" variant="primary" class="w-full justify-center sm:w-auto">Apply</flux:button>
+                    @if (($search ?? request('search')) !== '')
+                        <flux:button href="{{ route('requests.manage') }}" variant="ghost" class="w-full justify-center sm:w-auto">Reset</flux:button>
+                    @endif
+                </div>
+            </form>
+
             <div class="overflow-x-auto">
                 <table
                     class="w-full min-w-max border-collapse border border-neutral-200 dark:border-neutral-700 text-sm">

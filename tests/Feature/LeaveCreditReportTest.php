@@ -747,6 +747,62 @@ class LeaveCreditReportTest extends TestCase
         $this->assertEquals(0, (float) $employee->requestCredit->fresh()->approved_carry_over);
     }
 
+    public function test_manage_requests_employee_search_is_case_insensitive(): void
+    {
+        Role::findOrCreate('pnc.super', 'web');
+
+        $pncSuper = User::factory()->create([
+            'email' => 'pnc.super@example.com',
+        ]);
+        $pncSuper->assignRole('pnc.super');
+
+        $jane = User::factory()->create([
+            'employee_number' => '20250001',
+            'name' => 'Jane Employee',
+            'preferred_name' => 'Janie',
+            'email' => 'jane@example.com',
+        ]);
+        $other = User::factory()->create([
+            'employee_number' => '20250002',
+            'name' => 'Other Employee',
+            'email' => 'other@example.com',
+        ]);
+
+        StaffRequest::create([
+            'user_id' => $jane->id,
+            'type' => 'PTO',
+            'reason' => 'Vacation',
+            'start_date' => '2026-06-08',
+            'end_date' => '2026-06-08',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'pending',
+        ]);
+
+        StaffRequest::create([
+            'user_id' => $other->id,
+            'type' => 'PTO',
+            'reason' => 'Errand',
+            'start_date' => '2026-06-09',
+            'end_date' => '2026-06-09',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($pncSuper)
+            ->get(route('requests.manage', ['search' => 'jAnIe']))
+            ->assertOk()
+            ->assertSee('Jane Employee')
+            ->assertDontSee('Other Employee');
+
+        $this->actingAs($pncSuper)
+            ->get(route('requests.manage', ['search' => '20250002']))
+            ->assertOk()
+            ->assertSee('Other Employee')
+            ->assertDontSee('Jane Employee');
+    }
+
     public function test_replenishment_adds_approved_carry_over_resets_it_and_records_run_history(): void
     {
         $this->admin->givePermissionTo('leave-credits.initialize');

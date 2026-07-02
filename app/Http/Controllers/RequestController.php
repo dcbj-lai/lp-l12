@@ -365,12 +365,14 @@ class RequestController extends Controller
 
 
 
-    public function manage()
+    public function manage(Request $request)
     {
         if (!Gate::allows('is-manager-or-hr')) {
             abort(403, "Unauthorized Access.");
         }
 
+        $search = trim((string) $request->query('search', ''));
+        $normalizedSearch = mb_strtolower($search);
         $query = StaffRequest::with(['user.requestCredit'])->latest();
 
         $user = auth()->user();
@@ -382,9 +384,20 @@ class RequestController extends Controller
             });
         }
 
-        $requests = $query->paginate(10);
+        $query->when($search !== '', function ($query) use ($normalizedSearch) {
+            $like = "%{$normalizedSearch}%";
+
+            $query->whereHas('user', function ($userQuery) use ($like) {
+                $userQuery->whereRaw('LOWER(employee_number) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(name) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(preferred_name) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
+            });
+        });
+
+        $requests = $query->paginate(10)->withQueryString();
         // dd($requests);
-        return view('requests.manage', compact('requests'));
+        return view('requests.manage', compact('requests', 'search'));
     }
 
 
