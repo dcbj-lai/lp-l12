@@ -366,7 +366,7 @@ class UserController extends Controller
     // Edit User Page (placeholder for now)
     public function edit(User $user)
     {
-        $user->load('requestCredit');
+        $user->load('requestCredit', 'roles');
         // dd($user);
         $supervisors = User::where('rank', 'manager')->where('is_active', true)->get();
         $departments = Department::orderBy('name')->get();
@@ -436,16 +436,16 @@ class UserController extends Controller
                     ]);
             }
 
-            // ✅ Safe roles decoding
-            $legacy_roles = [];
-            if (!empty($validated['roles'])) {
+            $roleNames = null;
+            if (array_key_exists('roles', $validated) && $validated['roles'] !== null) {
                 $decoded = json_decode($validated['roles'], true);
-                $legacy_roles = is_array($decoded) ? $decoded : [];
-            }
-            // dd($legacy_roles);
-            // Ensure default role
-            if (!in_array('user', $legacy_roles)) {
-                $legacy_roles[] = 'user';
+                $roleNames = is_array($decoded)
+                    ? collect($decoded)->filter()->unique()->values()->all()
+                    : [];
+
+                if (!in_array('user', $roleNames, true)) {
+                    $roleNames[] = 'user';
+                }
             }
 
             // ✅ Clean monthly rate safely
@@ -476,7 +476,6 @@ class UserController extends Controller
                 'is_active' => $request->boolean('is_active'),
                 'supervisor_id' => $validated['supervisor_id'] ?? null,
                 'department_id' => $validated['department_id'] ?? null,
-                'legacy_roles' => $legacy_roles,
                 'payroll_on' => $validated['payroll_on'] ?? false,
                 'rank' => $validated['rank'] ?? 'employee',
                 'position' => $validated['position'] ?? null,
@@ -497,6 +496,10 @@ class UserController extends Controller
                 'birthdate' => $validated['birthdate'] ?? null,
                 'hire_date' => $validated['hire_date'] ?? null,
             ]);
+
+            if ($roleNames !== null) {
+                $user->syncRoles($roleNames);
+            }
 
             return redirect()->back()->with('flash', [
                 'type' => 'success',

@@ -151,7 +151,7 @@
 
                     <!-- Existing Roles as Dismissible Banners -->
                     <div class="flex flex-wrap gap-2 mb-2">
-                        @foreach ($user->legacy_roles ?? [] as $role)
+                        @foreach ($user->roles->pluck('name')->sort()->values() as $role)
                             <div
                                 class="bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200 px-2 py-1 flex items-center gap-2 rounded-md text-xs">
                                 <span>{{ $role }}</span>
@@ -171,9 +171,12 @@
                             <option value="" disabled selected>Add role...</option>
                             <option value="finance.staff">Finance Staff</option>
                             <option value="finance.admin">Finance Admin</option>
+                            <option value="pnc.super">P&C Super</option>
                             <option value="pnc.staff">P&C Staff</option>
                             <option value="pnc.admin">P&C Admin</option>
                             <option value="sys.admin">System Admin</option>
+                            <option value="super.admin">Super Admin</option>
+                            <option value="access.admin">Access Admin</option>
                             <option value="frontdesk.staff">Front Desk</option>
                             <option value="acad.admin">Acad Admin</option>
                             <option value="guidance.admin">Guidance Admin</option>
@@ -186,7 +189,7 @@
 
                     <!-- Hidden Roles Input -->
                     <input type="hidden" name="roles" id="roles"
-                        value="{{ json_encode($user->legacy_roles ?? []) }}" />
+                        value="{{ $user->roles->pluck('name')->sort()->values()->toJson() }}" />
                 </div>
 
                 <!-- Title -->

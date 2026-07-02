@@ -12,6 +12,27 @@ class AccessAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        Role::firstOrCreate(['name' => 'access.admin']);
+        foreach ([
+            'user',
+            'access.admin',
+            'super.admin',
+            'sys.admin',
+            'pnc.staff',
+            'pnc.super',
+            'pnc.admin',
+            'finance.staff',
+            'finance.admin',
+            'frontdesk.staff',
+            'acad.admin',
+            'guidance.admin',
+            'guidance.staff',
+            'comms.admin',
+            'clinic.admin',
+            'facility.admin',
+            'facility.approver',
+            'facility.user',
+        ] as $role) {
+            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+        }
     }
 }

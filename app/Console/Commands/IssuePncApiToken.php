@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class IssuePncApiToken extends Command
@@ -39,14 +40,11 @@ class IssuePncApiToken extends Command
             Permission::findOrCreate($permission, 'web');
         }
 
-        $roles = collect($user->legacy_roles ?? [])
-            ->merge(['user', 'pnc.admin'])
-            ->unique()
-            ->values()
-            ->all();
+        foreach (['user', 'pnc.admin'] as $role) {
+            Role::findOrCreate($role, 'web');
+        }
 
-        $user->legacy_roles = $roles;
-        $user->save();
+        $user->assignRole(['user', 'pnc.admin']);
         $user->givePermissionTo($permissions);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

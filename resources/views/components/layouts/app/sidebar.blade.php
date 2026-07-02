@@ -11,22 +11,16 @@
     @php
         $user = Auth::user();
 
-        // ✅ legacy roles
-        $legacyRoles = $user->legacy_roles ?? [];
-
-        // $isPNC = in_array('pnc.admin', $legacyRoles);
         $isPNC = Gate::allows('is-pnc');
-        $isFinanceAdmin = in_array('finance.admin', $legacyRoles);
-        $isSuperAdmin = in_array('super.admin', $legacyRoles);
+        $isFinanceAdmin = Gate::allows('is-finance');
+        $isSuperAdmin = Gate::allows('is-super-admin');
         $isManager = $user->isManager();
-        $isFrontDesk = in_array('frontdesk.staff', $legacyRoles);
-        $isAcadAdmin = in_array('acad.admin', $legacyRoles);
-        $isGuidanceAdmin = in_array('guidance.admin', $legacyRoles);
-        $isGuidanceStaff = in_array('guidance.staff', $legacyRoles);
-        $isCommsAdmin = in_array('comms.admin', $legacyRoles);
-        $isClinicAdmin = in_array('clinic.admin', $legacyRoles);
-
-        // ✅ new system (for later use)
+        $isFrontDesk = Gate::allows('is-frontdesk');
+        $isAcadAdmin = Gate::allows('is-acad-admin');
+        $isGuidanceAdmin = $user->hasRole('guidance.admin');
+        $isGuidanceStaff = $user->hasRole('guidance.staff');
+        $isCommsAdmin = Gate::allows('is-comms-admin');
+        $isClinicAdmin = Gate::allows('is-clinic');
         $isFacilityAdmin = $user->hasRole('facility.admin');
         $isFacilityApprover = $user->hasRole('facility.approver');
         $canAccessFacility = $isFacilityAdmin || $isFacilityApprover;

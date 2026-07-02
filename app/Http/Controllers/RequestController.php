@@ -373,8 +373,10 @@ class RequestController extends Controller
 
         $query = StaffRequest::with(['user.requestCredit'])->latest();
 
-        // Managers only see requests of their direct reports
-        if (auth()->user()->isManager() && !Gate::allows('is-super-admin')) {
+        $user = auth()->user();
+
+        // Managers only see requests of their direct reports; P&C super/admin can see all.
+        if ($user->isManager() && ! $user->canApproveAnyLeaveRequest()) {
             $query->whereHas('user', function ($q) {
                 $q->where('supervisor_id', auth()->id());
             });
@@ -395,6 +397,8 @@ class RequestController extends Controller
         }
 
         $staffRequest = StaffRequest::findOrFail($id);
+
+        abort_unless($this->canProcessLeaveRequest($staffRequest, auth()->user()), 403);
 
         if (
             ($staffRequest->status === 'approved' && $request->input('action_type') === 'approve') ||
@@ -618,9 +622,26 @@ class RequestController extends Controller
             abort(403, "Unauthorized Access.");
         }
 
+        abort_unless($this->canProcessLeaveRequest($request, auth()->user()), 403);
+
         return view('requests.show', [
             'request' => $request->load('user', 'approver'),
         ]);
+    }
+
+    protected function canProcessLeaveRequest(StaffRequest $request, User $user): bool
+    {
+        if ($user->canApproveAnyLeaveRequest()) {
+            return true;
+        }
+
+        if (! $user->isManager()) {
+            return false;
+        }
+
+        $request->loadMissing('user');
+
+        return (int) ($request->user?->supervisor_id ?? 0) === (int) $user->id;
     }
 
     /**Requester view for his own request */

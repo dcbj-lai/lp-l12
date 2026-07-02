@@ -90,7 +90,7 @@ class Request extends Model
 
     public function canViewOffsetProof(User $user): bool
     {
-        if ($user->hasAnyLegacyRole(['pnc.staff', 'pnc.admin', 'super.admin'])) {
+        if ($user->hasAnyRole(['pnc.staff', 'pnc.super', 'pnc.admin', 'super.admin'])) {
             return true;
         }
 

@@ -6,6 +6,7 @@ use App\Models\PreEnrollmentMedicalClearance;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class PreEnrollmentMedicalClearanceTest extends TestCase
@@ -14,11 +15,15 @@ class PreEnrollmentMedicalClearanceTest extends TestCase
 
     protected function clinicUser(): User
     {
-        return User::factory()->create([
+        Role::findOrCreate('clinic.admin', 'web');
+
+        $user = User::factory()->create([
             'name' => 'Clinic Admin Legal Name',
             'preferred_name' => 'Doc Preferred',
-            'legacy_roles' => ['user', 'clinic.admin'],
         ]);
+        $user->assignRole('clinic.admin');
+
+        return $user;
     }
 
     public function test_clinic_user_can_view_clearance_index_and_create_form(): void

@@ -13,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class LeaveCreditReportTest extends TestCase
@@ -549,7 +550,8 @@ class LeaveCreditReportTest extends TestCase
 
     public function test_pnc_admin_can_update_leave_balance_from_report(): void
     {
-        $this->admin->forceFill(['legacy_roles' => ['user', 'pnc.admin']])->save();
+        Role::findOrCreate('pnc.admin', 'web');
+        $this->admin->assignRole('pnc.admin');
 
         $employee = User::factory()->create([
             'employee_number' => '20250001',
@@ -672,6 +674,77 @@ class LeaveCreditReportTest extends TestCase
         $this->actingAs($otherManager)
             ->get(route('requests.documents.show', ['path' => $proofPath]))
             ->assertForbidden();
+    }
+
+    public function test_pnc_super_can_process_leave_and_carry_over_requests_for_any_employee(): void
+    {
+        Mail::fake();
+        Role::findOrCreate('pnc.super', 'web');
+
+        $pncSuper = User::factory()->create([
+            'email' => 'pnc.super@example.com',
+        ]);
+        $pncSuper->assignRole('pnc.super');
+
+        $manager = User::factory()->create([
+            'rank' => 'manager',
+            'email' => 'manager@example.com',
+        ]);
+        $employee = User::factory()->create([
+            'supervisor_id' => $manager->id,
+            'email' => 'employee@example.com',
+        ]);
+
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 10, 'wfh' => 4]);
+
+        $leaveRequest = StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => 'PTO',
+            'reason' => 'Vacation',
+            'start_date' => '2026-06-08',
+            'end_date' => '2026-06-08',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($pncSuper)
+            ->post(route('requests.process', $leaveRequest), [
+                'action_type' => 'approve',
+                'remarks' => 'Approved by P&C super.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $leaveRequest->refresh();
+        $employee->refresh();
+
+        $this->assertSame('approved', $leaveRequest->status);
+        $this->assertSame($pncSuper->id, $leaveRequest->approver_id);
+        $this->assertEquals(9, (float) $employee->requestCredit->pto);
+
+        $carryOverRequest = StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Unused prior-cycle leave',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+            'end_date_type' => 'full',
+            'number_of_days' => 2.5,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($pncSuper)
+            ->post(route('requests.process', $carryOverRequest), [
+                'action_type' => 'reject',
+                'remarks' => 'Needs review.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $carryOverRequest->refresh();
+
+        $this->assertSame('rejected', $carryOverRequest->status);
+        $this->assertSame($pncSuper->id, $carryOverRequest->approver_id);
+        $this->assertEquals(0, (float) $employee->requestCredit->fresh()->approved_carry_over);
     }
 
     public function test_replenishment_adds_approved_carry_over_resets_it_and_records_run_history(): void

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ClinicPatientCreateTest extends TestCase
@@ -13,9 +14,12 @@ class ClinicPatientCreateTest extends TestCase
 
     protected function clinicUser(): User
     {
-        return User::factory()->create([
-            'legacy_roles' => ['user', 'clinic.admin'],
-        ]);
+        Role::findOrCreate('clinic.admin', 'web');
+
+        $user = User::factory()->create();
+        $user->assignRole('clinic.admin');
+
+        return $user;
     }
 
     public function test_clinic_user_can_view_create_student_patient_form(): void

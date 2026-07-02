@@ -30,7 +30,6 @@ class User extends Authenticatable
         'password',
         'google_id',
         'supervisor_id',
-        'legacy_roles', // ✅ updated
         'payroll_on',
         'monthly_rate',
         'department_id',
@@ -63,7 +62,6 @@ class User extends Authenticatable
     ];
 
     protected $attributes = [
-        'legacy_roles' => '["user"]',
         'is_active' => true,
     ];
 
@@ -77,7 +75,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'legacy_roles' => 'array', // ✅ updated
             'is_active' => 'boolean',
             'payroll_on' => 'boolean',
             'monthly_rate' => 'decimal:2',
@@ -106,9 +103,9 @@ class User extends Authenticatable
         return $this->cardUrl();
     }
 
-    public function hasAnyLegacyRole(array $roles): bool
+    public function canApproveAnyLeaveRequest(): bool
     {
-        return count(array_intersect($this->legacy_roles ?? [], $roles)) > 0;
+        return $this->hasAnyRole(['pnc.super', 'pnc.admin', 'super.admin']);
     }
 
     /**
@@ -126,12 +123,12 @@ class User extends Authenticatable
 
     public function isFinanceAdmin(): bool
     {
-        return in_array('finance.admin', $this->legacy_roles ?? []) || in_array('super.admin', $this->legacy_roles ?? []);
+        return $this->hasAnyRole(['finance.admin', 'super.admin']);
     }
 
     public function isPNCAdmin(): bool
     {
-        return in_array('pnc.admin', $this->legacy_roles ?? []) || in_array('super.admin', $this->legacy_roles ?? []);
+        return $this->hasAnyRole(['pnc.admin', 'super.admin']);
     }
 
     public function supervisor()
@@ -166,11 +163,11 @@ class User extends Authenticatable
 
     public function isGuidanceAdmin(): bool
     {
-        return in_array('guidance.admin', $this->legacy_roles ?? []);
+        return $this->hasRole('guidance.admin');
     }
 
     public function isGuidanceStaff(): bool
     {
-        return in_array('guidance.staff', $this->legacy_roles ?? []);
+        return $this->hasRole('guidance.staff');
     }
 }

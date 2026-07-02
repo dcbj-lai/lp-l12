@@ -2,6 +2,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VisitorLogController;
+use App\Http\Controllers\AccessRoleController;
 use App\Http\Controllers\LeaveCreditController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UserController;
@@ -39,6 +40,24 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     Route::patch('/leave-credits/{user}', [LeaveCreditController::class, 'apiUpdate'])
         ->middleware('permission:leave-credits.assign')
         ->name('leave-credits.api.update');
+
+    Route::middleware('role:access.admin')->group(function () {
+        Route::get('/access/roles', [AccessRoleController::class, 'roles'])
+            ->name('access.api.roles.index');
+
+        Route::get('/users/{user}/roles', [AccessRoleController::class, 'userRoles'])
+            ->name('users.api.roles.show');
+
+        Route::post('/users/{user}/roles', [AccessRoleController::class, 'assign'])
+            ->name('users.api.roles.assign');
+
+        Route::put('/users/{user}/roles', [AccessRoleController::class, 'sync'])
+            ->name('users.api.roles.sync');
+
+        Route::delete('/users/{user}/roles/{role}', [AccessRoleController::class, 'revoke'])
+            ->where('role', '.*')
+            ->name('users.api.roles.revoke');
+    });
 });
 
 Route::post('/webhook/preapproved-visitor', [VisitorLogController::class, 'webhookPreapproved']);
