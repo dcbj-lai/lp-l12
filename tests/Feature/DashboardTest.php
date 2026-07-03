@@ -26,35 +26,19 @@ class DashboardTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_pnc_super_sees_my_approvals_navigation(): void
-    {
-        Role::findOrCreate('pnc.super', 'web');
-
-        $user = User::factory()->create([
-            'email' => 'perly.gonzales@life.edu.ph',
-        ]);
-        $user->assignRole('pnc.super');
-
-        $this->actingAs($user)
-            ->get('/dashboard')
-            ->assertOk()
-            ->assertSee('My Approvals')
-            ->assertSee('Schedule Requests');
-    }
-
-    public function test_pnc_admin_without_manager_rank_does_not_see_my_approvals_navigation(): void
+    public function test_pnc_admin_sees_my_approvals_navigation(): void
     {
         Role::findOrCreate('pnc.admin', 'web');
 
         $user = User::factory()->create([
-            'rank' => 'employee',
+            'email' => 'perly.gonzales@life.edu.ph',
         ]);
         $user->assignRole('pnc.admin');
 
         $this->actingAs($user)
             ->get('/dashboard')
             ->assertOk()
-            ->assertDontSee('My Approvals')
-            ->assertDontSee('Schedule Requests');
+            ->assertSee('My Approvals')
+            ->assertSee('Schedule Requests');
     }
 }

@@ -676,15 +676,15 @@ class LeaveCreditReportTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_pnc_super_can_process_leave_and_carry_over_requests_for_any_employee(): void
+    public function test_pnc_admin_can_process_leave_and_carry_over_requests_for_any_employee(): void
     {
         Mail::fake();
-        Role::findOrCreate('pnc.super', 'web');
+        Role::findOrCreate('pnc.admin', 'web');
 
-        $pncSuper = User::factory()->create([
-            'email' => 'pnc.super@example.com',
+        $pncAdmin = User::factory()->create([
+            'email' => 'pnc.admin@example.com',
         ]);
-        $pncSuper->assignRole('pnc.super');
+        $pncAdmin->assignRole('pnc.admin');
 
         $manager = User::factory()->create([
             'rank' => 'manager',
@@ -708,10 +708,10 @@ class LeaveCreditReportTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->actingAs($pncSuper)
+        $this->actingAs($pncAdmin)
             ->post(route('requests.process', $leaveRequest), [
                 'action_type' => 'approve',
-                'remarks' => 'Approved by P&C super.',
+                'remarks' => 'Approved by P&C admin.',
             ])
             ->assertRedirect(route('requests.manage'));
 
@@ -719,7 +719,7 @@ class LeaveCreditReportTest extends TestCase
         $employee->refresh();
 
         $this->assertSame('approved', $leaveRequest->status);
-        $this->assertSame($pncSuper->id, $leaveRequest->approver_id);
+        $this->assertSame($pncAdmin->id, $leaveRequest->approver_id);
         $this->assertEquals(9, (float) $employee->requestCredit->pto);
 
         $carryOverRequest = StaffRequest::create([
@@ -733,7 +733,7 @@ class LeaveCreditReportTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->actingAs($pncSuper)
+        $this->actingAs($pncAdmin)
             ->post(route('requests.process', $carryOverRequest), [
                 'action_type' => 'reject',
                 'remarks' => 'Needs review.',
@@ -743,18 +743,18 @@ class LeaveCreditReportTest extends TestCase
         $carryOverRequest->refresh();
 
         $this->assertSame('rejected', $carryOverRequest->status);
-        $this->assertSame($pncSuper->id, $carryOverRequest->approver_id);
+        $this->assertSame($pncAdmin->id, $carryOverRequest->approver_id);
         $this->assertEquals(0, (float) $employee->requestCredit->fresh()->approved_carry_over);
     }
 
     public function test_manage_requests_employee_search_is_case_insensitive(): void
     {
-        Role::findOrCreate('pnc.super', 'web');
+        Role::findOrCreate('pnc.admin', 'web');
 
-        $pncSuper = User::factory()->create([
-            'email' => 'pnc.super@example.com',
+        $pncAdmin = User::factory()->create([
+            'email' => 'pnc.admin@example.com',
         ]);
-        $pncSuper->assignRole('pnc.super');
+        $pncAdmin->assignRole('pnc.admin');
 
         $jane = User::factory()->create([
             'employee_number' => '20250001',
@@ -790,66 +790,17 @@ class LeaveCreditReportTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->actingAs($pncSuper)
+        $this->actingAs($pncAdmin)
             ->get(route('requests.manage', ['search' => 'jAnIe']))
             ->assertOk()
             ->assertSee('Jane Employee')
             ->assertDontSee('Other Employee');
 
-        $this->actingAs($pncSuper)
+        $this->actingAs($pncAdmin)
             ->get(route('requests.manage', ['search' => '20250002']))
             ->assertOk()
             ->assertSee('Other Employee')
             ->assertDontSee('Jane Employee');
-    }
-
-    public function test_pnc_admin_manager_sees_only_direct_reports_in_my_approvals(): void
-    {
-        Role::findOrCreate('pnc.admin', 'web');
-
-        $pncAdminManager = User::factory()->create([
-            'rank' => 'manager',
-            'email' => 'pnc.manager@example.com',
-        ]);
-        $pncAdminManager->assignRole('pnc.admin');
-
-        $directReport = User::factory()->create([
-            'supervisor_id' => $pncAdminManager->id,
-            'name' => 'Direct Report',
-            'email' => 'direct@example.com',
-        ]);
-        $otherEmployee = User::factory()->create([
-            'name' => 'Other Employee',
-            'email' => 'other.employee@example.com',
-        ]);
-
-        StaffRequest::create([
-            'user_id' => $directReport->id,
-            'type' => 'PTO',
-            'reason' => 'Direct report vacation',
-            'start_date' => '2026-06-08',
-            'end_date' => '2026-06-08',
-            'end_date_type' => 'full',
-            'number_of_days' => 1,
-            'status' => 'pending',
-        ]);
-
-        StaffRequest::create([
-            'user_id' => $otherEmployee->id,
-            'type' => 'PTO',
-            'reason' => 'Other employee vacation',
-            'start_date' => '2026-06-09',
-            'end_date' => '2026-06-09',
-            'end_date_type' => 'full',
-            'number_of_days' => 1,
-            'status' => 'pending',
-        ]);
-
-        $this->actingAs($pncAdminManager)
-            ->get(route('requests.manage'))
-            ->assertOk()
-            ->assertSee('Direct Report')
-            ->assertDontSee('Other Employee');
     }
 
     public function test_replenishment_adds_approved_carry_over_resets_it_and_records_run_history(): void

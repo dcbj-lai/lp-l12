@@ -15,7 +15,6 @@ return new class extends Migration
             'super.admin',
             'sys.admin',
             'pnc.staff',
-            'pnc.super',
             'pnc.admin',
             'finance.staff',
             'finance.admin',
@@ -49,6 +48,7 @@ return new class extends Migration
                     $roles = collect($legacyRoles ?? [])
                         ->filter(fn ($role) => is_string($role) && trim($role) !== '')
                         ->map(fn ($role) => trim($role))
+                        ->map(fn ($role) => $role === 'pnc.super' ? 'pnc.admin' : $role)
                         ->unique()
                         ->values();
 

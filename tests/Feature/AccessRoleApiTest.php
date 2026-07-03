@@ -14,7 +14,7 @@ class AccessRoleApiTest extends TestCase
     public function test_access_admin_can_assign_sync_and_revoke_user_roles(): void
     {
         $accessAdminRole = Role::findOrCreate('access.admin', 'web');
-        Role::findOrCreate('pnc.super', 'web');
+        Role::findOrCreate('pnc.admin', 'web');
         Role::findOrCreate('facility.admin', 'web');
 
         $admin = User::factory()->create();
@@ -29,17 +29,18 @@ class AccessRoleApiTest extends TestCase
         $this->actingAs($admin, 'sanctum')
             ->getJson(route('access.api.roles.index'))
             ->assertOk()
-            ->assertJsonFragment(['name' => 'pnc.super']);
+            ->assertJsonFragment(['name' => 'pnc.admin'])
+            ->assertJsonMissing(['name' => 'pnc.super']);
 
         $this->actingAs($admin, 'sanctum')
             ->postJson(route('users.api.roles.assign', $target), [
-                'role' => 'pnc.super',
+                'role' => 'pnc.admin',
             ])
             ->assertOk()
             ->assertJsonPath('updated', true)
-            ->assertJsonFragment(['name' => 'pnc.super']);
+            ->assertJsonFragment(['name' => 'pnc.admin']);
 
-        $this->assertTrue($target->fresh()->hasRole('pnc.super'));
+        $this->assertTrue($target->fresh()->hasRole('pnc.admin'));
 
         $this->actingAs($admin, 'sanctum')
             ->putJson(route('users.api.roles.sync', $target), [
@@ -47,11 +48,11 @@ class AccessRoleApiTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonFragment(['name' => 'facility.admin'])
-            ->assertJsonMissing(['name' => 'pnc.super']);
+            ->assertJsonMissing(['name' => 'pnc.admin']);
 
         $target->refresh();
         $this->assertTrue($target->hasRole('facility.admin'));
-        $this->assertFalse($target->hasRole('pnc.super'));
+        $this->assertFalse($target->hasRole('pnc.admin'));
 
         $this->actingAs($admin, 'sanctum')
             ->deleteJson(route('users.api.roles.revoke', [$target, 'facility.admin']))
@@ -64,14 +65,14 @@ class AccessRoleApiTest extends TestCase
 
     public function test_role_assignment_api_requires_access_admin_role(): void
     {
-        Role::findOrCreate('pnc.super', 'web');
+        Role::findOrCreate('pnc.admin', 'web');
 
         $plainUser = User::factory()->create();
         $target = User::factory()->create();
 
         $this->actingAs($plainUser, 'sanctum')
             ->postJson(route('users.api.roles.assign', $target), [
-                'role' => 'pnc.super',
+                'role' => 'pnc.admin',
             ])
             ->assertForbidden();
     }

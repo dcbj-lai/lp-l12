@@ -14,7 +14,7 @@ class SuperUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $roles = ['user', 'access.admin', 'super.admin', 'sys.admin', 'pnc.super', 'pnc.admin', 'pnc.staff', 'finance.staff', 'finance.admin'];
+        $roles = ['user', 'access.admin', 'super.admin', 'sys.admin', 'pnc.admin', 'pnc.staff', 'finance.staff', 'finance.admin'];
 
         foreach ($roles as $role) {
             Role::findOrCreate($role, 'web');

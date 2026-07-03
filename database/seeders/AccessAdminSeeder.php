@@ -18,7 +18,6 @@ class AccessAdminSeeder extends Seeder
             'super.admin',
             'sys.admin',
             'pnc.staff',
-            'pnc.super',
             'pnc.admin',
             'finance.staff',
             'finance.admin',

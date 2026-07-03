@@ -171,7 +171,6 @@
                             <option value="" disabled selected>Add role...</option>
                             <option value="finance.staff">Finance Staff</option>
                             <option value="finance.admin">Finance Admin</option>
-                            <option value="pnc.super">P&C Super</option>
                             <option value="pnc.staff">P&C Staff</option>
                             <option value="pnc.admin">P&C Admin</option>
                             <option value="sys.admin">System Admin</option>

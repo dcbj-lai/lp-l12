@@ -105,7 +105,7 @@ class User extends Authenticatable
 
     public function canApproveAnyLeaveRequest(): bool
     {
-        return $this->hasAnyRole(['pnc.super', 'super.admin']);
+        return $this->hasAnyRole(['pnc.admin', 'super.admin']);
     }
 
     /**
