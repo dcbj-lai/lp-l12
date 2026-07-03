@@ -72,12 +72,15 @@ class ReservationIndex extends Component
                 try {
                     app(\App\Services\GoogleCalendarService::class)
                         ->deleteEvent($reservation->google_event_id);
+                    $reservation->google_event_id = null;
                 } catch (\Throwable $e) {
                     \Log::warning('Failed to delete calendar event on reject', [
                         'reservation_id' => $reservation->id,
                         'event_id' => $reservation->google_event_id,
                         'error' => $e->getMessage(),
                     ]);
+
+                    throw new \Exception('Failed to delete calendar event. Reservation was not rejected.');
                 }
             }
 
@@ -86,7 +89,7 @@ class ReservationIndex extends Component
                 'status' => 'rejected',
                 'approved_by' => auth()->id(),
                 'approved_at' => now(),
-                'google_event_id' => null, // ✅ prevent stale reference
+                'google_event_id' => $reservation->google_event_id,
             ]);
 
             $this->dispatch(

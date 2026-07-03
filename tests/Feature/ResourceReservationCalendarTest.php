@@ -52,7 +52,7 @@ class ResourceReservationCalendarTest extends TestCase
         $this->assertSame('Not available.', $reservation->approval_note);
     }
 
-    public function test_rejecting_reservation_keeps_google_event_id_when_calendar_delete_fails(): void
+    public function test_rejecting_reservation_stops_when_calendar_delete_fails(): void
     {
         Mail::fake();
 
@@ -76,15 +76,24 @@ class ResourceReservationCalendarTest extends TestCase
             ->andThrow(new \RuntimeException('Google Calendar unavailable.'));
         $this->app->instance(GoogleCalendarService::class, $calendar);
 
-        app(ResourceReservationService::class)->rejectReservation(
-            $reservation,
-            $approver->id,
-            'Not available.'
-        );
+        try {
+            app(ResourceReservationService::class)->rejectReservation(
+                $reservation,
+                $approver->id,
+                'Not available.'
+            );
+
+            $this->fail('Calendar deletion failure should stop rejection.');
+        } catch (\Exception $e) {
+            $this->assertSame(
+                'Unable to delete the Google Calendar event. Reservation was not rejected.',
+                $e->getMessage()
+            );
+        }
 
         $reservation->refresh();
 
-        $this->assertSame('rejected', $reservation->status);
+        $this->assertSame('approved', $reservation->status);
         $this->assertSame('calendar-event-19', $reservation->google_event_id);
     }
 }

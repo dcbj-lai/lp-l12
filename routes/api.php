@@ -3,6 +3,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VisitorLogController;
 use App\Http\Controllers\AccessRoleController;
+use App\Http\Controllers\FacilityReservationController;
 use App\Http\Controllers\LeaveCreditController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UserController;
@@ -32,6 +33,28 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     Route::get('/leave-requests', [RequestController::class, 'apiIndex'])
         ->middleware('permission:requests.hr.view')
         ->name('leave-requests.api.index');
+
+    Route::middleware('role:facility.admin|facility.approver')
+        ->prefix('facility-reservations')
+        ->name('facility-reservations.api.')
+        ->group(function () {
+            Route::get('/', [FacilityReservationController::class, 'index'])->name('index');
+            Route::get('/{reservation}', [FacilityReservationController::class, 'show'])->name('show');
+            Route::post('/{reservation}/approve', [FacilityReservationController::class, 'approve'])->name('approve');
+            Route::post('/{reservation}/reject', [FacilityReservationController::class, 'reject'])->name('reject');
+            Route::post('/{reservation}/cleanup-google-calendar', [FacilityReservationController::class, 'cleanupGoogleCalendar'])
+                ->name('cleanup-google-calendar');
+        });
+
+    Route::middleware('role:facility.admin')
+        ->prefix('facility-reservations')
+        ->name('facility-reservations.api.')
+        ->group(function () {
+            Route::post('/', [FacilityReservationController::class, 'store'])->name('store');
+            Route::patch('/{reservation}', [FacilityReservationController::class, 'update'])->name('update');
+            Route::put('/{reservation}', [FacilityReservationController::class, 'update'])->name('replace');
+            Route::delete('/{reservation}', [FacilityReservationController::class, 'destroy'])->name('destroy');
+        });
 
     Route::patch('/leave-credits', [LeaveCreditController::class, 'apiBulkUpdate'])
         ->middleware('permission:leave-credits.assign')
