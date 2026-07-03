@@ -7,6 +7,7 @@ use App\Mail\ResourceBookingRejected;
 use App\Models\ResourceReservation;
 use App\Services\GoogleCalendarService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ResourceReservationService
@@ -182,11 +183,25 @@ class ResourceReservationService
             throw new \Exception('Rejection reason is required.');
         }
 
+        if ($reservation->google_event_id) {
+            try {
+                app(GoogleCalendarService::class)->deleteEvent($reservation->google_event_id);
+                $reservation->google_event_id = null;
+            } catch (\Throwable $e) {
+                Log::warning('Google Calendar event deletion failed on resource reservation reject', [
+                    'reservation_id' => $reservation->id,
+                    'event_id' => $reservation->google_event_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         $reservation->update([
             'status' => 'rejected',
             'approved_by' => $approverId,
             'approved_at' => now(),
             'approval_note' => $note, // ✅ same column
+            'google_event_id' => $reservation->google_event_id,
         ]);
 
         $reservation->load(['resource', 'equipment']);
