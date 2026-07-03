@@ -41,4 +41,20 @@ class DashboardTest extends TestCase
             ->assertSee('My Approvals')
             ->assertSee('Schedule Requests');
     }
+
+    public function test_pnc_admin_without_manager_rank_does_not_see_my_approvals_navigation(): void
+    {
+        Role::findOrCreate('pnc.admin', 'web');
+
+        $user = User::factory()->create([
+            'rank' => 'employee',
+        ]);
+        $user->assignRole('pnc.admin');
+
+        $this->actingAs($user)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee('My Approvals')
+            ->assertDontSee('Schedule Requests');
+    }
 }
