@@ -23,6 +23,7 @@
         $isClinicAdmin = Gate::allows('is-clinic');
         $isFacilityAdmin = $user->hasRole('facility.admin');
         $isFacilityApprover = $user->hasRole('facility.approver');
+        $canManageApprovals = $isManager || $user->canApproveAnyLeaveRequest();
         $canAccessFacility = $isFacilityAdmin || $isFacilityApprover;
         $canAccessAdmin = $user->hasRole('access.admin');
     @endphp
@@ -51,7 +52,7 @@
                     <flux:navlist.item href="{{ route('steps.index') }}" icon="trophy">Leaderboard</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist.group>
-            @if ($isManager)
+            @if ($canManageApprovals)
                 <flux:navlist.group heading="My Approvals" expandable :expanded="false">
                     <flux:navlist.item href="{{ route('requests.manage') }}" icon="bookmark-check">Schedule Requests
                     </flux:navlist.item>

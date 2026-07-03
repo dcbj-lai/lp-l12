@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -23,5 +24,21 @@ class DashboardTest extends TestCase
 
         $response = $this->get('/dashboard');
         $response->assertStatus(200);
+    }
+
+    public function test_pnc_super_sees_my_approvals_navigation(): void
+    {
+        Role::findOrCreate('pnc.super', 'web');
+
+        $user = User::factory()->create([
+            'email' => 'perly.gonzales@life.edu.ph',
+        ]);
+        $user->assignRole('pnc.super');
+
+        $this->actingAs($user)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('My Approvals')
+            ->assertSee('Schedule Requests');
     }
 }
