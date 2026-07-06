@@ -629,6 +629,70 @@ class LeaveCreditReportTest extends TestCase
         $this->assertEquals(2.5, (float) $employee->requestCredit->approved_carry_over);
     }
 
+    public function test_duplicate_approved_carry_over_requests_use_largest_amount_not_sum(): void
+    {
+        Mail::fake();
+
+        $manager = User::factory()->create([
+            'rank' => 'manager',
+            'email' => 'manager@example.com',
+        ]);
+        $employee = User::factory()->create([
+            'supervisor_id' => $manager->id,
+            'email' => 'employee@example.com',
+        ]);
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 8, 'wfh' => 4]);
+
+        $canonicalCarryOver = StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Unused credits',
+            'start_date' => '2026-07-01',
+            'end_date' => '2026-07-01',
+            'end_date_type' => 'full',
+            'number_of_days' => 11.5,
+            'status' => 'pending',
+        ]);
+
+        $duplicateCarryOver = StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Retreat',
+            'start_date' => '2026-07-03',
+            'end_date' => '2026-07-03',
+            'end_date_type' => 'full',
+            'number_of_days' => 7,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('requests.process', $canonicalCarryOver), [
+                'action_type' => 'approve',
+                'remarks' => 'Approved carry over.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $this->assertEquals(11.5, (float) $employee->requestCredit->fresh()->approved_carry_over);
+
+        $this->actingAs($manager)
+            ->post(route('requests.process', $duplicateCarryOver), [
+                'action_type' => 'approve',
+                'remarks' => 'Approved carry over.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $this->assertEquals(11.5, (float) $employee->requestCredit->fresh()->approved_carry_over);
+
+        $this->actingAs($manager)
+            ->post(route('requests.process', $canonicalCarryOver), [
+                'action_type' => 'reject',
+                'remarks' => 'Removed canonical carry over.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $this->assertEquals(7, (float) $employee->requestCredit->fresh()->approved_carry_over);
+    }
+
     public function test_approving_manager_can_view_offset_leave_proof(): void
     {
         Storage::fake('private_s3');

@@ -475,14 +475,8 @@ class RequestController extends Controller
 
         }
 
-        if (
-            $staffRequest->status === 'approved'
-            && $staffRequest->isCreditCarryOver()
-            && $originalStatus !== 'approved'
-        ) {
-            $credit = $staffRequest->user->requestCredit()->firstOrCreate(['user_id' => $staffRequest->user_id]);
-            $credit->approved_carry_over = (float) ($credit->approved_carry_over ?? 0) + (float) $staffRequest->number_of_days;
-            $credit->save();
+        if ($staffRequest->isCreditCarryOver()) {
+            $this->syncApprovedCarryOverForUser($staffRequest->user_id);
         }
 
         if (
@@ -508,22 +502,6 @@ class RequestController extends Controller
                 $credit->save();
             } else {
                 Log::warning("No credit found to reverse for user", ['user_id' => $staffRequest->user_id]);
-            }
-        }
-
-        if (
-            $originalStatus === 'approved' &&
-            $staffRequest->status === 'rejected' &&
-            $staffRequest->isCreditCarryOver()
-        ) {
-            $credit = $staffRequest->user->requestCredit;
-
-            if ($credit) {
-                $credit->approved_carry_over = max(
-                    0,
-                    (float) ($credit->approved_carry_over ?? 0) - (float) $staffRequest->number_of_days
-                );
-                $credit->save();
             }
         }
 
@@ -655,6 +633,36 @@ class RequestController extends Controller
         $request->loadMissing('user');
 
         return (int) ($request->user?->supervisor_id ?? 0) === (int) $user->id;
+    }
+
+    protected function syncApprovedCarryOverForUser(int $userId): RequestCredit
+    {
+        $approvedCarryOver = (float) $this->currentCarryOverRequests($userId)
+            ->where('status', 'approved')
+            ->max('number_of_days');
+
+        $credit = RequestCredit::firstOrCreate(['user_id' => $userId]);
+        $credit->approved_carry_over = $approvedCarryOver;
+        $credit->save();
+
+        return $credit;
+    }
+
+    protected function currentCarryOverRequests(int $userId)
+    {
+        $query = StaffRequest::query()
+            ->where('user_id', $userId)
+            ->where('type', StaffRequest::TYPE_CREDIT_CARRY_OVER);
+
+        $lastReplenishment = LeaveReplenishmentRun::query()
+            ->latest('created_at')
+            ->value('created_at');
+
+        if ($lastReplenishment) {
+            $query->where('updated_at', '>=', $lastReplenishment);
+        }
+
+        return $query;
     }
 
     /**Requester view for his own request */
