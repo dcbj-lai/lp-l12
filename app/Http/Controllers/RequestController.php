@@ -120,10 +120,11 @@ class RequestController extends Controller
 
         if ($requestModel->status !== 'rejected') {
             $requestModel->status = 'rejected';
-            $requestModel->remarks = $validated['remarks'] ?? $requestModel->remarks;
             $requestModel->approver_id = $request->user()->id;
-            $requestModel->save();
         }
+
+        $requestModel->remarks = $validated['remarks'] ?? $requestModel->remarks;
+        $requestModel->save();
 
         $this->syncApprovedCarryOverForUser($requestModel->user_id);
 
