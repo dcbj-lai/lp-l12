@@ -1,12 +1,12 @@
 <x-layouts.app>
-    <div class="px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-        <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">
+    <div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <h1 class="max-w-3xl mx-auto text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">
             Request Settings
         </h1>
 
         {{-- Update Default Credits --}}
         <form action="{{ route('org-settings.update') }}" method="POST"
-            class="space-y-6 bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
+            class="max-w-3xl mx-auto space-y-6 bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
             @csrf
 
             <div>
@@ -47,10 +47,10 @@
         </form>
 
         {{-- Divider --}}
-        <div class="my-10 border-t border-gray-200 dark:border-gray-700"></div>
+        <div class="my-10 max-w-3xl mx-auto border-t border-gray-200 dark:border-gray-700"></div>
 
         {{-- Initialize Leave Credits --}}
-        <div class="space-y-4 bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
+        <div class="max-w-3xl mx-auto space-y-4 bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6">
             <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 Initialize Leave Requests
             </h2>
@@ -78,8 +78,8 @@
                 Replenishment Run History
             </h2>
 
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[720px] text-sm">
+            <div class="max-w-full overflow-x-auto">
+                <table class="w-full min-w-[960px] text-sm">
                     <thead class="bg-gray-100 text-left text-xs font-semibold uppercase text-gray-600 dark:bg-gray-900 dark:text-gray-300">
                         <tr>
                             <th class="px-4 py-3">Run Date</th>
@@ -109,8 +109,8 @@
                                             Employee snapshots ({{ number_format($run->items->count()) }})
                                         </summary>
 
-                                        <div class="mt-3 overflow-x-auto">
-                                            <table class="w-full min-w-[980px] text-xs">
+                                        <div class="mt-3 max-w-full overflow-x-auto">
+                                            <table class="w-full min-w-[1120px] text-xs">
                                                 <thead class="bg-white text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                                                     <tr>
                                                         <th class="px-3 py-2 text-left">Employee #</th>
