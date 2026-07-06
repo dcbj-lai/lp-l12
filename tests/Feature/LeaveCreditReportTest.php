@@ -786,6 +786,53 @@ class LeaveCreditReportTest extends TestCase
         $this->assertEquals(8, (float) $employee->requestCredit->fresh()->approved_carry_over);
     }
 
+    public function test_leave_request_uses_credits_not_reserved_for_carry_over(): void
+    {
+        Mail::fake();
+
+        $manager = User::factory()->create([
+            'rank' => 'manager',
+            'email' => 'manager@example.com',
+        ]);
+        $employee = User::factory()->create([
+            'supervisor_id' => $manager->id,
+            'email' => 'employee@example.com',
+        ]);
+        RequestCredit::create([
+            'user_id' => $employee->id,
+            'pto' => 11.5,
+            'wfh' => 4,
+            'approved_carry_over' => 9,
+        ]);
+
+        foreach ([7, 1, 1] as $days) {
+            StaffRequest::create([
+                'user_id' => $employee->id,
+                'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+                'reason' => 'Itemized carry-over',
+                'start_date' => '2026-07-03',
+                'end_date' => '2026-07-03',
+                'end_date_type' => 'full',
+                'number_of_days' => $days,
+                'status' => 'approved',
+            ]);
+        }
+
+        $this->actingAs($employee)
+            ->post(route('requests.store'), [
+                'type' => 'PTO',
+                'start_date' => '2026-07-06',
+                'end_date' => '2026-07-08',
+                'end_date_type' => 'full',
+                'reason' => 'Vacation',
+            ])
+            ->assertSessionHasErrors('type');
+
+        $this->assertFalse(StaffRequest::where('user_id', $employee->id)
+            ->where('type', StaffRequest::TYPE_PTO)
+            ->exists());
+    }
+
     public function test_pnc_admin_can_reject_extra_carry_over_request_by_api(): void
     {
         Role::findOrCreate('pnc.admin', 'web');

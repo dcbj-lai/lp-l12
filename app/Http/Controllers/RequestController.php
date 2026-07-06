@@ -338,14 +338,9 @@ class RequestController extends Controller
          |-------------------------------------------------
          */
         if ($validated['type'] !== 'LWOP' && !$request->boolean('is_offset')) {
-            $outstanding = StaffRequest::where('user_id', $user->id)
-                ->where('type', $validated['type'])
-                ->where('status', 'pending')
-                ->sum('number_of_days');
-
             $creditExceeded = match ($validated['type']) {
-                'PTO' => $days > ($credits->pto - $outstanding),
-                'WFH' => $days > ($credits->wfh - $outstanding),
+                'PTO' => $days > $this->usableLeaveCreditsForRequest($user->id, StaffRequest::TYPE_PTO),
+                'WFH' => $days > $this->usableLeaveCreditsForRequest($user->id, StaffRequest::TYPE_WFH),
                 default => false,
             };
 
@@ -756,6 +751,31 @@ class RequestController extends Controller
             ->value('pto') ?? 0);
     }
 
+    protected function usableLeaveCreditsForRequest(int $userId, string $type, ?int $excludeRequestId = null): float
+    {
+        $credit = RequestCredit::query()
+            ->where('user_id', $userId)
+            ->first();
+
+        $available = match ($type) {
+            StaffRequest::TYPE_PTO => (float) ($credit?->pto ?? 0) - $this->activeCarryOverRequestedCredits($userId),
+            StaffRequest::TYPE_WFH => (float) ($credit?->wfh ?? 0),
+            default => 0,
+        };
+
+        return max(0, $available - $this->pendingLeaveRequestedCredits($userId, $type, $excludeRequestId));
+    }
+
+    protected function pendingLeaveRequestedCredits(int $userId, string $type, ?int $excludeRequestId = null): float
+    {
+        return (float) StaffRequest::query()
+            ->where('user_id', $userId)
+            ->where('type', $type)
+            ->where('status', 'pending')
+            ->when($excludeRequestId, fn ($query) => $query->whereKeyNot($excludeRequestId))
+            ->sum('number_of_days');
+    }
+
     protected function currentCarryOverRequests(int $userId)
     {
         $query = StaffRequest::query()
@@ -925,6 +945,16 @@ class RequestController extends Controller
                 'start_date' => 'Your selected dates overlap with an existing request.',
                 'end_date' => 'Please choose a non-conflicting range.',
             ]);
+        }
+
+        if ($validated['type'] !== 'LWOP' && ! $request->boolean('is_offset')) {
+            $availableCredits = $this->usableLeaveCreditsForRequest($user->id, $validated['type'], $requestModel->id);
+
+            if ($days > $availableCredits) {
+                return back()->withErrors([
+                    'type' => "Insufficient credits. You requested {$days} day(s).",
+                ]);
+            }
         }
 
 
