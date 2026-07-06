@@ -629,7 +629,71 @@ class LeaveCreditReportTest extends TestCase
         $this->assertEquals(2.5, (float) $employee->requestCredit->approved_carry_over);
     }
 
-    public function test_duplicate_approved_carry_over_requests_use_largest_amount_not_sum(): void
+    public function test_carry_over_requests_sum_when_total_fits_available_credits(): void
+    {
+        Mail::fake();
+
+        $manager = User::factory()->create([
+            'rank' => 'manager',
+            'email' => 'manager@example.com',
+        ]);
+        $employee = User::factory()->create([
+            'supervisor_id' => $manager->id,
+            'email' => 'employee@example.com',
+        ]);
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 11.5, 'wfh' => 4]);
+
+        $firstCarryOver = StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Malaysia vacation',
+            'start_date' => '2026-07-01',
+            'end_date' => '2026-07-01',
+            'end_date_type' => 'full',
+            'number_of_days' => 7,
+            'status' => 'pending',
+        ]);
+
+        $secondCarryOver = StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Retreat',
+            'start_date' => '2026-07-03',
+            'end_date' => '2026-07-03',
+            'end_date_type' => 'full',
+            'number_of_days' => 1,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('requests.process', $firstCarryOver), [
+                'action_type' => 'approve',
+                'remarks' => 'Approved carry over.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $this->assertEquals(7, (float) $employee->requestCredit->fresh()->approved_carry_over);
+
+        $this->actingAs($manager)
+            ->post(route('requests.process', $secondCarryOver), [
+                'action_type' => 'approve',
+                'remarks' => 'Approved carry over.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $this->assertEquals(8, (float) $employee->requestCredit->fresh()->approved_carry_over);
+
+        $this->actingAs($manager)
+            ->post(route('requests.process', $firstCarryOver), [
+                'action_type' => 'reject',
+                'remarks' => 'Removed canonical carry over.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $this->assertEquals(1, (float) $employee->requestCredit->fresh()->approved_carry_over);
+    }
+
+    public function test_carry_over_submission_reserves_pending_and_approved_requests(): void
     {
         Mail::fake();
 
@@ -643,7 +707,106 @@ class LeaveCreditReportTest extends TestCase
         ]);
         RequestCredit::create(['user_id' => $employee->id, 'pto' => 8, 'wfh' => 4]);
 
-        $canonicalCarryOver = StaffRequest::create([
+        $this->actingAs($employee)
+            ->post(route('requests.store'), [
+                'request_kind' => 'credit-carry-over',
+                'carry_over_days' => 5,
+                'reason' => 'Unused credits',
+            ])
+            ->assertRedirect(route('my-requests'));
+
+        $this->actingAs($employee)
+            ->post(route('requests.store'), [
+                'request_kind' => 'credit-carry-over',
+                'carry_over_days' => 4,
+                'reason' => 'Duplicate unused credits',
+            ])
+            ->assertSessionHasErrors('carry_over_days');
+
+        $this->assertSame(1, StaffRequest::where('user_id', $employee->id)
+            ->where('type', StaffRequest::TYPE_CREDIT_CARRY_OVER)
+            ->count());
+    }
+
+    public function test_carry_over_approval_blocks_requests_over_available_credits(): void
+    {
+        Mail::fake();
+
+        $manager = User::factory()->create([
+            'rank' => 'manager',
+            'email' => 'manager@example.com',
+        ]);
+        $employee = User::factory()->create([
+            'supervisor_id' => $manager->id,
+            'email' => 'employee@example.com',
+        ]);
+        RequestCredit::create(['user_id' => $employee->id, 'pto' => 8, 'wfh' => 4]);
+
+        $firstCarryOver = StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Unused credits',
+            'start_date' => '2026-07-01',
+            'end_date' => '2026-07-01',
+            'end_date_type' => 'full',
+            'number_of_days' => 8,
+            'status' => 'pending',
+        ]);
+
+        $duplicateCarryOver = StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Duplicate unused credits',
+            'start_date' => '2026-07-03',
+            'end_date' => '2026-07-03',
+            'end_date_type' => 'full',
+            'number_of_days' => 8,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('requests.process', $firstCarryOver), [
+                'action_type' => 'approve',
+                'remarks' => 'Approved carry over.',
+            ])
+            ->assertRedirect(route('requests.manage'));
+
+        $this->assertEquals(8, (float) $employee->requestCredit->fresh()->approved_carry_over);
+
+        $this->actingAs($manager)
+            ->post(route('requests.process', $duplicateCarryOver), [
+                'action_type' => 'approve',
+                'remarks' => 'Approved carry over.',
+            ])
+            ->assertSessionHas('flash.type', 'error');
+
+        $duplicateCarryOver->refresh();
+
+        $this->assertSame('pending', $duplicateCarryOver->status);
+        $this->assertEquals(8, (float) $employee->requestCredit->fresh()->approved_carry_over);
+    }
+
+    public function test_pnc_admin_can_reject_extra_carry_over_request_by_api(): void
+    {
+        Role::findOrCreate('pnc.admin', 'web');
+
+        $pncAdmin = User::factory()->create([
+            'email' => 'pnc.admin@example.com',
+        ]);
+        $pncAdmin->assignRole('pnc.admin');
+        $pncAdmin->givePermissionTo('requests.hr.view');
+
+        $employee = User::factory()->create([
+            'email' => 'employee@example.com',
+        ]);
+        RequestCredit::create([
+            'user_id' => $employee->id,
+            'pto' => 11.5,
+            'wfh' => 4,
+            'approved_carry_over' => 18.5,
+        ]);
+
+        StaffRequest::create([
             'user_id' => $employee->id,
             'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
             'reason' => 'Unused credits',
@@ -651,46 +814,33 @@ class LeaveCreditReportTest extends TestCase
             'end_date' => '2026-07-01',
             'end_date_type' => 'full',
             'number_of_days' => 11.5,
-            'status' => 'pending',
+            'status' => 'approved',
         ]);
 
-        $duplicateCarryOver = StaffRequest::create([
+        $extraCarryOver = StaffRequest::create([
             'user_id' => $employee->id,
             'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
-            'reason' => 'Retreat',
+            'reason' => 'Included in canonical request',
             'start_date' => '2026-07-03',
             'end_date' => '2026-07-03',
             'end_date_type' => 'full',
             'number_of_days' => 7,
-            'status' => 'pending',
+            'status' => 'approved',
         ]);
 
-        $this->actingAs($manager)
-            ->post(route('requests.process', $canonicalCarryOver), [
-                'action_type' => 'approve',
-                'remarks' => 'Approved carry over.',
+        $this->actingAs($pncAdmin, 'sanctum')
+            ->postJson(route('leave-requests.api.reject-carry-over', $extraCarryOver), [
+                'remarks' => 'Admin cleanup: included in canonical carry-over request.',
             ])
-            ->assertRedirect(route('requests.manage'));
+            ->assertOk()
+            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.approver.email', 'pnc.admin@example.com')
+            ->assertJsonPath('data.current_credit_snapshot.approved_carry_over', 11.5);
 
+        $extraCarryOver->refresh();
+
+        $this->assertSame('rejected', $extraCarryOver->status);
         $this->assertEquals(11.5, (float) $employee->requestCredit->fresh()->approved_carry_over);
-
-        $this->actingAs($manager)
-            ->post(route('requests.process', $duplicateCarryOver), [
-                'action_type' => 'approve',
-                'remarks' => 'Approved carry over.',
-            ])
-            ->assertRedirect(route('requests.manage'));
-
-        $this->assertEquals(11.5, (float) $employee->requestCredit->fresh()->approved_carry_over);
-
-        $this->actingAs($manager)
-            ->post(route('requests.process', $canonicalCarryOver), [
-                'action_type' => 'reject',
-                'remarks' => 'Removed canonical carry over.',
-            ])
-            ->assertRedirect(route('requests.manage'));
-
-        $this->assertEquals(7, (float) $employee->requestCredit->fresh()->approved_carry_over);
     }
 
     public function test_approving_manager_can_view_offset_leave_proof(): void

@@ -109,6 +109,29 @@ class RequestController extends Controller
         ]);
     }
 
+    public function apiRejectCarryOver(Request $request, StaffRequest $requestModel)
+    {
+        abort_unless($requestModel->isCreditCarryOver(), 422, 'Only credit carry-over requests can be rejected through this endpoint.');
+        abort_unless($this->canProcessLeaveRequest($requestModel, $request->user()), 403);
+
+        $validated = $request->validate([
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        if ($requestModel->status !== 'rejected') {
+            $requestModel->status = 'rejected';
+            $requestModel->remarks = $validated['remarks'] ?? $requestModel->remarks;
+            $requestModel->approver_id = $request->user()->id;
+            $requestModel->save();
+        }
+
+        $this->syncApprovedCarryOverForUser($requestModel->user_id);
+
+        return response()->json([
+            'data' => $this->apiRowFor($requestModel->fresh(['user.department:id,name', 'user.requestCredit', 'approver:id,name,email'])),
+        ]);
+    }
+
     public function index()
     {
         $requests = StaffRequest::with('approver')
@@ -148,6 +171,16 @@ class RequestController extends Controller
 
             $user = Auth::user();
             $today = now()->toDateString();
+            $requestedCarryOver = (float) $validated['carry_over_days'];
+            $remainingCarryOver = $this->remainingCarryOverCreditsForRequest($user->id);
+
+            if ($requestedCarryOver > $remainingCarryOver) {
+                return back()
+                    ->withErrors([
+                        'carry_over_days' => 'Requested carry-over credits exceed your remaining available leave credits.',
+                    ])
+                    ->withInput();
+            }
 
             $requestRecord = StaffRequest::create([
                 'user_id' => $user->id,
@@ -157,7 +190,7 @@ class RequestController extends Controller
                 'start_date' => $today,
                 'end_date' => $today,
                 'end_date_type' => 'full',
-                'number_of_days' => $validated['carry_over_days'],
+                'number_of_days' => $requestedCarryOver,
                 'status' => 'pending',
             ]);
 
@@ -439,6 +472,18 @@ class RequestController extends Controller
             'action_type' => 'required|in:approve,reject',
         ]);
 
+        if (
+            $validated['action_type'] === 'approve'
+            && $staffRequest->isCreditCarryOver()
+            && ! $this->carryOverApprovalFitsAvailableCredits($staffRequest)
+        ) {
+            return redirect()->back()
+                ->with('flash', [
+                    'type' => 'error',
+                    'message' => 'Request exceeds the remaining available carry-over credits.',
+                ]);
+        }
+
         $staffRequest->remarks = $validated['remarks'];
         $staffRequest->status = $validated['action_type'] === 'approve' ? 'approved' : 'rejected';
         $staffRequest->approver_id = auth()->id();
@@ -639,13 +684,42 @@ class RequestController extends Controller
     {
         $approvedCarryOver = (float) $this->currentCarryOverRequests($userId)
             ->where('status', 'approved')
-            ->max('number_of_days');
+            ->sum('number_of_days');
 
         $credit = RequestCredit::firstOrCreate(['user_id' => $userId]);
         $credit->approved_carry_over = $approvedCarryOver;
         $credit->save();
 
         return $credit;
+    }
+
+    protected function remainingCarryOverCreditsForRequest(int $userId): float
+    {
+        return max(0, $this->eligibleCarryOverCredits($userId) - $this->activeCarryOverRequestedCredits($userId));
+    }
+
+    protected function carryOverApprovalFitsAvailableCredits(StaffRequest $request): bool
+    {
+        $approvedCarryOver = (float) $this->currentCarryOverRequests($request->user_id)
+            ->where('status', 'approved')
+            ->whereKeyNot($request->id)
+            ->sum('number_of_days');
+
+        return ($approvedCarryOver + (float) $request->number_of_days) <= $this->eligibleCarryOverCredits($request->user_id);
+    }
+
+    protected function activeCarryOverRequestedCredits(int $userId): float
+    {
+        return (float) $this->currentCarryOverRequests($userId)
+            ->whereIn('status', ['pending', 'approved'])
+            ->sum('number_of_days');
+    }
+
+    protected function eligibleCarryOverCredits(int $userId): float
+    {
+        return (float) (RequestCredit::query()
+            ->where('user_id', $userId)
+            ->value('pto') ?? 0);
     }
 
     protected function currentCarryOverRequests(int $userId)
