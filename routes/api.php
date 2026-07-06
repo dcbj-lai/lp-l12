@@ -38,6 +38,10 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
         ->middleware('permission:requests.hr.view')
         ->name('leave-requests.api.reject-carry-over');
 
+    Route::post('/leave-requests/{requestModel}/approve-carry-over', [RequestController::class, 'apiApproveCarryOver'])
+        ->middleware('permission:requests.hr.view')
+        ->name('leave-requests.api.approve-carry-over');
+
     Route::middleware('role:facility.admin|facility.approver')
         ->prefix('facility-reservations')
         ->name('facility-reservations.api.')

@@ -133,6 +133,39 @@ class RequestController extends Controller
         ]);
     }
 
+    public function apiApproveCarryOver(Request $request, StaffRequest $requestModel)
+    {
+        abort_unless($requestModel->isCreditCarryOver(), 422, 'Only credit carry-over requests can be approved through this endpoint.');
+        abort_unless($this->canProcessLeaveRequest($requestModel, $request->user()), 403);
+
+        $validated = $request->validate([
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        if (
+            $requestModel->status !== 'approved'
+            && ! $this->carryOverApprovalFitsAvailableCredits($requestModel)
+        ) {
+            return response()->json([
+                'message' => 'Request exceeds the remaining available carry-over credits.',
+            ], 422);
+        }
+
+        if ($requestModel->status !== 'approved') {
+            $requestModel->status = 'approved';
+            $requestModel->approver_id = $request->user()->id;
+        }
+
+        $requestModel->remarks = $validated['remarks'] ?? $requestModel->remarks;
+        $requestModel->save();
+
+        $this->syncApprovedCarryOverForUser($requestModel->user_id);
+
+        return response()->json([
+            'data' => $this->apiRowFor($requestModel->fresh(['user.department:id,name', 'user.requestCredit', 'approver:id,name,email'])),
+        ]);
+    }
+
     public function index()
     {
         $requests = StaffRequest::with('approver')

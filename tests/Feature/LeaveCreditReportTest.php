@@ -843,6 +843,66 @@ class LeaveCreditReportTest extends TestCase
         $this->assertEquals(11.5, (float) $employee->requestCredit->fresh()->approved_carry_over);
     }
 
+    public function test_pnc_admin_can_correct_carry_over_to_itemized_approved_total_by_api(): void
+    {
+        Role::findOrCreate('pnc.admin', 'web');
+
+        $pncAdmin = User::factory()->create([
+            'email' => 'pnc.admin@example.com',
+        ]);
+        $pncAdmin->assignRole('pnc.admin');
+        $pncAdmin->givePermissionTo('requests.hr.view');
+
+        $employee = User::factory()->create([
+            'email' => 'employee@example.com',
+        ]);
+        RequestCredit::create([
+            'user_id' => $employee->id,
+            'pto' => 11.5,
+            'wfh' => 4,
+            'approved_carry_over' => 11.5,
+        ]);
+
+        $canonicalCarryOver = StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Unused credits',
+            'start_date' => '2026-07-01',
+            'end_date' => '2026-07-01',
+            'end_date_type' => 'full',
+            'number_of_days' => 11.5,
+            'status' => 'approved',
+        ]);
+
+        $itemizedCarryOvers = collect([7, 1, 1])->map(fn (int $days) => StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Itemized carry-over',
+            'start_date' => '2026-07-03',
+            'end_date' => '2026-07-03',
+            'end_date_type' => 'full',
+            'number_of_days' => $days,
+            'status' => 'rejected',
+        ]));
+
+        $this->actingAs($pncAdmin, 'sanctum')
+            ->postJson(route('leave-requests.api.reject-carry-over', $canonicalCarryOver), [
+                'remarks' => 'Admin cleanup: replaced by itemized carry-over requests.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.current_credit_snapshot.approved_carry_over', 0);
+
+        foreach ($itemizedCarryOvers as $carryOver) {
+            $this->actingAs($pncAdmin, 'sanctum')
+                ->postJson(route('leave-requests.api.approve-carry-over', $carryOver), [
+                    'remarks' => 'Admin cleanup: valid itemized carry-over request.',
+                ])
+                ->assertOk();
+        }
+
+        $this->assertEquals(9, (float) $employee->requestCredit->fresh()->approved_carry_over);
+    }
+
     public function test_approving_manager_can_view_offset_leave_proof(): void
     {
         Storage::fake('private_s3');
