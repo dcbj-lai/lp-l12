@@ -33,6 +33,9 @@ class OrgSettingController extends Controller
         $settings = OrgSetting::first();
         $settings->update($request->only('pto_default', 'wfh_default'));
 
-        return redirect()->back()->with('success', 'Organization settings updated.');
+        return redirect()->back()->with('flash', [
+            'type' => 'success',
+            'message' => 'Organization settings updated.',
+        ]);
     }
 }

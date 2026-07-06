@@ -29,6 +29,7 @@ class LeaveCreditReportTest extends TestCase
         Permission::findOrCreate('leave-credits.view', 'web');
         Permission::findOrCreate('leave-credits.assign', 'web');
         Permission::findOrCreate('leave-credits.initialize', 'web');
+        Permission::findOrCreate('leave-credits.update', 'web');
         Permission::findOrCreate('requests.hr.view', 'web');
 
         $this->admin = User::factory()->create();
@@ -1249,6 +1250,25 @@ class LeaveCreditReportTest extends TestCase
         $item = LeaveReplenishmentRunItem::where('user_id', $employee->id)->firstOrFail();
         $this->assertEquals(9, (float) $item->approved_carry_over_applied);
         $this->assertEquals(34, (float) $item->initialized_pto);
+    }
+
+    public function test_org_settings_update_uses_global_flash_notification_payload(): void
+    {
+        $this->admin->givePermissionTo('leave-credits.update');
+
+        $this->actingAs($this->admin)
+            ->post(route('org-settings.update'), [
+                'pto_default' => 25,
+                'wfh_default' => 0,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('flash.type', 'success')
+            ->assertSessionHas('flash.message', 'Organization settings updated.');
+
+        $settings = OrgSetting::firstOrFail();
+
+        $this->assertEquals(25, (float) $settings->pto_default);
+        $this->assertEquals(0, (float) $settings->wfh_default);
     }
 
     public function test_sanctum_token_can_read_and_update_leave_credits(): void
