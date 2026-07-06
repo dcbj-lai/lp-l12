@@ -1188,6 +1188,69 @@ class LeaveCreditReportTest extends TestCase
         $this->assertEquals(5, (float) $item->initialized_wfh);
     }
 
+    public function test_replenishment_uses_canonical_approved_carry_over_not_duplicate_request_sum(): void
+    {
+        $this->admin->givePermissionTo('leave-credits.initialize');
+        OrgSetting::query()->update([
+            'pto_default' => 25,
+            'wfh_default' => 0,
+            'last_leave_replenished_on' => null,
+        ]);
+
+        $employee = User::factory()->create([
+            'employee_number' => '20241104',
+            'name' => 'Yen Estigoy',
+            'email' => 'yen@example.com',
+        ]);
+
+        RequestCredit::create([
+            'user_id' => $employee->id,
+            'pto' => 11.5,
+            'wfh' => 0,
+            'approved_carry_over' => 9,
+        ]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Unused credits',
+            'start_date' => '2026-07-01',
+            'end_date' => '2026-07-01',
+            'end_date_type' => 'full',
+            'number_of_days' => 11.5,
+            'status' => 'approved',
+        ]);
+
+        StaffRequest::create([
+            'user_id' => $employee->id,
+            'type' => StaffRequest::TYPE_CREDIT_CARRY_OVER,
+            'reason' => 'Approved correction',
+            'start_date' => '2026-07-03',
+            'end_date' => '2026-07-03',
+            'end_date_type' => 'full',
+            'number_of_days' => 9,
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('org-settings.initiate-leave'))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('request_credits', [
+            'user_id' => $employee->id,
+            'pto' => 34,
+            'wfh' => 0,
+            'approved_carry_over' => 0,
+        ]);
+
+        $run = LeaveReplenishmentRun::where('run_by', $this->admin->id)->firstOrFail();
+        $this->assertEquals(9, (float) $run->total_approved_carry_over);
+
+        $item = LeaveReplenishmentRunItem::where('user_id', $employee->id)->firstOrFail();
+        $this->assertEquals(9, (float) $item->approved_carry_over_applied);
+        $this->assertEquals(34, (float) $item->initialized_pto);
+    }
+
     public function test_sanctum_token_can_read_and_update_leave_credits(): void
     {
         $employee = User::factory()->create([
