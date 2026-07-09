@@ -78,9 +78,12 @@
     {{-- CSV Upload + Submit --}}
     <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mt-6">
         {{-- CSV Upload --}}
-        <div class="flex-1 flex gap-2 text-sm text-neutral-500">
+        <div class="flex-1 flex flex-col sm:flex-row gap-2 text-sm text-neutral-500">
             <input type="file" wire:model="csvFile" accept=".csv"
                 class="border px-4 py-2 rounded-md dark:bg-zinc-700 dark:text-white flex-1">
+            <flux:button href="{{ route('visitors.preapproved.template') }}" variant="outline" icon="arrow-down-tray" size="sm">
+                Template
+            </flux:button>
             <flux:button type="button" variant="filled" icon="paperclip" size="sm" wire:click="uploadCsv">Upload CSV
             </flux:button>
         </div>

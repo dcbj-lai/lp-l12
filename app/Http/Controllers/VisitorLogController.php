@@ -530,6 +530,23 @@ class VisitorLogController extends Controller
         return view('frontdesk.visitors.create-preapproved');
     }
 
+    public function preapprovedTemplate(): StreamedResponse
+    {
+        $fileName = 'preapproved_visitors_template.csv';
+
+        return response()->streamDownload(function () {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, ['name', 'email']);
+            fputcsv($handle, ['Juan Dela Cruz', 'juan.delacruz@example.com']);
+            fputcsv($handle, ['Maria Santos', 'maria.santos@example.com']);
+
+            fclose($handle);
+        }, $fileName, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
     public function cancelBatch($batchId)
     {
         $count = VisitorLog::where('batch_id', $batchId)->count();

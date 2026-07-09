@@ -375,6 +375,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/visitors/preapproved/create', [VisitorLogController::class, 'createPreapproved'])
         ->name('visitors.create-preapproved');
 
+    Route::get('/visitors/preapproved/template', [VisitorLogController::class, 'preapprovedTemplate'])
+        ->name('visitors.preapproved.template');
+
 });
 
 
