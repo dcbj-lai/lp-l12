@@ -496,6 +496,9 @@ Route::prefix('clinic')
         Route::post('/patients/{patient}/consultations', [ClinicConsultationController::class, 'store'])
             ->name('consultations.store');
 
+        Route::post('/consultations/{consultation}/email/retry', [ClinicConsultationController::class, 'retryEmail'])
+            ->name('consultations.email.retry');
+
         Route::get('/consultations', [ClinicConsultationController::class, 'index'])
             ->name('consultations.index');
 

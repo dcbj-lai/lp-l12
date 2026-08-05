@@ -15,11 +15,16 @@ class Patient extends Model
         'email',
         'type',
         'course',
+        'is_under_accessibility',
         'department',
         'position',
         'emergency_contact_person',
         'emergency_contact_number',
         'blood_type',
+    ];
+
+    protected $casts = [
+        'is_under_accessibility' => 'boolean',
     ];
 
     public function getFullNameAttribute(): string
@@ -35,6 +40,11 @@ class Patient extends Model
     public function isStaff(): bool
     {
         return $this->type === 'staff';
+    }
+
+    public function isUnderAccessibility(): bool
+    {
+        return $this->isStudent() && $this->is_under_accessibility;
     }
 
     public function index()

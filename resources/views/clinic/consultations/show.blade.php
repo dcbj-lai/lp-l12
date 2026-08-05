@@ -361,16 +361,22 @@
 
                 <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
-                        <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">CURRENT TEACHER</div>
+                        <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">CHECK-IN TEACHER</div>
                         <div class="mt-1 text-gray-900 dark:text-white">
-                            {{ $consultation->current_teacher ?? '—' }}
+                            {{ $consultation->check_in_teacher ?: 'No Teacher Assigned' }}
+                        </div>
+                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-300 break-all">
+                            {{ $consultation->check_in_teacher_email ?: '—' }}
                         </div>
                     </div>
 
                     <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
-                        <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">TEACHER EMAIL</div>
-                        <div class="mt-1 text-gray-900 dark:text-white break-all">
-                            {{ $consultation->teacher_email ?? '—' }}
+                        <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">CHECK-OUT TEACHER</div>
+                        <div class="mt-1 text-gray-900 dark:text-white">
+                            {{ $consultation->current_teacher ?: 'No Teacher Assigned' }}
+                        </div>
+                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-300 break-all">
+                            {{ $consultation->teacher_email ?: '—' }}
                         </div>
                     </div>
 
@@ -405,6 +411,27 @@
                         <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">APPROVED BY</div>
                         <div class="mt-1 text-gray-900 dark:text-white">
                             {{ $consultation->self_approved_by ?? '—' }}
+                        </div>
+                    </div>
+                    <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
+                        <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">EMAIL NOTIFICATION</div>
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                            @if ($consultation->email_status === \App\Models\ClinicConsultation::EMAIL_STATUS_QUEUED)
+                                <span class="inline-flex rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">Queued</span>
+                            @elseif ($consultation->email_status === \App\Models\ClinicConsultation::EMAIL_STATUS_SENT)
+                                <span class="inline-flex rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-300">Sent</span>
+                                @if ($consultation->email_sent_at)
+                                    <span class="text-xs text-gray-500 dark:text-gray-300">{{ $consultation->email_sent_at->format('M d, Y h:i A') }}</span>
+                                @endif
+                            @elseif ($consultation->email_status === \App\Models\ClinicConsultation::EMAIL_STATUS_FAILED)
+                                <span class="inline-flex rounded bg-red-100 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-900 dark:text-red-300">Failed</span>
+                                <form method="POST" action="{{ route('clinic.consultations.email.retry', $consultation) }}">
+                                    @csrf
+                                    <button type="submit" class="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400">Retry email</button>
+                                </form>
+                            @else
+                                <span class="text-gray-500 dark:text-gray-300">&mdash;</span>
+                            @endif
                         </div>
                     </div>
                 </div>

@@ -25,6 +25,7 @@ class AccessAdminSeeder extends Seeder
             'acad.admin',
             'guidance.admin',
             'guidance.staff',
+            'faculty',
             'comms.admin',
             'clinic.admin',
             'facility.admin',

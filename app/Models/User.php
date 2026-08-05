@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -101,6 +102,13 @@ class User extends Authenticatable
     public function vcardUrl(): string
     {
         return $this->cardUrl();
+    }
+
+    public function scopeActiveFaculty(Builder $query): Builder
+    {
+        return $query
+            ->role('faculty')
+            ->where('is_active', true);
     }
 
     public function canApproveAnyLeaveRequest(): bool
