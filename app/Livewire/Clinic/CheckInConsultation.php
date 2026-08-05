@@ -80,21 +80,15 @@ class CheckInConsultation extends Component
 
     public function render()
     {
-        $facultyDepartment = \App\Models\Department::whereRaw('LOWER(name) = ?', ['faculty'])->first();
-
-        $teachers = [];
-
-        if ($facultyDepartment) {
-            $teachers = User::where('department_id', $facultyDepartment->id)
-                ->select('name', 'email')
-                ->orderBy('name')
-                ->get()
-                ->map(fn ($u) => [
-                    'name' => $u->name,
-                    'email' => $u->email,
-                ])
-                ->toArray();
-        }
+        $teachers = User::activeFaculty()
+            ->select('name', 'email')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($user) => [
+                'name' => $user->name,
+                'email' => $user->email,
+            ])
+            ->toArray();
 
         return view('livewire.clinic.check-in-consultation', compact('teachers'));
     }

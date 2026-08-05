@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class ClinicConsultation extends Model
 {
+    public const EMAIL_STATUS_QUEUED = 'queued';
+
+    public const EMAIL_STATUS_SENT = 'sent';
+
+    public const EMAIL_STATUS_FAILED = 'failed';
+
     protected $table = 'clinic_consultations';
 
     protected $fillable = [
@@ -43,6 +49,10 @@ class ClinicConsultation extends Model
         'going_home_method',
         'fetcher_name',
         'self_approved_by',
+        'email_status',
+        'email_sent_at',
+        'email_failed_at',
+        'email_failure_message',
     ];
 
     protected $casts = [
@@ -52,6 +62,8 @@ class ClinicConsultation extends Model
         'pain_rating' => 'integer',
         'medicines' => 'array',
         'supplies' => 'array',
+        'email_sent_at' => 'datetime',
+        'email_failed_at' => 'datetime',
     ];
 
     public function patient()

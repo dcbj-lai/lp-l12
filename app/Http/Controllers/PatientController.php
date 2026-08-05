@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 
@@ -48,34 +49,57 @@ class PatientController extends Controller
         return view('clinic.patients.index', compact('students', 'staff'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('clinic.patients.create');
+        $patientType = $request->query('tab') === 'staff' ? 'staff' : 'student';
+        $departments = Department::query()
+            ->orderBy('name')
+            ->pluck('name');
+
+        return view('clinic.patients.create', compact('patientType', 'departments'));
     }
 
     public function store(Request $request)
     {
+        $patientType = $request->input('type') === 'staff' ? 'staff' : 'student';
+
         $data = $request->validate([
+            'type' => ['nullable', 'string', 'in:student,staff'],
             'first_name' => ['required', 'string', 'max:255'],
-            'last_name'  => ['required', 'string', 'max:255'],
-            'email'      => ['nullable', 'email', 'max:255', 'unique:patients,email'],
-            'course'     => ['nullable', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:patients,email'],
+            'course' => ['nullable', 'string', 'max:255'],
+            'is_under_accessibility' => ['sometimes', 'boolean'],
+            'department' => $patientType === 'staff'
+                ? ['nullable', 'string', 'max:255', 'exists:departments,name']
+                : ['nullable', 'string', 'max:255'],
+            'position' => ['nullable', 'string', 'max:255'],
             'blood_type' => ['nullable', 'string', 'max:10'],
             'emergency_contact_person' => ['nullable', 'string', 'max:255'],
             'emergency_contact_number' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $data['type'] = 'student';
-        $data['department'] = null;
-        $data['position'] = null;
+        $data['type'] = $patientType;
+
+        if ($patientType === 'staff') {
+            $data['course'] = null;
+            $data['is_under_accessibility'] = false;
+        } else {
+            $data['department'] = null;
+            $data['position'] = null;
+            $data['is_under_accessibility'] = $request->boolean('is_under_accessibility');
+        }
 
         $patient = Patient::create($data);
 
         return redirect()
-            ->route('clinic.patients.show', ['patient' => $patient, 'tab' => 'students'])
+            ->route('clinic.patients.show', [
+                'patient' => $patient,
+                'tab' => $patientType === 'staff' ? 'staff' : 'students',
+            ])
             ->with('flash', [
                 'type' => 'success',
-                'message' => 'Student patient record created.',
+                'message' => ucfirst($patientType).' patient record created.',
             ]);
     }
 
@@ -103,6 +127,7 @@ class PatientController extends Controller
             'type'       => ['required', 'string', 'in:student,staff'],
 
             'course'     => ['nullable', 'string', 'max:255'],
+            'is_under_accessibility' => ['sometimes', 'boolean'],
             'department' => ['nullable', 'string', 'max:255'],
             'position'   => ['nullable', 'string', 'max:255'],
 
@@ -115,8 +140,10 @@ class PatientController extends Controller
         if ($data['type'] === 'student') {
             $data['department'] = null;
             $data['position'] = null;
+            $data['is_under_accessibility'] = $request->boolean('is_under_accessibility');
         } else {
             $data['course'] = null;
+            $data['is_under_accessibility'] = false;
         }
 
         $patient->update($data);

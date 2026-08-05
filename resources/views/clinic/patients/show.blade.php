@@ -82,6 +82,10 @@
                         <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Course</dt>
                         <dd class="mt-1 text-sm">{{ $patient->course ?? '—' }}</dd>
                     </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Under Accessibility</dt>
+                        <dd class="mt-1 text-sm">{{ $patient->is_under_accessibility ? 'Yes' : 'No' }}</dd>
+                    </div>
                 @endif
 
                 @if ($patient->type === 'staff')
@@ -178,7 +182,10 @@
 
                                     @if ($patient->type === 'student')
                                         <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">
-                                            Current Teacher
+                                            Check-in Teacher
+                                        </th>
+                                        <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">
+                                            Check-out Teacher
                                         </th>
                                         <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">
                                             After Consultation
@@ -209,6 +216,10 @@
 
                                         @if ($patient->type === 'student')
                                             <td class="px-4 py-3 whitespace-nowrap">
+                                                {{ $log->check_in_teacher ?: 'No Teacher Assigned' }}
+                                            </td>
+
+                                            <td class="px-4 py-3 whitespace-nowrap">
                                                 {{ $log->current_teacher ?: 'No Teacher Assigned' }}
                                             </td>
 
@@ -225,6 +236,7 @@
                                                     —
                                                 @endif
                                             </td>
+
                                         @endif
 
                                         <td class="px-4 py-3 whitespace-nowrap text-center">

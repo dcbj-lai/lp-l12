@@ -102,6 +102,19 @@
                                     focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
 
+                    <div class="w-full" x-show="type === 'student'">
+                        <input type="hidden" name="is_under_accessibility" value="0">
+                        <label class="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                            <input type="checkbox" name="is_under_accessibility" value="1"
+                                @checked((bool) old('is_under_accessibility', $patient->is_under_accessibility))
+                                class="rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500">
+                            Under Accessibility
+                        </label>
+                        <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                            Identifies a student supported by Student Accessibility Services.
+                        </p>
+                    </div>
+
                     {{-- Staff --}}
                     <div class="w-full" x-show="type === 'staff'">
                         <label class="block text-sm font-medium mb-2 text-neutral-700 dark:text-neutral-200">Department</label>

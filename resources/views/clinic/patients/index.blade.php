@@ -50,7 +50,7 @@
 
                     <a href="{{ route('clinic.patients.create', ['tab' => 'students']) }}"
                         class="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 sm:w-auto">
-                        Create Student Patient
+                        Create
                     </a>
                 </div>
 
@@ -146,6 +146,17 @@
 
             <!-- Staff Tab -->
             <div x-show="activeTab === 'staff'" x-cloak class="space-y-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Staff Patients</h2>
+                        <p class="text-sm text-neutral-500 dark:text-neutral-400">Create and manage staff clinic records.</p>
+                    </div>
+
+                    <a href="{{ route('clinic.patients.create', ['tab' => 'staff']) }}"
+                        class="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 sm:w-auto">
+                        Create
+                    </a>
+                </div>
 
                 <!-- Staff Filters -->
                 <form method="GET" action="{{ route('clinic.patients.index') }}" class="mb-4">

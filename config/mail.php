@@ -115,4 +115,11 @@ return [
     /** Resource Booking Admin Email */
     'resource_admin' => env('REQUESTS_OP_EMAIL', 'ops.team@life.edu.ph'),
 
+    'clinic_recipients' => [
+        'clinic' => env('REQUESTS_CLINIC_EMAIL'),
+        'academic_council' => env('REQUESTS_ACAD_COUNCIL_EMAIL'),
+        'academic_dean' => env('REQUESTS_ACAD_DEAN_EMAIL'),
+        'sas' => env('REQUESTS_SAS_EMAIL'),
+    ],
+
 ];

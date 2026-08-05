@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Patient;
+use App\Jobs\SendClinicConsultationEmail;
 use App\Models\ClinicConsultation;
+use App\Models\Patient;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
-use App\Mail\StudentResumeClassClinicMail;
-use App\Mail\StudentGoHomeClinicMail;
+use Throwable;
 
 class ClinicConsultationController extends Controller
 {
@@ -51,21 +50,15 @@ class ClinicConsultationController extends Controller
 
     public function create(Patient $patient)
     {
-        $facultyDepartment = \App\Models\Department::whereRaw('LOWER(name) = ?', ['faculty'])->first();
-
-        $teachers = [];
-
-        if ($facultyDepartment) {
-            $teachers = \App\Models\User::where('department_id', $facultyDepartment->id)
-                ->select('name', 'email')
-                ->orderBy('name')
-                ->get()
-                ->map(fn ($u) => [
-                    'name' => $u->name,
-                    'email' => $u->email,
-                ])
-                ->toArray();
-        }
+        $teachers = User::activeFaculty()
+            ->select('name', 'email')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($user) => [
+                'name' => $user->name,
+                'email' => $user->email,
+            ])
+            ->toArray();
 
         return view('clinic.consultations.create', compact('patient', 'teachers'));
     }
@@ -254,88 +247,10 @@ class ClinicConsultationController extends Controller
 
         $consultation = $consultation->fresh();
 
-        if ($patient->type === 'student') {
-            $studentName = "{$patient->first_name} {$patient->last_name}";
-
-            $dateDisplay = $consultation->time_in
-                ? Carbon::parse($consultation->time_in)->timezone('Asia/Manila')->format('M d, Y')
-                : 'N/A';
-
-            $timeInDisplay = $consultation->time_in
-                ? Carbon::parse($consultation->time_in)->timezone('Asia/Manila')->format('g:i A')
-                : 'N/A';
-
-            $timeOutDisplay = $consultation->time_out
-                ? Carbon::parse($consultation->time_out)->timezone('Asia/Manila')->format('g:i A')
-                : 'N/A';
-
-            $patientEmail = $patient->email ?: null;
-
-            $teacherRecipients = array_values(array_unique(array_filter([
-                $consultation->check_in_teacher_email ?? null,
-                $consultation->teacher_email ?? null,
-            ])));
-
-            $ccRecipients = array_values(array_filter([
-                env('REQUESTS_ACADCORE_EMAIL'),
-                env('REQUESTS_CLINIC_EMAIL'),
-            ]));
-
-            if ($consultation->after_consultation === 'resume') {
-                $mail = new StudentResumeClassClinicMail(
-                    $studentName,
-                    $consultation->current_teacher ?? $consultation->check_in_teacher ?? null,
-                    $dateDisplay,
-                    $timeInDisplay,
-                    $timeOutDisplay
-                );
-
-                $to = !empty($teacherRecipients) ? $teacherRecipients : $ccRecipients;
-
-                if (!empty($to)) {
-                    $message = Mail::to($to);
-
-                    if (!empty($ccRecipients) && $to !== $ccRecipients) {
-                        $message->cc($ccRecipients);
-                    }
-
-                    if (!empty($patientEmail)) {
-                        $message->bcc($patientEmail);
-                    }
-
-                    $message->send($mail);
-                }
-            }
-
-            if ($consultation->after_consultation === 'go_home') {
-                $mail = new StudentGoHomeClinicMail(
-                    $studentName,
-                    $consultation->current_teacher ?? $consultation->check_in_teacher ?? null,
-                    $dateDisplay,
-                    $timeInDisplay,
-                    $timeOutDisplay,
-                    $consultation->going_home_method ?? null,
-                    $consultation->fetcher_name ?? null,
-                    $consultation->self_approved_by ?? null
-                );
-
-                $to = !empty($teacherRecipients) ? $teacherRecipients : $ccRecipients;
-
-                if (!empty($to)) {
-                    $message = Mail::to($to);
-
-                    if (!empty($ccRecipients) && $to !== $ccRecipients) {
-                        $message->cc($ccRecipients);
-                    }
-
-                    if (!empty($patientEmail)) {
-                        $message->bcc($patientEmail);
-                    }
-
-                    $message->send($mail);
-                }
-            }
-        }
+        $emailQueued = $this->queueConsultationEmail($consultation);
+        $submissionMessage = $emailQueued
+            ? 'Consultation submitted. Email notification queued.'
+            : 'Consultation submitted.';
 
         $returnUrl = $request->input('return_url');
 
@@ -348,7 +263,7 @@ class ClinicConsultationController extends Controller
                 ->to($returnUrl)
                 ->with('flash', [
                     'type' => 'success',
-                    'message' => 'Consultation submitted.',
+                    'message' => $submissionMessage,
                 ]);
         }
 
@@ -359,8 +274,72 @@ class ClinicConsultationController extends Controller
             ])
             ->with('flash', [
                 'type' => 'success',
-                'message' => 'Consultation submitted.',
+                'message' => $submissionMessage,
             ]);
+    }
+
+    public function retryEmail(ClinicConsultation $consultation)
+    {
+        $consultation->load('patient');
+
+        if (
+            ! $consultation->patient ||
+            $consultation->patient->type !== 'student' ||
+            ! in_array($consultation->after_consultation, ['resume', 'go_home'], true)
+        ) {
+            return back()->with('flash', [
+                'type' => 'error',
+                'message' => 'This consultation does not have an email notification to retry.',
+            ]);
+        }
+
+        if (! $this->queueConsultationEmail($consultation)) {
+            return back()->with('flash', [
+                'type' => 'error',
+                'message' => 'Email notification could not be queued. Please check the logs.',
+            ]);
+        }
+
+        return back()->with('flash', [
+            'type' => 'success',
+            'message' => 'Email notification queued for retry.',
+        ]);
+    }
+
+    private function queueConsultationEmail(ClinicConsultation $consultation): bool
+    {
+        $consultation->loadMissing('patient');
+
+        if (
+            ! $consultation->patient ||
+            $consultation->patient->type !== 'student' ||
+            ! in_array($consultation->after_consultation, ['resume', 'go_home'], true)
+        ) {
+            return false;
+        }
+
+        $consultation->update([
+            'email_status' => ClinicConsultation::EMAIL_STATUS_QUEUED,
+            'email_sent_at' => null,
+            'email_failed_at' => null,
+            'email_failure_message' => null,
+        ]);
+
+        try {
+            SendClinicConsultationEmail::dispatch($consultation->id);
+
+            return true;
+        } catch (Throwable $exception) {
+            $consultation->update([
+                'email_status' => ClinicConsultation::EMAIL_STATUS_FAILED,
+                'email_failed_at' => now(),
+                'email_failure_message' => mb_substr($exception->getMessage(), 0, 2000),
+            ]);
+
+            report($exception);
+
+            return false;
+        }
     }
 
     public function show(ClinicConsultation $consultation)
