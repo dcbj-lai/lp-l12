@@ -1,6 +1,23 @@
 <x-layouts.app title="Client Profile">
 
     <div class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+        @if (session('success'))
+            <div role="alert" class="mb-4 rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-300">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('info'))
+            <div role="alert" class="mb-4 rounded-md border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                {{ session('info') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div role="alert" class="mb-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <!-- Breadcrumb -->
         <div class="mb-3 text-sm text-neutral-600 dark:text-neutral-400">
@@ -62,15 +79,34 @@
                     <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Last Name</dt>
                     <dd class="mt-1 text-sm">{{ $client->last_name }}</dd>
                 </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Course</dt>
+                        <dd class="mt-1 text-sm">{{ $client->course ?: '—' }}</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Section</dt>
+                        <dd class="mt-1 text-sm">{{ $client->section ?: '—' }}</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Under Accessibility</dt>
+                        <dd class="mt-1 text-sm">{{ $client->isUnderAccessibility() ? 'Yes' : 'No' }}</dd>
+                    </div>
 
                 <div>
-                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Course</dt>
-                    <dd class="mt-1 text-sm">{{ $client->course ?? '—' }}</dd>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Blood Type</dt>
+                    <dd class="mt-1 text-sm">{{ $client->blood_type ?: '—' }}</dd>
                 </div>
 
                 <div>
-                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Section</dt>
-                    <dd class="mt-1 text-sm">{{ $client->section ?? '—' }}</dd>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Emergency Contact Person</dt>
+                    <dd class="mt-1 text-sm">{{ $client->emergency_contact_person ?: '—' }}</dd>
+                </div>
+
+                <div>
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Emergency Contact Number</dt>
+                    <dd class="mt-1 text-sm">{{ $client->emergency_contact_number ?: '—' }}</dd>
                 </div>
 
                 <div>
@@ -125,8 +161,8 @@
                         <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
                             <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">Time In</th>
                             <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">Time Out</th>
-                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">Teacher in Check-In</th>
-                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">Teacher in Check-Out</th>
+                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">Check-in Teacher</th>
+                            <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">Check-out Teacher</th>
                             <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-left whitespace-nowrap">After Consultation</th>
                             <th class="border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 text-center whitespace-nowrap">Action</th>
                         </tr>

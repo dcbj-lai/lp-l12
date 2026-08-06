@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendGuidanceConsultationEmail;
 use App\Models\Client;
 use App\Models\Consultation;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\StudentResumeClassMail;
-use App\Mail\StudentGoHomeMail;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Throwable;
 
 class ConsultationsController extends Controller
 {
@@ -26,8 +26,8 @@ class ConsultationsController extends Controller
         $consultations = Consultation::with('client')
             ->whereNotNull('time_out')
             ->when($q, function ($query) use ($q) {
-                $query->whereHas('client', function ($q2) use ($q) {
-                    $q2->where('first_name', 'like', "%{$q}%")
+                $query->whereHas('client', function ($clientQuery) use ($q) {
+                    $clientQuery->where('first_name', 'like', "%{$q}%")
                         ->orWhere('last_name', 'like', "%{$q}%")
                         ->orWhere('email', 'like', "%{$q}%");
                 });
@@ -41,27 +41,21 @@ class ConsultationsController extends Controller
             'consultations',
             'q',
             'dateFrom',
-            'dateTo'
+            'dateTo',
         ));
     }
 
     public function create(Client $client)
     {
-        $facultyDepartment = \App\Models\Department::whereRaw('LOWER(name) = ?', ['faculty'])->first();
-
-        $teachers = [];
-
-        if ($facultyDepartment) {
-            $teachers = \App\Models\User::where('department_id', $facultyDepartment->id)
-                ->select('name', 'email')
-                ->orderBy('name')
-                ->get()
-                ->map(fn ($u) => [
-                    'name' => $u->name,
-                    'email' => $u->email,
-                ])
-                ->toArray();
-        }
+        $teachers = User::activeFaculty()
+            ->select('name', 'email')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user) => [
+                'name' => $user->name,
+                'email' => $user->email,
+            ])
+            ->toArray();
 
         return view('guidance.consultations.create', compact('client', 'teachers'));
     }
@@ -74,7 +68,7 @@ class ConsultationsController extends Controller
                 ->latest()
                 ->first();
 
-            if (!$consultation) {
+            if (! $consultation) {
                 return redirect()
                     ->route('guidance.clients.show', $client)
                     ->with('info', 'Consultation cancelled.');
@@ -87,146 +81,114 @@ class ConsultationsController extends Controller
                 ->with('info', 'Consultation cancelled and archived.');
         }
 
-        $data = $request->validate([
-            'current_teacher'          => ['nullable', 'string'],
-            'teacher_email'            => ['nullable', 'email'],
-            'next_class_teacher'       => ['nullable', 'string'],
-            'next_class_teacher_email' => ['nullable', 'email'],
-            'type_of_session'          => ['nullable', 'string'],
-            'risk_assessment'          => ['nullable', 'string'],
-            'issue_concern'            => ['nullable', 'string'],
-            'intervention'             => ['nullable', 'string'],
-            'remarks'                  => ['nullable', 'string'],
-            'after_consultation'       => ['required', 'in:resume,go_home'],
-            'going_home_method'        => ['nullable', 'in:fetcher,self', 'required_if:after_consultation,go_home'],
-            'fetcher_name'             => ['nullable', 'string', 'required_if:going_home_method,fetcher'],
-            'self_approved_by'         => ['nullable', 'string', 'required_if:going_home_method,self'],
-        ]);
+        $rules = [
+            'type_of_session' => ['nullable', 'string'],
+            'risk_assessment' => ['nullable', 'string'],
+            'issue_concern' => ['nullable', 'string'],
+            'intervention' => ['nullable', 'string'],
+            'remarks' => ['nullable', 'string'],
+        ];
+
+        $rules['current_teacher'] = ['nullable', 'string'];
+        $rules['teacher_email'] = ['nullable', 'email'];
+        $rules['after_consultation'] = ['required', 'in:resume,go_home'];
+        $rules['going_home_method'] = ['nullable', 'in:fetcher,self', 'required_if:after_consultation,go_home'];
+        $rules['fetcher_name'] = ['nullable', 'string', 'required_if:going_home_method,fetcher'];
+        $rules['self_approved_by'] = ['nullable', 'string', 'required_if:going_home_method,self'];
+
+        $data = $request->validate($rules);
 
         $consultation = Consultation::where('client_id', $client->id)
             ->whereNull('time_out')
             ->latest()
             ->first();
 
-        if (!$consultation) {
+        if (! $consultation) {
             return back()->with('error', 'No active consultation found.');
         }
 
         $consultation->update([
-            'current_teacher'          => $data['current_teacher'] ?? null,
-            'teacher_email'            => $data['teacher_email'] ?? null,
-            'next_class_teacher'       => $data['next_class_teacher'] ?? null,
-            'next_class_teacher_email' => $data['next_class_teacher_email'] ?? null,
-            'type_of_session'          => $data['type_of_session'] ?? null,
-            'risk_assessment'          => $data['risk_assessment'] ?? null,
-            'issue_concern'            => $data['issue_concern'] ?? null,
-            'intervention'             => $data['intervention'] ?? null,
-            'remarks'                  => $data['remarks'] ?? null,
-            'after_consultation'       => $data['after_consultation'],
-            'going_home_method'        => $data['going_home_method'] ?? null,
-            'fetcher_name'             => $data['fetcher_name'] ?? null,
-            'self_approved_by'         => $data['self_approved_by'] ?? null,
-            'time_out'                 => now(),
+            'current_teacher' => $data['current_teacher'] ?? null,
+            'teacher_email' => $data['teacher_email'] ?? null,
+            'type_of_session' => $data['type_of_session'] ?? null,
+            'risk_assessment' => $data['risk_assessment'] ?? null,
+            'issue_concern' => $data['issue_concern'] ?? null,
+            'intervention' => $data['intervention'] ?? null,
+            'remarks' => $data['remarks'] ?? null,
+            'after_consultation' => $data['after_consultation'] ?? null,
+            'going_home_method' => $data['going_home_method'] ?? null,
+            'fetcher_name' => $data['fetcher_name'] ?? null,
+            'self_approved_by' => $data['self_approved_by'] ?? null,
+            'time_out' => now(),
         ]);
 
         $consultation = $consultation->fresh();
-
-        $studentName = "{$client->first_name} {$client->last_name}";
-
-        $dateDisplay = $consultation->time_in
-            ? $consultation->time_in->format('M d, Y')
-            : 'N/A';
-
-        $timeInDisplay = $consultation->time_in
-            ? $consultation->time_in->format('g:i A')
-            : 'N/A';
-
-        $timeOutDisplay = $consultation->time_out
-            ? $consultation->time_out->format('g:i A')
-            : 'N/A';
-
-        $clientEmail = $client->email ?: null;
-
-        $teacherRecipients = array_values(array_unique(array_filter([
-            $consultation->check_in_teacher_email,
-            $consultation->teacher_email,
-            $consultation->next_class_teacher_email,
-        ])));
-
-        $ccRecipients = array_values(array_filter([
-            env('REQUESTS_ACADCORE_EMAIL'),
-            env('REQUESTS_GC_EMAIL'),
-        ]));
-
-        if ($consultation->after_consultation === 'resume') {
-            $mail = new StudentResumeClassMail(
-                $studentName,
-                $consultation->next_class_teacher
-                    ?? $consultation->current_teacher
-                    ?? null,
-                $dateDisplay,
-                $timeInDisplay,
-                $timeOutDisplay
-            );
-
-            if (!empty($teacherRecipients)) {
-                $message = Mail::to($teacherRecipients);
-
-                if (!empty($ccRecipients)) {
-                    $message->cc($ccRecipients);
-                }
-
-                if (!empty($clientEmail)) {
-                    $message->bcc($clientEmail);
-                }
-
-                $message->send($mail);
-            }
-        }
-
-        if ($consultation->after_consultation === 'go_home') {
-            $mail = new StudentGoHomeMail(
-                $studentName,
-                $consultation->current_teacher ?? null,
-                $dateDisplay,
-                $timeInDisplay,
-                $timeOutDisplay,
-                $consultation->going_home_method ?? null,
-                $consultation->fetcher_name ?? null,
-                $consultation->self_approved_by ?? null
-            );
-
-            if (!empty($teacherRecipients)) {
-                $message = Mail::to($teacherRecipients);
-
-                if (!empty($ccRecipients)) {
-                    $message->cc($ccRecipients);
-                }
-
-                if (!empty($clientEmail)) {
-                    $message->bcc($clientEmail);
-                }
-
-                $message->send($mail);
-            } elseif (!empty($ccRecipients)) {
-                $message = Mail::to($ccRecipients);
-
-                if (!empty($clientEmail)) {
-                    $message->bcc($clientEmail);
-                }
-
-                $message->send($mail);
-            }
-        }
+        $emailQueued = $this->queueConsultationEmail($consultation);
+        $message = $emailQueued
+            ? 'Consultation submitted. Email notification queued.'
+            : 'Consultation submitted.';
 
         return redirect()
             ->route('guidance.clients.show', $client)
-            ->with('success', 'Consultation saved successfully.');
+            ->with('success', $message);
+    }
+
+    public function retryEmail(Consultation $consultation)
+    {
+        $consultation->load('client');
+
+        if (
+            ! $consultation->client ||
+            ! in_array($consultation->after_consultation, ['resume', 'go_home'], true)
+        ) {
+            return back()->with('error', 'This consultation does not have an email notification to retry.');
+        }
+
+        if (! $this->queueConsultationEmail($consultation)) {
+            return back()->with('error', 'Email notification could not be queued. Please check the logs.');
+        }
+
+        return back()->with('success', 'Email notification queued for retry.');
+    }
+
+    private function queueConsultationEmail(Consultation $consultation): bool
+    {
+        $consultation->loadMissing('client');
+
+        if (
+            ! $consultation->client ||
+            ! in_array($consultation->after_consultation, ['resume', 'go_home'], true)
+        ) {
+            return false;
+        }
+
+        $consultation->update([
+            'email_status' => Consultation::EMAIL_STATUS_QUEUED,
+            'email_sent_at' => null,
+            'email_failed_at' => null,
+            'email_failure_message' => null,
+        ]);
+
+        try {
+            SendGuidanceConsultationEmail::dispatch($consultation->id);
+
+            return true;
+        } catch (Throwable $exception) {
+            $consultation->update([
+                'email_status' => Consultation::EMAIL_STATUS_FAILED,
+                'email_failed_at' => now(),
+                'email_failure_message' => mb_substr($exception->getMessage(), 0, 2000),
+            ]);
+
+            report($exception);
+
+            return false;
+        }
     }
 
     public function update(Request $request, Consultation $consultation)
     {
-        if (!$consultation->time_out) {
+        if (! $consultation->time_out) {
             return redirect()->back()
                 ->with('error', 'Consultation must be completed before editing session notes.');
         }
@@ -234,9 +196,9 @@ class ConsultationsController extends Controller
         $data = $request->validate([
             'type_of_session' => ['nullable', 'string'],
             'risk_assessment' => ['nullable', 'string'],
-            'issue_concern'   => ['nullable', 'string'],
-            'intervention'    => ['nullable', 'string'],
-            'remarks'         => ['nullable', 'string'],
+            'issue_concern' => ['nullable', 'string'],
+            'intervention' => ['nullable', 'string'],
+            'remarks' => ['nullable', 'string'],
         ]);
 
         $consultation->update($data);
@@ -253,18 +215,18 @@ class ConsultationsController extends Controller
 
     public function edit(Consultation $consultation)
     {
-        return view('guidance.consultations.edit', [
-            'consultation' => $consultation,
-        ]);
+        $consultation->load('client');
+
+        return view('guidance.consultations.edit', compact('consultation'));
     }
 
     public function show(Consultation $consultation, Request $request)
     {
-        $return = $request->input('return', 'clients');
+        $consultation->load('client');
 
         return view('guidance.consultations.show', [
             'consultation' => $consultation,
-            'return' => $return,
+            'return' => $request->input('return', 'clients'),
         ]);
     }
 

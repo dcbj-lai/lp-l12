@@ -9,12 +9,19 @@ class Client extends Model
     protected $table = 'clients';
 
     protected $fillable = [
-        'id',
         'first_name',
         'last_name',
         'email',
         'course',
         'section',
+        'is_under_accessibility',
+        'emergency_contact_person',
+        'emergency_contact_number',
+        'blood_type',
+    ];
+
+    protected $casts = [
+        'is_under_accessibility' => 'boolean',
     ];
 
     // Optional convenience accessor
@@ -23,8 +30,13 @@ class Client extends Model
         return "{$this->first_name} {$this->last_name}";
     }
 
+    public function isUnderAccessibility(): bool
+    {
+        return (bool) $this->is_under_accessibility;
+    }
+
     public function consultations()
-{
-    return $this->hasMany(\App\Models\Consultation::class);
-}
+    {
+        return $this->hasMany(Consultation::class);
+    }
 }

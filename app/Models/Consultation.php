@@ -9,6 +9,12 @@ class Consultation extends Model
 {
     use SoftDeletes;
 
+    public const EMAIL_STATUS_QUEUED = 'queued';
+
+    public const EMAIL_STATUS_SENT = 'sent';
+
+    public const EMAIL_STATUS_FAILED = 'failed';
+
     protected $fillable = [
         'client_id',
 
@@ -25,6 +31,10 @@ class Consultation extends Model
         'going_home_method',
         'fetcher_name',
         'self_approved_by',
+        'email_status',
+        'email_sent_at',
+        'email_failed_at',
+        'email_failure_message',
 
         // consultation details
         'type_of_session',
@@ -35,8 +45,10 @@ class Consultation extends Model
     ];
 
     protected $casts = [
-        'time_in'  => 'datetime',
+        'time_in' => 'datetime',
         'time_out' => 'datetime',
+        'email_sent_at' => 'datetime',
+        'email_failed_at' => 'datetime',
     ];
 
     protected $dates = ['deleted_at'];

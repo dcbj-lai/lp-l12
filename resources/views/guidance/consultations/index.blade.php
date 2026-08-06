@@ -84,8 +84,8 @@
                 <thead>
                     <tr class="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200">
                         <th class="w-[12%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Student</th>
-                        <th class="w-[16%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Teacher in Check-In</th>
-                        <th class="w-[16%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Teacher in Check-Out</th>
+                        <th class="w-[16%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Check-in Teacher</th>
+                        <th class="w-[16%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Check-out Teacher</th>
                         <th class="w-[14%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Time In</th>
                         <th class="w-[14%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">Time Out</th>
                         <th class="w-[10%] border-b border-neutral-200 dark:border-neutral-700 px-3 py-3 text-left">After Consultation</th>
