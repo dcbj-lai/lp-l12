@@ -59,9 +59,17 @@
 
         <!-- Client Information -->
         <div class="overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 mb-6 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700">
-            <h2 class="text-lg font-semibold mb-6">
-                Client Information
-            </h2>
+            <div class="mb-6 flex items-start justify-between gap-4">
+                <h2 class="text-lg font-semibold">
+                    Client Information
+                </h2>
+
+                <a href="{{ route('guidance.clients.edit', $client) }}"
+                   class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600">
+                    Edit Profile
+                    <span aria-hidden="true">&#9998;</span>
+                </a>
+            </div>
 
             <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
 

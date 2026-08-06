@@ -143,4 +143,101 @@ class GuidanceClientCreateTest extends TestCase
             ])
             ->assertSessionHasErrors('email');
     }
+
+    public function test_guidance_user_can_open_edit_form_from_client_profile(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Test',
+            'last_name' => 'Student',
+            'email' => 'edit.guidance@example.com',
+            'course' => 'BSN',
+        ]);
+        $user = $this->guidanceUser();
+
+        $this->actingAs($user)
+            ->get(route('guidance.clients.show', $client))
+            ->assertOk()
+            ->assertSeeText('Edit Profile')
+            ->assertSee(route('guidance.clients.edit', $client), false);
+
+        $this->actingAs($user)
+            ->get(route('guidance.clients.edit', $client))
+            ->assertOk()
+            ->assertSeeText('Edit Student Client')
+            ->assertSee('value="edit.guidance@example.com"', false)
+            ->assertSeeText('Save Changes');
+    }
+
+    public function test_guidance_user_can_update_student_client_profile(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Test',
+            'last_name' => 'Student',
+            'email' => 'update.guidance@example.com',
+            'is_under_accessibility' => true,
+        ]);
+
+        $response = $this->actingAs($this->guidanceUser())
+            ->put(route('guidance.clients.update', $client), [
+                'first_name' => 'Updated',
+                'last_name' => 'Learner',
+                'email' => $client->email,
+                'course' => 'BSIT',
+                'section' => 'B',
+                'is_under_accessibility' => '0',
+                'blood_type' => 'A+',
+                'emergency_contact_person' => 'Updated Parent',
+                'emergency_contact_number' => '+639181234567',
+            ]);
+
+        $response
+            ->assertRedirect(route('guidance.clients.show', $client))
+            ->assertSessionHas('success', 'Student client profile updated.');
+
+        $client->refresh();
+
+        $this->assertSame('Updated', $client->first_name);
+        $this->assertSame('Learner', $client->last_name);
+        $this->assertSame('BSIT', $client->course);
+        $this->assertSame('B', $client->section);
+        $this->assertFalse($client->is_under_accessibility);
+        $this->assertSame('A+', $client->blood_type);
+        $this->assertSame('Updated Parent', $client->emergency_contact_person);
+        $this->assertSame('+639181234567', $client->emergency_contact_number);
+    }
+
+    public function test_update_rejects_another_clients_email(): void
+    {
+        $client = Client::create([
+            'first_name' => 'First',
+            'last_name' => 'Student',
+            'email' => 'first.guidance@example.com',
+        ]);
+        $otherClient = Client::create([
+            'first_name' => 'Other',
+            'last_name' => 'Student',
+            'email' => 'other.guidance@example.com',
+        ]);
+
+        $this->actingAs($this->guidanceUser())
+            ->put(route('guidance.clients.update', $client), [
+                'first_name' => $client->first_name,
+                'last_name' => $client->last_name,
+                'email' => $otherClient->email,
+            ])
+            ->assertSessionHasErrors('email');
+    }
+
+    public function test_non_guidance_user_cannot_edit_client(): void
+    {
+        $client = Client::create([
+            'first_name' => 'Restricted',
+            'last_name' => 'Student',
+            'email' => 'restricted.guidance@example.com',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('guidance.clients.edit', $client))
+            ->assertForbidden();
+    }
 }

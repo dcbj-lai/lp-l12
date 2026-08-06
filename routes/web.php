@@ -440,6 +440,12 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
     Route::post('/guidance/clients', [ClientsController::class, 'store'])
         ->name('guidance.clients.store');
 
+    Route::get('/guidance/clients/{client}/edit', [ClientsController::class, 'edit'])
+        ->name('guidance.clients.edit');
+
+    Route::put('/guidance/clients/{client}', [ClientsController::class, 'update'])
+        ->name('guidance.clients.update');
+
     Route::get('/guidance/clients/{client}', [ClientsController::class, 'show'])
         ->name('guidance.clients.show');
 
