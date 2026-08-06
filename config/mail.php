@@ -118,14 +118,12 @@ return [
     'clinic_recipients' => [
         'clinic' => env('REQUESTS_CLINIC_EMAIL'),
         'academic_council' => env('REQUESTS_ACAD_COUNCIL_EMAIL'),
-        'academic_dean' => env('REQUESTS_ACAD_DEAN_EMAIL'),
         'sas' => env('REQUESTS_SAS_EMAIL'),
     ],
 
     'guidance_recipients' => [
         'guidance' => env('REQUESTS_GC_EMAIL'),
         'academic_council' => env('REQUESTS_ACAD_COUNCIL_EMAIL'),
-        'academic_dean' => env('REQUESTS_ACAD_DEAN_EMAIL'),
         'sas' => env('REQUESTS_SAS_EMAIL'),
     ],
 

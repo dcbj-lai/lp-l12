@@ -49,7 +49,6 @@ class SendClinicConsultationEmail implements ShouldQueue
             $ccRecipients = array_values(array_unique(array_filter([
                 config('mail.clinic_recipients.clinic'),
                 config('mail.clinic_recipients.academic_council'),
-                config('mail.clinic_recipients.academic_dean'),
                 $patient->isUnderAccessibility()
                     ? config('mail.clinic_recipients.sas')
                     : null,

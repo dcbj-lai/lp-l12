@@ -26,7 +26,6 @@ class ClinicConsultationMailRoutingTest extends TestCase
         config()->set('mail.clinic_recipients', [
             'clinic' => 'clinic@example.com',
             'academic_council' => 'academic-council@example.com',
-            'academic_dean' => 'academic-dean@example.com',
             'sas' => 'sas@example.com',
         ]);
     }
@@ -94,7 +93,6 @@ class ClinicConsultationMailRoutingTest extends TestCase
                 && $mail->hasTo('checkout.teacher@example.com')
                 && $mail->hasCc('clinic@example.com')
                 && $mail->hasCc('academic-council@example.com')
-                && $mail->hasCc('academic-dean@example.com')
                 && ! $mail->hasCc('sas@example.com')
                 && ! $mail->hasBcc('ana.student@example.com');
         });
@@ -133,7 +131,6 @@ class ClinicConsultationMailRoutingTest extends TestCase
                 && $mail->hasTo('checkout.teacher@example.com')
                 && $mail->hasCc('clinic@example.com')
                 && $mail->hasCc('academic-council@example.com')
-                && $mail->hasCc('academic-dean@example.com')
                 && $mail->hasCc('sas@example.com')
                 && ! $mail->hasBcc('ana.student@example.com');
         });

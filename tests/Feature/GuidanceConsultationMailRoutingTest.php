@@ -26,7 +26,6 @@ class GuidanceConsultationMailRoutingTest extends TestCase
         config()->set('mail.guidance_recipients', [
             'guidance' => 'guidance@example.com',
             'academic_council' => 'academic-council@example.com',
-            'academic_dean' => 'academic-dean@example.com',
             'sas' => 'sas@example.com',
         ]);
     }
@@ -95,7 +94,6 @@ class GuidanceConsultationMailRoutingTest extends TestCase
                 && $mail->hasTo('checkout.guidance.teacher@example.com')
                 && $mail->hasCc('guidance@example.com')
                 && $mail->hasCc('academic-council@example.com')
-                && $mail->hasCc('academic-dean@example.com')
                 && ! $mail->hasCc('sas@example.com')
                 && ! $mail->hasBcc('ana.guidance.mail@example.com');
         });
@@ -129,7 +127,6 @@ class GuidanceConsultationMailRoutingTest extends TestCase
                 && $mail->hasTo('checkout.guidance.teacher@example.com')
                 && $mail->hasCc('guidance@example.com')
                 && $mail->hasCc('academic-council@example.com')
-                && $mail->hasCc('academic-dean@example.com')
                 && $mail->hasCc('sas@example.com')
                 && ! $mail->hasBcc('ana.guidance.mail@example.com');
         });

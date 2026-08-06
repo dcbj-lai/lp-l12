@@ -49,7 +49,6 @@ class SendGuidanceConsultationEmail implements ShouldQueue
             $ccRecipients = array_values(array_unique(array_filter([
                 config('mail.guidance_recipients.guidance'),
                 config('mail.guidance_recipients.academic_council'),
-                config('mail.guidance_recipients.academic_dean'),
                 $client->isUnderAccessibility()
                     ? config('mail.guidance_recipients.sas')
                     : null,
