@@ -72,6 +72,7 @@
                 approvedBy: '',
                 fetcherName: '',
 
+
                 canSubmit() {
                     if (!this.checkedIn) return false;
                     if (!this.decision) return false;
@@ -118,7 +119,7 @@
                             <!-- Student Name -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                                    Student Name <span class="text-red-600">*</span>
+                                    Client Name <span class="text-red-600">*</span>
                                 </label>
                                 <input type="text"
                                        value="{{ $client->first_name }} {{ $client->last_name }}"
@@ -327,7 +328,7 @@
                         </div>
 
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                            Note: Save/Submit will record Time Out automatically. If no teacher is selected, no email will be sent for either Resume class or Go home.
+                            Save/Submit records Time Out automatically. Student email notifications are queued when an eligible consultation outcome is selected.
                         </p>
                     </form>
                 </div>

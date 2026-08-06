@@ -81,6 +81,7 @@ class ImportCsvController extends Controller
                     'first_name' => $firstName,
                     'last_name'  => $lastName,
                     'email'      => $email,
+                    'is_under_accessibility' => false,
                     'course'     => $course,
                     'section'    => $section,
                 ]);

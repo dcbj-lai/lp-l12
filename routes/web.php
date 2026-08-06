@@ -434,6 +434,12 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
     Route::get('/guidance/clients', [ClientsController::class, 'index'])
         ->name('guidance.clients.index');
 
+    Route::get('/guidance/clients/create', [ClientsController::class, 'create'])
+        ->name('guidance.clients.create');
+
+    Route::post('/guidance/clients', [ClientsController::class, 'store'])
+        ->name('guidance.clients.store');
+
     Route::get('/guidance/clients/{client}', [ClientsController::class, 'show'])
         ->name('guidance.clients.show');
 
@@ -444,6 +450,9 @@ Route::middleware(['auth', 'can:guidance'])->group(function () {
 
     Route::post('/guidance/clients/{client}/consultations', [ConsultationsController::class, 'store'])
         ->name('guidance.consultations.store');
+
+    Route::post('/guidance/consultations/{consultation}/email/retry', [ConsultationsController::class, 'retryEmail'])
+        ->name('guidance.consultations.email.retry');
 
     Route::get('/guidance/consultations/{consultation}', [ConsultationsController::class, 'show'])
         ->name('guidance.consultations.show');

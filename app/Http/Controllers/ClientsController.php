@@ -13,25 +13,52 @@ class ClientsController extends Controller
 
         $clients = Client::query()
             ->when($q !== '', function ($query) use ($q) {
-                $query->where('first_name', 'like', "%{$q}%")
-                      ->orWhere('last_name', 'like', "%{$q}%")
-                      ->orWhere('email', 'like', "%{$q}%");
+                $query->where(function ($searchQuery) use ($q) {
+                    $searchQuery->where('first_name', 'like', "%{$q}%")
+                        ->orWhere('last_name', 'like', "%{$q}%")
+                        ->orWhere('email', 'like', "%{$q}%");
+                });
             })
-            ->orderBy('id', 'asc')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
             ->paginate(10)
             ->withQueryString();
 
-        return view('guidance.clients.index', [
-            'clients' => $clients,
-            'q'       => $q,
+        return view('guidance.clients.index', compact('clients', 'q'));
+    }
+
+    public function create()
+    {
+        return view('guidance.clients.create');
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:clients,email'],
+            'course' => ['nullable', 'string', 'max:255'],
+            'section' => ['nullable', 'string', 'max:255'],
+            'is_under_accessibility' => ['sometimes', 'boolean'],
+            'blood_type' => ['nullable', 'string', 'max:10'],
+            'emergency_contact_person' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_number' => ['nullable', 'string', 'max:50'],
         ]);
+
+        $data['is_under_accessibility'] = $request->boolean('is_under_accessibility');
+        $client = Client::create($data);
+
+        return redirect()
+            ->route('guidance.clients.show', $client)
+            ->with('success', 'Student client record created.');
     }
 
     public function show(Client $client)
     {
         $consultations = $client->consultations()
             ->whereNotNull('time_out')
-            ->orderByDesc('created_at')   // newest first by check-in time
+            ->orderByDesc('created_at')
             ->paginate(5);
 
         return view('guidance.clients.show', compact('client', 'consultations'));
