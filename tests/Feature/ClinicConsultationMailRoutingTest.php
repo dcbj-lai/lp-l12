@@ -139,6 +139,42 @@ class ClinicConsultationMailRoutingTest extends TestCase
         $this->assertSame(ClinicConsultation::EMAIL_STATUS_SENT, $consultation->email_status);
     }
 
+    public function test_no_teacher_email_does_not_queue_or_send_notification(): void
+    {
+        Queue::fake();
+        $patient = $this->student(false);
+        $consultation = ClinicConsultation::create([
+            'patient_id' => $patient->id,
+            'time_in' => now()->subMinutes(30),
+        ]);
+
+        $response = $this->actingAs($this->clinicUser())
+            ->post(route('clinic.consultations.store', $patient), [
+                'consultation_id' => $consultation->id,
+                'after_consultation' => 'resume',
+            ]);
+
+        $response
+            ->assertRedirect()
+            ->assertSessionHas('flash.message', 'Consultation submitted.');
+
+        Queue::assertNotPushed(SendClinicConsultationEmail::class);
+
+        $consultation->refresh();
+        $this->assertNull($consultation->email_status);
+
+        Mail::fake();
+        (new SendClinicConsultationEmail($consultation->id))->handle();
+        Mail::assertNothingSent();
+
+        $consultation->refresh();
+        $this->assertNull($consultation->email_status);
+
+        $this->get(route('clinic.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSeeText('No email was sent.');
+    }
+
     public function test_failed_delivery_marks_consultation_as_failed(): void
     {
         $consultation = $this->openConsultation($this->student(false));

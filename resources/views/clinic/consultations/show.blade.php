@@ -430,7 +430,7 @@
                                     <button type="submit" class="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400">Retry email</button>
                                 </form>
                             @else
-                                <span class="text-gray-500 dark:text-gray-300">&mdash;</span>
+                                <span class="text-gray-500 dark:text-gray-300">No email was sent.</span>
                             @endif
                         </div>
                     </div>

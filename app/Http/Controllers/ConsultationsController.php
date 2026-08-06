@@ -162,6 +162,22 @@ class ConsultationsController extends Controller
             return false;
         }
 
+        $teacherRecipients = array_filter([
+            $consultation->check_in_teacher_email,
+            $consultation->teacher_email,
+        ], fn (mixed $email): bool => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false);
+
+        if ($teacherRecipients === []) {
+            $consultation->update([
+                'email_status' => null,
+                'email_sent_at' => null,
+                'email_failed_at' => null,
+                'email_failure_message' => null,
+            ]);
+
+            return false;
+        }
+
         $consultation->update([
             'email_status' => Consultation::EMAIL_STATUS_QUEUED,
             'email_sent_at' => null,

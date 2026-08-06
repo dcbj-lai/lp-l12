@@ -185,7 +185,7 @@
                                     <button type="submit" class="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400">Retry email</button>
                                 </form>
                             @else
-                                <span class="text-gray-500 dark:text-gray-300">—</span>
+                                <span class="text-gray-500 dark:text-gray-300">No email was sent.</span>
                             @endif
                         </div>
                         @if ($consultation->email_status === \App\Models\Consultation::EMAIL_STATUS_FAILED && $consultation->email_failure_message)

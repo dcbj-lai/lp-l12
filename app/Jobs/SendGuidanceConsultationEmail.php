@@ -54,11 +54,18 @@ class SendGuidanceConsultationEmail implements ShouldQueue
                     : null,
             ])));
 
-            $to = $teacherRecipients ?: $ccRecipients;
+            if ($teacherRecipients === []) {
+                $consultation->update([
+                    'email_status' => null,
+                    'email_sent_at' => null,
+                    'email_failed_at' => null,
+                    'email_failure_message' => null,
+                ]);
 
-            if ($to === []) {
-                throw new RuntimeException('No Guidance consultation email recipients are configured.');
+                return;
             }
+
+            $to = $teacherRecipients;
 
             $dateDisplay = $consultation->time_in
                 ? Carbon::parse($consultation->time_in)->timezone('Asia/Manila')->format('M d, Y')

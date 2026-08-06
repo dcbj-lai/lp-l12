@@ -132,6 +132,41 @@ class GuidanceConsultationMailRoutingTest extends TestCase
         });
     }
 
+    public function test_no_teacher_email_does_not_queue_or_send_notification(): void
+    {
+        Queue::fake();
+        $client = $this->student(false);
+        $consultation = Consultation::create([
+            'client_id' => $client->id,
+            'time_in' => now()->subMinutes(30),
+        ]);
+
+        $response = $this->actingAs($this->guidanceUser())
+            ->post(route('guidance.consultations.store', $client), [
+                'after_consultation' => 'resume',
+            ]);
+
+        $response
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Consultation submitted.');
+
+        Queue::assertNotPushed(SendGuidanceConsultationEmail::class);
+
+        $consultation->refresh();
+        $this->assertNull($consultation->email_status);
+
+        Mail::fake();
+        (new SendGuidanceConsultationEmail($consultation->id))->handle();
+        Mail::assertNothingSent();
+
+        $consultation->refresh();
+        $this->assertNull($consultation->email_status);
+
+        $this->get(route('guidance.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSeeText('No email was sent.');
+    }
+
     public function test_failed_delivery_marks_consultation_as_failed(): void
     {
         $consultation = $this->openConsultation($this->student(false));
