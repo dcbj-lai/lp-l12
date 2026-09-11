@@ -247,10 +247,8 @@ class ClinicConsultationController extends Controller
 
         $consultation = $consultation->fresh();
 
-        $emailQueued = $this->queueConsultationEmail($consultation);
-        $submissionMessage = $emailQueued
-            ? 'Consultation submitted. Email notification queued.'
-            : 'Consultation submitted.';
+        $this->queueConsultationEmail($consultation);
+        $submissionMessage = 'Consultation submitted.';
 
         $returnUrl = $request->input('return_url');
 
@@ -296,13 +294,13 @@ class ClinicConsultationController extends Controller
         if (! $this->queueConsultationEmail($consultation)) {
             return back()->with('flash', [
                 'type' => 'error',
-                'message' => 'Email notification could not be queued. Please check the logs.',
+                'message' => 'Email notification could not be started. Check the consultation details for the error.',
             ]);
         }
 
         return back()->with('flash', [
             'type' => 'success',
-            'message' => 'Email notification queued for retry.',
+            'message' => 'Email retry requested. Check the consultation details for the result.',
         ]);
     }
 

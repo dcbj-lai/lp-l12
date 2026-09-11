@@ -123,10 +123,8 @@ class ConsultationsController extends Controller
         ]);
 
         $consultation = $consultation->fresh();
-        $emailQueued = $this->queueConsultationEmail($consultation);
-        $message = $emailQueued
-            ? 'Consultation submitted. Email notification queued.'
-            : 'Consultation submitted.';
+        $this->queueConsultationEmail($consultation);
+        $message = 'Consultation submitted.';
 
         return redirect()
             ->route('guidance.clients.show', $client)
@@ -145,10 +143,10 @@ class ConsultationsController extends Controller
         }
 
         if (! $this->queueConsultationEmail($consultation)) {
-            return back()->with('error', 'Email notification could not be queued. Please check the logs.');
+            return back()->with('error', 'Email notification could not be started. Check the consultation details for the error.');
         }
 
-        return back()->with('success', 'Email notification queued for retry.');
+        return back()->with('success', 'Email retry requested. Check the consultation details for the result.');
     }
 
     private function queueConsultationEmail(Consultation $consultation): bool

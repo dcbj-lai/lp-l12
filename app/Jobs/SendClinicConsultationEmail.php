@@ -23,7 +23,6 @@ class SendClinicConsultationEmail implements ShouldQueue
 
     public function __construct(public int $consultationId)
     {
-        $this->onQueue('mail');
     }
 
     public function handle(): void
@@ -31,6 +30,10 @@ class SendClinicConsultationEmail implements ShouldQueue
         $consultation = ClinicConsultation::with('patient')->find($this->consultationId);
 
         if (! $consultation) {
+            return;
+        }
+
+        if ($consultation->email_status !== ClinicConsultation::EMAIL_STATUS_QUEUED) {
             return;
         }
 

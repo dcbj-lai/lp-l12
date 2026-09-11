@@ -76,14 +76,21 @@ class ClinicConsultationMailRoutingTest extends TestCase
                 'after_consultation' => 'resume',
             ])
             ->assertRedirect()
-            ->assertSessionHas('flash.message', 'Consultation submitted. Email notification queued.');
+            ->assertSessionHas('flash.message', 'Consultation submitted.');
 
         $consultation->refresh();
 
         $this->assertSame(ClinicConsultation::EMAIL_STATUS_QUEUED, $consultation->email_status);
         Queue::assertPushed(SendClinicConsultationEmail::class, function ($job) use ($consultation) {
-            return $job->consultationId === $consultation->id && $job->queue === 'mail';
+            return $job->consultationId === $consultation->id && $job->queue === null;
         });
+
+        $this->get(route('clinic.consultations.show', $consultation))
+            ->assertOk()
+            ->assertDontSeeText('EMAIL NOTIFICATION')
+            ->assertDontSeeText('Queued')
+            ->assertDontSeeText('Success')
+            ->assertDontSeeText('No email was sent.');
 
         Mail::fake();
         (new SendClinicConsultationEmail($consultation->id))->handle();
@@ -100,6 +107,14 @@ class ClinicConsultationMailRoutingTest extends TestCase
         $consultation->refresh();
         $this->assertSame(ClinicConsultation::EMAIL_STATUS_SENT, $consultation->email_status);
         $this->assertNotNull($consultation->email_sent_at);
+
+        $this->get(route('clinic.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSeeText('EMAIL NOTIFICATION')
+            ->assertSeeText('Success')
+            ->assertSeeText($consultation->email_sent_at->format('M d, Y h:i A'))
+            ->assertDontSeeText('Queued')
+            ->assertDontSeeText('Failed');
     }
 
     public function test_accessibility_student_email_adds_sas_and_never_bccs_patient(): void
@@ -191,6 +206,34 @@ class ClinicConsultationMailRoutingTest extends TestCase
         $this->assertSame(ClinicConsultation::EMAIL_STATUS_FAILED, $consultation->email_status);
         $this->assertNotNull($consultation->email_failed_at);
         $this->assertSame('SMTP rejected the message.', $consultation->email_failure_message);
+
+        $this->actingAs($this->clinicUser())
+            ->get(route('clinic.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSeeText('Failed')
+            ->assertSeeText('SMTP rejected the message.')
+            ->assertSeeText('Retry email')
+            ->assertDontSeeText('Success');
+    }
+
+    public function test_job_does_not_send_when_consultation_is_already_failed(): void
+    {
+        Mail::fake();
+
+        $consultation = $this->openConsultation($this->student(false));
+        $consultation->update([
+            'after_consultation' => 'resume',
+            'email_status' => ClinicConsultation::EMAIL_STATUS_FAILED,
+            'email_failure_message' => 'Delivery canceled before processing.',
+        ]);
+
+        (new SendClinicConsultationEmail($consultation->id))->handle();
+
+        Mail::assertNothingSent();
+        $this->assertSame(
+            ClinicConsultation::EMAIL_STATUS_FAILED,
+            $consultation->fresh()->email_status,
+        );
     }
 
     public function test_clinic_user_can_retry_a_failed_email(): void
@@ -208,7 +251,7 @@ class ClinicConsultationMailRoutingTest extends TestCase
         $this->actingAs($this->clinicUser())
             ->post(route('clinic.consultations.email.retry', $consultation))
             ->assertRedirect()
-            ->assertSessionHas('flash.message', 'Email notification queued for retry.');
+            ->assertSessionHas('flash.message', 'Email retry requested. Check the consultation details for the result.');
 
         $consultation->refresh();
 
@@ -216,7 +259,7 @@ class ClinicConsultationMailRoutingTest extends TestCase
         $this->assertNull($consultation->email_failed_at);
         $this->assertNull($consultation->email_failure_message);
         Queue::assertPushed(SendClinicConsultationEmail::class, function ($job) use ($consultation) {
-            return $job->consultationId === $consultation->id && $job->queue === 'mail';
+            return $job->consultationId === $consultation->id && $job->queue === null;
         });
     }
 
@@ -238,5 +281,37 @@ class ClinicConsultationMailRoutingTest extends TestCase
             ->assertSeeText('CHECK-OUT TEACHER')
             ->assertSeeText('Checkout Teacher')
             ->assertSeeText('checkout.teacher@example.com');
+    }
+
+    public function test_failure_description_is_escaped_in_consultation_details(): void
+    {
+        $failure = 'SMTP rejected <script>alert("test")</script>';
+        $consultation = $this->openConsultation($this->student(false));
+        $consultation->update([
+            'after_consultation' => 'resume',
+            'email_status' => ClinicConsultation::EMAIL_STATUS_FAILED,
+            'email_failure_message' => $failure,
+        ]);
+
+        $this->actingAs($this->clinicUser())
+            ->get(route('clinic.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSee($failure)
+            ->assertDontSee($failure, false);
+    }
+
+    public function test_failed_email_without_recorded_error_has_a_description(): void
+    {
+        $consultation = $this->openConsultation($this->student(false));
+        $consultation->update([
+            'after_consultation' => 'resume',
+            'email_status' => ClinicConsultation::EMAIL_STATUS_FAILED,
+        ]);
+
+        $this->actingAs($this->clinicUser())
+            ->get(route('clinic.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSeeText('Failed')
+            ->assertSeeText('The email could not be sent. No error description was recorded.');
     }
 }
