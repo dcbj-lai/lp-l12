@@ -74,17 +74,25 @@ class GuidanceConsultationMailRoutingTest extends TestCase
 
         $response
             ->assertRedirect()
-            ->assertSessionHas('success', 'Consultation submitted. Email notification queued.');
+            ->assertSessionHas('success', 'Consultation submitted.');
 
         $this->get($response->headers->get('Location'))
             ->assertOk()
-            ->assertSeeText('Consultation submitted. Email notification queued.');
+            ->assertSeeText('Consultation submitted.')
+            ->assertDontSeeText('Email notification queued.');
 
         $consultation->refresh();
         $this->assertSame(Consultation::EMAIL_STATUS_QUEUED, $consultation->email_status);
         Queue::assertPushed(SendGuidanceConsultationEmail::class, function ($job) use ($consultation) {
             return $job->consultationId === $consultation->id && $job->queue === null;
         });
+
+        $this->get(route('guidance.consultations.show', $consultation))
+            ->assertOk()
+            ->assertDontSeeText('EMAIL NOTIFICATION')
+            ->assertDontSeeText('Queued')
+            ->assertDontSeeText('Success')
+            ->assertDontSeeText('No email was sent.');
 
         Mail::fake();
         (new SendGuidanceConsultationEmail($consultation->id))->handle();
@@ -101,6 +109,14 @@ class GuidanceConsultationMailRoutingTest extends TestCase
         $consultation->refresh();
         $this->assertSame(Consultation::EMAIL_STATUS_SENT, $consultation->email_status);
         $this->assertNotNull($consultation->email_sent_at);
+
+        $this->get(route('guidance.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSeeText('EMAIL NOTIFICATION')
+            ->assertSeeText('Success')
+            ->assertSeeText($consultation->email_sent_at->format('M d, Y h:i A'))
+            ->assertDontSeeText('Queued')
+            ->assertDontSeeText('Failed');
     }
 
     public function test_accessibility_student_adds_sas_and_never_bccs_client(): void
@@ -182,6 +198,14 @@ class GuidanceConsultationMailRoutingTest extends TestCase
         $this->assertSame(Consultation::EMAIL_STATUS_FAILED, $consultation->email_status);
         $this->assertNotNull($consultation->email_failed_at);
         $this->assertSame('SMTP rejected the Guidance message.', $consultation->email_failure_message);
+
+        $this->actingAs($this->guidanceUser())
+            ->get(route('guidance.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSeeText('Failed')
+            ->assertSeeText('SMTP rejected the Guidance message.')
+            ->assertSeeText('Retry email')
+            ->assertDontSeeText('Success');
     }
 
     public function test_job_does_not_send_when_consultation_is_already_failed(): void
@@ -218,7 +242,7 @@ class GuidanceConsultationMailRoutingTest extends TestCase
         $this->actingAs($this->guidanceUser())
             ->post(route('guidance.consultations.email.retry', $consultation))
             ->assertRedirect()
-            ->assertSessionHas('success', 'Email notification queued for retry.');
+            ->assertSessionHas('success', 'Email retry requested. Check the consultation details for the result.');
 
         $consultation->refresh();
         $this->assertSame(Consultation::EMAIL_STATUS_QUEUED, $consultation->email_status);
@@ -250,5 +274,37 @@ class GuidanceConsultationMailRoutingTest extends TestCase
             ->assertSeeText('EMAIL NOTIFICATION')
             ->assertSeeText('Failed')
             ->assertSeeText('Retry email');
+    }
+
+    public function test_failure_description_is_escaped_in_consultation_details(): void
+    {
+        $failure = 'SMTP rejected <script>alert("test")</script>';
+        $consultation = $this->openConsultation($this->student(false));
+        $consultation->update([
+            'after_consultation' => 'resume',
+            'email_status' => Consultation::EMAIL_STATUS_FAILED,
+            'email_failure_message' => $failure,
+        ]);
+
+        $this->actingAs($this->guidanceUser())
+            ->get(route('guidance.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSee($failure)
+            ->assertDontSee($failure, false);
+    }
+
+    public function test_failed_email_without_recorded_error_has_a_description(): void
+    {
+        $consultation = $this->openConsultation($this->student(false));
+        $consultation->update([
+            'after_consultation' => 'resume',
+            'email_status' => Consultation::EMAIL_STATUS_FAILED,
+        ]);
+
+        $this->actingAs($this->guidanceUser())
+            ->get(route('guidance.consultations.show', $consultation))
+            ->assertOk()
+            ->assertSeeText('Failed')
+            ->assertSeeText('The email could not be sent. No error description was recorded.');
     }
 }

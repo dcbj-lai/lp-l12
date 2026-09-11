@@ -168,13 +168,12 @@
                         {{ $consultation->self_approved_by ?? '—' }}
                     </div>
                 </div>
+                    @if ($consultation->email_status !== \App\Models\Consultation::EMAIL_STATUS_QUEUED)
                     <div class="border border-gray-200 dark:border-gray-700 rounded p-4 bg-white dark:bg-gray-900">
                         <div class="text-xs tracking-widest text-gray-500 dark:text-gray-300">EMAIL NOTIFICATION</div>
                         <div class="mt-2 flex flex-wrap items-center gap-2">
-                            @if ($consultation->email_status === \App\Models\Consultation::EMAIL_STATUS_QUEUED)
-                                <span class="inline-flex rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">Queued</span>
-                            @elseif ($consultation->email_status === \App\Models\Consultation::EMAIL_STATUS_SENT)
-                                <span class="inline-flex rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-300">Sent</span>
+                            @if ($consultation->email_status === \App\Models\Consultation::EMAIL_STATUS_SENT)
+                                <span class="inline-flex rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-300">Success</span>
                                 @if ($consultation->email_sent_at)
                                     <span class="text-xs text-gray-500 dark:text-gray-300">{{ $consultation->email_sent_at->format('M d, Y h:i A') }}</span>
                                 @endif
@@ -188,10 +187,11 @@
                                 <span class="text-gray-500 dark:text-gray-300">No email was sent.</span>
                             @endif
                         </div>
-                        @if ($consultation->email_status === \App\Models\Consultation::EMAIL_STATUS_FAILED && $consultation->email_failure_message)
-                            <p class="mt-2 text-xs text-red-600 dark:text-red-300">{{ $consultation->email_failure_message }}</p>
+                        @if ($consultation->email_status === \App\Models\Consultation::EMAIL_STATUS_FAILED)
+                            <p class="mt-2 break-words text-xs text-red-600 dark:text-red-300">{{ $consultation->email_failure_message ?: 'The email could not be sent. No error description was recorded.' }}</p>
                         @endif
                     </div>
+                    @endif
             </div>
         </div>
     </div>
