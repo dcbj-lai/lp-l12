@@ -83,7 +83,7 @@ class GuidanceConsultationMailRoutingTest extends TestCase
         $consultation->refresh();
         $this->assertSame(Consultation::EMAIL_STATUS_QUEUED, $consultation->email_status);
         Queue::assertPushed(SendGuidanceConsultationEmail::class, function ($job) use ($consultation) {
-            return $job->consultationId === $consultation->id && $job->queue === 'mail';
+            return $job->consultationId === $consultation->id && $job->queue === null;
         });
 
         Mail::fake();
@@ -182,6 +182,26 @@ class GuidanceConsultationMailRoutingTest extends TestCase
         $this->assertSame(Consultation::EMAIL_STATUS_FAILED, $consultation->email_status);
         $this->assertNotNull($consultation->email_failed_at);
         $this->assertSame('SMTP rejected the Guidance message.', $consultation->email_failure_message);
+    }
+
+    public function test_job_does_not_send_when_consultation_is_already_failed(): void
+    {
+        Mail::fake();
+
+        $consultation = $this->openConsultation($this->student(false));
+        $consultation->update([
+            'after_consultation' => 'resume',
+            'email_status' => Consultation::EMAIL_STATUS_FAILED,
+            'email_failure_message' => 'Delivery canceled before processing.',
+        ]);
+
+        (new SendGuidanceConsultationEmail($consultation->id))->handle();
+
+        Mail::assertNothingSent();
+        $this->assertSame(
+            Consultation::EMAIL_STATUS_FAILED,
+            $consultation->fresh()->email_status,
+        );
     }
 
     public function test_guidance_user_can_retry_failed_email(): void
