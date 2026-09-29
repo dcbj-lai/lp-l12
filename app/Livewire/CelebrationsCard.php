@@ -17,6 +17,7 @@ class CelebrationsCard extends Component
 
         // 🎂 Birthdays
         $this->birthdays = User::query()
+            ->where('is_active', true)
             ->whereNotNull('birthdate')
             ->whereMonth('birthdate', $currentMonth)
             ->get()
@@ -25,6 +26,7 @@ class CelebrationsCard extends Component
 
         // 🎉 Work Anniversaries (exclude new hires from this year)
         $this->anniversaries = User::query()
+            ->where('is_active', true)
             ->whereNotNull('hire_date')
             ->whereMonth('hire_date', $currentMonth)
             ->whereYear('hire_date', '<', now()->year)
