@@ -18,9 +18,9 @@
         </div>
     </div>
 
-    <div class="w-fit rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800/60 dark:bg-amber-950/30">
-        <p class="flex items-center gap-2 whitespace-nowrap text-xs font-bold leading-relaxed text-amber-900 dark:text-white">
-            <flux:icon name="information-circle" class="h-4 w-4 shrink-0" />
+    <div class="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800/60 dark:bg-amber-950/30 sm:w-fit">
+        <p class="flex items-start gap-2 text-xs font-bold leading-relaxed text-amber-900 dark:text-white sm:items-center sm:whitespace-nowrap">
+            <flux:icon name="information-circle" class="mt-0.5 h-4 w-4 shrink-0 sm:mt-0" />
             Displayed leave credits are based on a full-year tenure (July 1, 2026–June 30, 2027).
         </p>
     </div>
