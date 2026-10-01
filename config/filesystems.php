@@ -15,6 +15,9 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    // Facility attachments use public local storage when no cloud bucket is configured.
+    'facility_upload_disk' => env('FACILITY_UPLOAD_DISK', env('AWS_PUBLIC_BUCKET') ? 's3' : 'public'),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks

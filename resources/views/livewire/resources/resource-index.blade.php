@@ -1,6 +1,7 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
 
-<div class="space-y-6">
+<div class="space-y-6" wire:poll.60s x-data x-on:wheel.capture="if ($event.target.matches('input[type=number]')) $event.target.blur()">
+    <p class="text-sm text-zinc-500">The remaining count accounts for approved bookings that have not ended and updates every minute. Pending requests hold their selected time slots when new reservations are checked.</p>
     <div class="flex justify-end">
 
         <flux:modal.trigger name="manage-resource-modal">
@@ -21,7 +22,7 @@
                 <!-- Image -->
                 <div class="h-40 w-full mb-3 overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-700">
                     @if ($resource->image_path)
-                        <img src="{{ Storage::disk('s3')->url($resource->image_path) }}"
+                        <img src="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($resource->image_path) }}"
                             class="h-full w-full object-cover">
                     @else
                         <div class="flex items-center justify-center h-full text-sm text-gray-500">
@@ -45,6 +46,21 @@
                     <div class="text-xs text-gray-500 mt-1">
                         {{ $resource->location ?? '—' }} • Capacity: {{ $resource->capacity ?? '—' }}
                     </div>
+                @endif
+                @if ($resource->type === 'equipment')
+                    <div class="text-xs text-gray-500 mt-1">Total quantity: {{ $resource->total_quantity }}</div>
+                @endif
+
+                @php $availability = $availabilityNow[$resource->id]; @endphp
+                <div class="mt-2 text-sm font-medium {{ $availability['bookable'] > 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
+                    @if ($resource->isRoom())
+                        {{ $availability['bookable'] ? 'Uncommitted' : 'Committed to approved booking' }}
+                    @else
+                        Uncommitted: {{ $availability['bookable'] }} of {{ $availability['total'] }}
+                    @endif
+                </div>
+                @if ($availability['approved'])
+                    <p class="text-xs text-zinc-500">Committed to approved bookings: {{ $availability['approved'] }}</p>
                 @endif
 
                 <!-- Manage -->
@@ -96,7 +112,7 @@
                             @if ($image)
                                 <img src="{{ $image->temporaryUrl() }}" class="h-full w-full object-cover">
                             @elseif ($selectedResourceId && ($res = $resources->firstWhere('id', $selectedResourceId)) && $res->image_path)
-                                <img src="{{ Storage::disk('s3')->url($res->image_path) }}"
+                                <img src="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($res->image_path) }}"
                                     class="h-full w-full object-cover">
                             @else
                                 <span class="text-sm text-gray-500">
@@ -126,16 +142,19 @@
                     <label class="block text-sm mb-1">Control Number</label>
                     <input type="text" wire:model="control_number" placeholder="e.g. RM-101"
                         class="w-full rounded-md border px-3 py-2 text-sm">
+                    @error('control_number') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
 
-                <flux:select wire:model="type" label="Type">
+                <flux:select wire:model.live="type" label="Type">
                     <option value="room">Room</option>
                     <option value="equipment">Equipment</option>
                 </flux:select>
 
                 @if ($type === 'room')
                     <flux:input wire:model="location" label="Location" />
-                    <flux:input wire:model="capacity" type="number" label="Capacity" />
+                    <flux:input wire:model="capacity" type="number" min="1" label="Capacity" />
+                @else
+                    <flux:input wire:model="total_quantity" type="number" min="1" label="Total quantity" />
                 @endif
 
                 <flux:textarea wire:model="description" label="Description" />

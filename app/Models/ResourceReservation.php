@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ResourceReservation extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -23,13 +24,32 @@ class ResourceReservation extends Model
         'google_event_id',
         'notes',
         'attachment_path',
+        'number_of_pax',
+        'setup_arrangement',
+        'contact_number',
+        'consumables',
+        'floor_plan_path',
+        'gate_pass_path',
         'approval_note',
+        'recurrence_series_id',
+        'recurrence_label',
+        'recurrence_position',
+        'recurrence_total',
+        'billing_status',
+        'soa_path',
+        'soa_sent_at',
+        'payment_due_at',
+        'paid_at',
     ];
 
     protected $casts = [
         'start_datetime' => 'datetime',
         'end_datetime' => 'datetime',
         'approved_at' => 'datetime',
+        'number_of_pax' => 'integer',
+        'soa_sent_at' => 'date',
+        'payment_due_at' => 'date',
+        'paid_at' => 'datetime',
     ];
 
     // 🔗 Owner
@@ -58,7 +78,7 @@ class ResourceReservation extends Model
             'resource_reservation_items',
             'reservation_id',
             'resource_id'
-        );
+        )->withPivot('quantity');
     }
 
     // 🔗 Approver

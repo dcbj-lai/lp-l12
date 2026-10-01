@@ -18,7 +18,10 @@ class Resource extends Model
         'created_by',
         'image_path',
         'control_number',
+        'total_quantity',
     ];
+
+    protected $casts = ['total_quantity' => 'integer'];
 
     // 🔗 Who created it
     public function creator()

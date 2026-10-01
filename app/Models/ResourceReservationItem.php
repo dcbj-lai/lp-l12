@@ -12,7 +12,10 @@ class ResourceReservationItem extends Model
     protected $fillable = [
         'reservation_id',
         'resource_id',
+        'quantity',
     ];
+
+    protected $casts = ['quantity' => 'integer'];
 
     public function reservation()
     {

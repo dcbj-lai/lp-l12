@@ -22,8 +22,11 @@ class PreapprovedVisitorTemplateTest extends TestCase
 
         $csv = $response->streamedContent();
 
-        $this->assertStringContainsString('name,email', $csv);
-        $this->assertStringContainsString('Juan Dela Cruz,juan.delacruz@example.com', $csv);
-        $this->assertStringContainsString('Maria Santos,maria.santos@example.com', $csv);
+        $rows = array_map('str_getcsv', array_filter(explode("\n", trim($csv))));
+        $this->assertSame([
+            ['name', 'email'],
+            ['Juan Dela Cruz', 'juan.delacruz@example.com'],
+            ['Maria Santos', 'maria.santos@example.com'],
+        ], $rows);
     }
 }

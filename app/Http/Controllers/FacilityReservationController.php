@@ -6,8 +6,6 @@ use App\Models\ResourceReservation;
 use App\Services\ResourceReservationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -119,6 +117,9 @@ class FacilityReservationController extends Controller
 
     public function destroy(ResourceReservation $reservation, ResourceReservationService $service)
     {
+        if ($reservation->status === 'approved' && $reservation->soa_path) {
+            return response()->json(['message' => 'Remove the SOA before deleting this approved reservation.'], 409);
+        }
         if ($reservation->google_event_id && !$service->deleteGoogleCalendarEvent($reservation)) {
             return response()->json([
                 'message' => 'Unable to delete the Google Calendar event. Reservation was not deleted.',
@@ -128,18 +129,6 @@ class FacilityReservationController extends Controller
 
         if ($reservation->google_event_id === null) {
             $reservation->save();
-        }
-
-        if ($reservation->attachment_path) {
-            try {
-                Storage::disk('s3')->delete($reservation->attachment_path);
-            } catch (\Throwable $e) {
-                Log::warning('Failed to delete resource reservation attachment through API', [
-                    'reservation_id' => $reservation->id,
-                    'path' => $reservation->attachment_path,
-                    'error' => $e->getMessage(),
-                ]);
-            }
         }
 
         $reservation->delete();
@@ -231,8 +220,10 @@ class FacilityReservationController extends Controller
         $validated = $request->validate([
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'requester_email' => [$partial ? 'sometimes' : 'required_without:user_id', 'nullable', 'email', 'max:255'],
-            'resource_id' => ['nullable', 'integer', 'exists:resources,id'],
+            'resource_id' => [$partial ? 'sometimes' : 'required', 'integer', Rule::exists('resources', 'id')->where(fn ($query) => $query->where('type', 'room'))],
             'equipment_ids' => [$partial ? 'sometimes' : 'nullable', 'array'],
+            'equipment_quantities' => [$partial ? 'sometimes' : 'nullable', 'array'],
+            'equipment_quantities.*' => ['integer', 'min:1'],
             'equipment_ids.*' => [
                 'integer',
                 'distinct',
@@ -244,6 +235,12 @@ class FacilityReservationController extends Controller
             'end_datetime' => [$required, 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'attachment_path' => ['nullable', 'string', 'max:2048'],
+            'number_of_pax' => [$required, 'integer', 'min:1'],
+            'setup_arrangement' => [$required, 'string', 'max:255'],
+            'contact_number' => [$required, 'string', 'max:50'],
+            'consumables' => ['nullable', 'string', 'max:2000'],
+            'floor_plan_path' => [$required, 'string', 'max:2048'],
+            'gate_pass_path' => ['nullable', 'string', 'max:2048'],
         ]);
 
         $start = CarbonImmutable::parse($validated['start_datetime'] ?? $reservation?->start_datetime);
@@ -280,6 +277,7 @@ class FacilityReservationController extends Controller
                 'location' => $reservation->resource->location,
                 'capacity' => $reservation->resource->capacity,
                 'control_number' => $reservation->resource->control_number,
+                'total_quantity' => $reservation->resource->total_quantity,
             ] : null,
             'equipment' => $reservation->equipment
                 ->map(fn ($resource) => [
@@ -287,6 +285,7 @@ class FacilityReservationController extends Controller
                     'name' => $resource->name,
                     'type' => $resource->type,
                     'control_number' => $resource->control_number,
+                    'quantity' => $resource->pivot->quantity,
                 ])
                 ->values(),
             'start_datetime' => $reservation->start_datetime?->toISOString(),
@@ -294,6 +293,18 @@ class FacilityReservationController extends Controller
             'notes' => $reservation->notes,
             'attachment_path' => $reservation->attachment_path,
             'approval_note' => $reservation->approval_note,
+            'number_of_pax' => $reservation->number_of_pax,
+            'setup_arrangement' => $reservation->setup_arrangement,
+            'contact_number' => $reservation->contact_number,
+            'consumables' => $reservation->consumables,
+            'floor_plan_path' => $reservation->floor_plan_path,
+            'gate_pass_path' => $reservation->gate_pass_path,
+            'recurrence_series_id' => $reservation->recurrence_series_id,
+            'billing_status' => $reservation->billing_status,
+            'soa_path' => $reservation->soa_path,
+            'soa_sent_at' => $reservation->soa_sent_at?->toDateString(),
+            'payment_due_at' => $reservation->payment_due_at?->toDateString(),
+            'paid_at' => $reservation->paid_at?->toISOString(),
             'approved_by' => $reservation->approved_by,
             'approved_at' => $reservation->approved_at?->toISOString(),
             'approver' => $reservation->approver ? [

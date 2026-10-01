@@ -16,6 +16,22 @@ class FacilityReservationApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_api_rejects_deleting_approved_reservation_with_soa(): void
+    {
+        $admin = $this->facilityUser('facility.admin');
+        $reservation = ResourceReservation::create([
+            'requester_email' => 'requester@example.com', 'title' => 'Workshop',
+            'start_datetime' => '2026-10-06 09:00', 'end_datetime' => '2026-10-06 10:00',
+            'status' => 'approved', 'billing_status' => 'billed',
+            'soa_path' => 'reservations/soa/example.pdf',
+        ]);
+
+        $this->actingAs($admin, 'sanctum')
+            ->deleteJson(route('facility-reservations.api.destroy', $reservation))
+            ->assertStatus(409);
+        $this->assertDatabaseHas('resource_reservations', ['id' => $reservation->id, 'deleted_at' => null]);
+    }
+
     public function test_facility_admin_can_crud_reservations_and_cleanup_google_calendar_event(): void
     {
         Mail::fake();
@@ -43,6 +59,10 @@ class FacilityReservationApiTest extends TestCase
                 'start_datetime' => '2026-07-06 09:00:00',
                 'end_datetime' => '2026-07-06 10:00:00',
                 'notes' => 'Needs projector.',
+                'number_of_pax' => 12,
+                'setup_arrangement' => 'Workshop',
+                'contact_number' => '09171234567',
+                'floor_plan_path' => 'reservations/test-floor-plan.pdf',
             ])
             ->assertCreated()
             ->assertJsonPath('data.title', 'Strategy Meeting')
@@ -92,7 +112,7 @@ class FacilityReservationApiTest extends TestCase
             ->deleteJson(route('facility-reservations.api.destroy', $reservationId))
             ->assertNoContent();
 
-        $this->assertDatabaseMissing('resource_reservations', [
+        $this->assertSoftDeleted('resource_reservations', [
             'id' => $reservationId,
         ]);
     }
