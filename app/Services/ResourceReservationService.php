@@ -13,6 +13,7 @@ use Google\Service\Exception as GoogleServiceException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Collection;
 
 class ResourceReservationService
 {
@@ -158,6 +159,43 @@ class ResourceReservationService
             $reservation->end_datetime,
             $reservation->id
         );
+    }
+
+    /** Approved bookings that currently consume a resource blocking this request. */
+    public function blockingApprovedReservations(ResourceReservation $reservation): Collection
+    {
+        if ($reservation->trashed() || $reservation->status !== 'pending') {
+            return collect();
+        }
+
+        $reservation->loadMissing('equipment');
+        $equipmentIds = $reservation->equipment
+            ->filter(fn ($item) => $item->pivot->quantity > $this->availableEquipmentQuantity(
+                $item->id, $reservation->start_datetime, $reservation->end_datetime, $reservation->id
+            ))->pluck('id')->all();
+        $roomConflicts = $reservation->resource_id && !$this->isResourceAvailable(
+            $reservation->resource_id, $reservation->start_datetime, $reservation->end_datetime, $reservation->id
+        );
+
+        if (!$roomConflicts && !$equipmentIds) {
+            return collect();
+        }
+
+        return ResourceReservation::with(['resource', 'equipment'])
+            ->where('status', 'approved')
+            ->whereKeyNot($reservation->id)
+            ->where('start_datetime', '<', $reservation->end_datetime)
+            ->where('end_datetime', '>', $reservation->start_datetime)
+            ->where(function ($query) use ($roomConflicts, $reservation, $equipmentIds) {
+                if ($roomConflicts) {
+                    $query->where('resource_id', $reservation->resource_id);
+                }
+                if ($equipmentIds) {
+                    $method = $roomConflicts ? 'orWhereHas' : 'whereHas';
+                    $query->{$method}('equipment', fn ($items) => $items->whereIn('resources.id', $equipmentIds));
+                }
+            })
+            ->orderBy('start_datetime')->get();
     }
 
     /**

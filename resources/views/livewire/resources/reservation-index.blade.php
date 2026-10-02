@@ -71,7 +71,7 @@
                                     @if ($res->billing_status === 'billed' && $res->payment_due_at && $res->payment_due_at->isBefore(today())) <flux:badge color="red">Overdue</flux:badge> @endif
                                 </div>
                             </div>
-                            @if ($group['conflict_count']) <div class="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">Conflicting resources: {{ implode(', ', $group['conflict_names']) }}. Resolve before approval.</div> @endif
+                            @if ($group['conflict_count']) <div class="flex flex-wrap items-center gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200"><span>Conflicting resources: {{ implode(', ', $group['conflict_names']) }}. Resolve before approval.</span><flux:button size="sm" wire:click="showConflictManager({{ $res->id }})">Manage conflict</flux:button></div> @endif
                             <div class="text-sm text-zinc-600 dark:text-zinc-300">
                                 @if ($res->number_of_pax) {{ $res->number_of_pax }} pax · @endif
                                 @if ($res->setup_arrangement) {{ $res->setup_arrangement }} setup · @endif
@@ -149,7 +149,7 @@
                             <flux:badge color="{{ $occurrence->trashed() ? 'zinc' : ($occurrence->status === 'approved' ? 'green' : ($occurrence->status === 'rejected' ? 'red' : 'yellow')) }}">{{ $occurrence->trashed() ? 'Deleted' : (['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$occurrence->status] ?? $occurrence->status) }}</flux:badge>
                             @if ($occurrenceConflicts) <flux:badge color="red">Conflict with approved booking</flux:badge> @endif
                         </div>
-                        @if ($occurrenceConflicts) <div class="text-xs text-red-700 dark:text-red-300">Conflicting resources: {{ implode(', ', $occurrenceConflicts) }}. Resolve before approval.</div> @endif
+                        @if ($occurrenceConflicts) <div class="flex flex-wrap items-center gap-2 text-xs text-red-700 dark:text-red-300"><span>Conflicting resources: {{ implode(', ', $occurrenceConflicts) }}. Resolve before approval.</span><flux:button size="sm" wire:click="showConflictManager({{ $occurrence->id }})">Manage conflict</flux:button></div> @endif
                         @if ($occurrence->equipment->isNotEmpty()) <div class="text-xs">Equipment: {{ $occurrence->equipment->map(fn ($item) => $item->name . ' × ' . $item->pivot->quantity)->join(', ') }}</div> @endif
                         @if ($occurrence->notes) <div class="text-xs whitespace-pre-line">Notes: {{ $occurrence->notes }}</div> @endif
                         @if ($occurrence->status === 'rejected' && $occurrence->approval_note) <div class="text-xs text-red-700">Rejection reason: {{ $occurrence->approval_note }}</div> @endif
@@ -179,6 +179,38 @@
                 @endforeach
             </div>
             <div class="flex justify-end"><flux:modal.close><flux:button>Close</flux:button></flux:modal.close></div>
+        </div>
+    </flux:modal>
+
+    <flux:modal name="conflict-manager" class="md:w-[680px]">
+        <div class="space-y-4 p-4">
+            @php $conflictRequest = $this->conflictRequest; @endphp
+            <div>
+                <h2 class="text-lg font-semibold">Manage conflict for request #{{ $conflictRequest?->id }}</h2>
+                @if ($conflictRequest)
+                    <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ $conflictRequest->title }} · {{ $conflictRequest->start_datetime->format('M j, Y g:i A') }}–{{ $conflictRequest->end_datetime->format('g:i A') }}</p>
+                @endif
+            </div>
+            <p class="text-sm">Move or reject an approved booking, or edit this request. Approval becomes available once the conflict is resolved.</p>
+            <div class="max-h-[55vh] space-y-3 overflow-y-auto">
+                @forelse ($this->blockingBookings as $booking)
+                    <div wire:key="blocking-booking-{{ $booking->id }}" class="space-y-2 rounded-md border border-zinc-200 p-3 dark:border-zinc-700">
+                        <div class="font-medium">Approved #{{ $booking->id }} · {{ $booking->title }}</div>
+                        <div class="text-sm">{{ $booking->start_datetime->format('M j, Y g:i A') }}–{{ $booking->end_datetime->format('g:i A') }} · {{ $booking->resource?->name ?? 'No room' }}</div>
+                        @if ($booking->equipment->isNotEmpty()) <div class="text-xs">Equipment: {{ $booking->equipment->map(fn ($item) => $item->name . ' × ' . $item->pivot->quantity)->join(', ') }}</div> @endif
+                        <div class="flex flex-wrap gap-2">
+                            @if ($isFacilityAdmin) <flux:button size="sm" wire:click="editConflictingBooking({{ $booking->id }})">Edit approved booking</flux:button> @endif
+                            <flux:button size="sm" variant="danger" wire:click="rejectConflictingBooking({{ $booking->id }})">Reject approved booking</flux:button>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-green-700">No approved booking currently blocks this request.</p>
+                @endforelse
+            </div>
+            <div class="flex flex-wrap justify-end gap-2">
+                @if ($isFacilityAdmin && $conflictRequest?->status === 'pending') <flux:button wire:click="editConflictedRequest">Edit request</flux:button> @endif
+                <flux:modal.close><flux:button>Close</flux:button></flux:modal.close>
+            </div>
         </div>
     </flux:modal>
 

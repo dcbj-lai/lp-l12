@@ -334,8 +334,14 @@ class FacilityReservationWorkflowTest extends TestCase
 
         $request = ResourceReservation::where('title', 'Conflicting workshop')->firstOrFail();
         $this->assertSame('pending', $request->status);
+        $this->assertSame([$approved->id], app(ResourceReservationService::class)
+            ->blockingApprovedReservations($request)->pluck('id')->all());
         Livewire::actingAs($admin)->test(ReservationIndex::class)
             ->assertSee('Conflict with approved booking')
+            ->call('showConflictManager', $request->id)
+            ->assertSee('Manage conflict for request #' . $request->id)
+            ->assertSee('Approved #' . $approved->id)
+            ->assertSee('Edit approved booking')
             ->call('selectForDecision', $request->id)
             ->assertSee('Cannot approve while this conflicts')
             ->call('confirmApprove');

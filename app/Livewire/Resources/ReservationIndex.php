@@ -20,6 +20,7 @@ class ReservationIndex extends Component
     public string $requestDateSort = 'desc';
     public ?string $selectedSeriesId = null;
     public ?int $reservationId = null;
+    public ?int $conflictReservationId = null;
     public ?string $approvalNote = null;
     public ?int $deleteId = null;
     public bool $showDeleteModal = false;
@@ -104,6 +105,54 @@ class ReservationIndex extends Component
     public function conflictsFor(ResourceReservation $reservation): array
     {
         return app(ResourceReservationService::class)->approvedConflictsForReservation($reservation);
+    }
+
+    public function showConflictManager(int $id): void
+    {
+        $reservation = ResourceReservation::findOrFail($id);
+        abort_unless($reservation->status === 'pending', 404);
+        $this->conflictReservationId = $id;
+        $this->modal('conflict-manager')->show();
+    }
+
+    public function getConflictRequestProperty(): ?ResourceReservation
+    {
+        return $this->conflictReservationId
+            ? ResourceReservation::with(['resource', 'equipment'])->find($this->conflictReservationId)
+            : null;
+    }
+
+    public function getBlockingBookingsProperty()
+    {
+        $request = $this->conflictRequest;
+        return $request ? app(ResourceReservationService::class)->blockingApprovedReservations($request) : collect();
+    }
+
+    public function editConflictingBooking(int $id): void
+    {
+        abort_unless(auth()->user()->hasRole('facility.admin'), 403);
+        abort_unless($this->blockingBookings->contains('id', $id), 404);
+        $this->modal('conflict-manager')->close();
+        $this->selectForEdit($id);
+        $this->modal('edit-reservation')->show();
+    }
+
+    public function rejectConflictingBooking(int $id): void
+    {
+        abort_unless($this->blockingBookings->contains('id', $id), 404);
+        $this->modal('conflict-manager')->close();
+        $this->selectForDecision($id);
+        $this->modal('reject-reservation')->show();
+    }
+
+    public function editConflictedRequest(): void
+    {
+        abort_unless(auth()->user()->hasRole('facility.admin'), 403);
+        $request = $this->conflictRequest;
+        abort_unless($request && $request->status === 'pending', 404);
+        $this->modal('conflict-manager')->close();
+        $this->selectForEdit($request->id);
+        $this->modal('edit-reservation')->show();
     }
 
     public function getSelectedSeriesReservationsProperty()
