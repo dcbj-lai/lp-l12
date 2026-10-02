@@ -60,9 +60,18 @@
                         @else
                         <article id="res-{{ $res->id }}" wire:key="reservation-{{ $res->id }}" class="rounded-lg border bg-white p-4 shadow-sm dark:bg-zinc-800 space-y-3">
                             <div class="flex flex-wrap items-start justify-between gap-2">
-                                <div>
-                                    <div class="font-semibold">{{ $res->title }} <span class="text-xs font-normal text-zinc-500">#{{ $res->id }}</span></div>
-                                    <div class="text-xs text-zinc-500">Event: {{ $res->start_datetime->format('M j, Y g:i A') }}–{{ $res->end_datetime->format('M j, Y g:i A') }} · {{ $res->resource?->name ?? 'No room' }} · {{ $res->requester_email }}</div>
+                                <div class="flex items-start gap-2">
+                                    @if ($statusFilter !== 'deleted' && $isFacilityAdmin)
+                                        @if ($res->status === 'approved' && $res->soa_path)
+                                            <flux:button size="sm" variant="danger" icon="trash" disabled aria-label="Delete reservation #{{ $res->id }}" title="Remove SOA before deleting"></flux:button>
+                                        @else
+                                            <flux:button size="sm" variant="danger" icon="trash" wire:click="selectForDelete({{ $res->id }})" aria-label="Delete reservation #{{ $res->id }}" title="Delete reservation #{{ $res->id }}"></flux:button>
+                                        @endif
+                                    @endif
+                                    <div>
+                                        <div class="font-semibold">{{ $res->title }} <span class="text-xs font-normal text-zinc-500">#{{ $res->id }}</span></div>
+                                        <div class="text-xs text-zinc-500">Event: {{ $res->start_datetime->format('M j, Y g:i A') }}–{{ $res->end_datetime->format('M j, Y g:i A') }} · {{ $res->resource?->name ?? 'No room' }} · {{ $res->requester_email }}</div>
+                                    </div>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
                                     <flux:badge color="{{ $res->status === 'approved' ? 'green' : ($res->status === 'rejected' ? 'red' : 'yellow') }}">{{ ['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$res->status] ?? $res->status }}</flux:badge>
@@ -107,11 +116,6 @@
                                 @endif
                                 @if ($isFacilityAdmin)
                                     <flux:modal.trigger name="edit-reservation"><flux:button size="sm" wire:click="selectForEdit({{ $res->id }})">Edit</flux:button></flux:modal.trigger>
-                                    @if ($res->status === 'approved' && $res->soa_path)
-                                        <flux:button size="sm" variant="danger" disabled>Delete</flux:button><span class="self-center text-xs text-zinc-500">Remove SOA first</span>
-                                    @else
-                                        <flux:button size="sm" variant="danger" wire:click="selectForDelete({{ $res->id }})">Delete</flux:button>
-                                    @endif
                                     @if ($res->status === 'approved')
                                         <flux:modal.trigger name="billing-reservation"><flux:button size="sm" wire:click="selectForBilling({{ $res->id }})">{{ $res->soa_path ? 'Replace SOA' : 'Upload SOA' }}</flux:button></flux:modal.trigger>
                                         @if ($res->soa_path) <flux:button size="sm" variant="danger" wire:click="selectForSoaRemoval({{ $res->id }})">Remove SOA</flux:button> @endif
@@ -142,9 +146,18 @@
                     @php $occurrenceConflicts = $this->conflictsFor($occurrence); @endphp
                     <div wire:key="series-occurrence-{{ $occurrence->id }}" class="rounded-md border border-zinc-200 p-3 space-y-2 dark:border-zinc-700">
                         <div class="flex flex-wrap items-start justify-between gap-2">
-                            <div>
-                                <div class="font-medium">{{ $occurrence->start_datetime->format('D, M j, Y') }} · {{ $occurrence->start_datetime->format('g:i A') }}–{{ $occurrence->end_datetime->format('g:i A') }}</div>
-                                <div class="text-xs text-zinc-500">#{{ $occurrence->id }} · {{ $occurrence->recurrence_position }} of {{ $occurrence->recurrence_total }} · {{ $occurrence->resource?->name ?? 'No room' }}</div>
+                            <div class="flex items-start gap-2">
+                                @if (!$occurrence->trashed() && $isFacilityAdmin)
+                                    @if ($occurrence->status === 'approved' && $occurrence->soa_path)
+                                        <flux:button size="sm" variant="danger" icon="trash" disabled aria-label="Delete reservation #{{ $occurrence->id }}" title="Remove SOA before deleting"></flux:button>
+                                    @else
+                                        <flux:button size="sm" variant="danger" icon="trash" wire:click="selectForDelete({{ $occurrence->id }})" aria-label="Delete reservation #{{ $occurrence->id }}" title="Delete reservation #{{ $occurrence->id }}"></flux:button>
+                                    @endif
+                                @endif
+                                <div>
+                                    <div class="font-medium">{{ $occurrence->start_datetime->format('D, M j, Y') }} · {{ $occurrence->start_datetime->format('g:i A') }}–{{ $occurrence->end_datetime->format('g:i A') }}</div>
+                                    <div class="text-xs text-zinc-500">#{{ $occurrence->id }} · {{ $occurrence->recurrence_position }} of {{ $occurrence->recurrence_total }} · {{ $occurrence->resource?->name ?? 'No room' }}</div>
+                                </div>
                             </div>
                             <flux:badge color="{{ $occurrence->trashed() ? 'zinc' : ($occurrence->status === 'approved' ? 'green' : ($occurrence->status === 'rejected' ? 'red' : 'yellow')) }}">{{ $occurrence->trashed() ? 'Deleted' : (['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$occurrence->status] ?? $occurrence->status) }}</flux:badge>
                             @if ($occurrenceConflicts) <flux:badge color="red">Conflict with approved booking</flux:badge> @endif
@@ -166,11 +179,6 @@
                                 @if ($occurrence->status !== 'rejected') <flux:modal.trigger name="reject-reservation"><flux:button size="sm" variant="danger" wire:click="selectForDecision({{ $occurrence->id }})">Reject</flux:button></flux:modal.trigger> @endif
                                 @if ($isFacilityAdmin)
                                     <flux:modal.trigger name="edit-reservation"><flux:button size="sm" wire:click="selectForEdit({{ $occurrence->id }})">Edit</flux:button></flux:modal.trigger>
-                                    @if ($occurrence->status === 'approved' && $occurrence->soa_path)
-                                        <flux:button size="sm" variant="danger" disabled>Delete</flux:button>
-                                    @else
-                                        <flux:button size="sm" variant="danger" wire:click="selectForDelete({{ $occurrence->id }})">Delete</flux:button>
-                                    @endif
                                     @if ($occurrence->status === 'approved') <flux:modal.trigger name="billing-reservation"><flux:button size="sm" wire:click="selectForBilling({{ $occurrence->id }})">{{ $occurrence->soa_path ? 'Replace SOA' : 'Upload SOA' }}</flux:button></flux:modal.trigger> @endif
                                 @endif
                             @endif
