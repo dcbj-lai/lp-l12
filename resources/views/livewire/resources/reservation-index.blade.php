@@ -109,7 +109,11 @@
                                     @if ($isFacilityAdmin) <flux:button size="sm" wire:click="restoreReservation({{ $res->id }})">Restore for approval</flux:button> @endif
                                 @else
                                 @if ($res->status !== 'approved')
-                                    <flux:modal.trigger name="approve-reservation"><flux:button size="sm" variant="primary" wire:click="selectForDecision({{ $res->id }})">Approve</flux:button></flux:modal.trigger>
+                                    @if ($group['conflict_count'])
+                                        <flux:button size="sm" variant="primary" disabled title="Resolve the conflict before approval">Approve</flux:button>
+                                    @else
+                                        <flux:modal.trigger name="approve-reservation"><flux:button size="sm" variant="primary" wire:click="selectForDecision({{ $res->id }})">Approve</flux:button></flux:modal.trigger>
+                                    @endif
                                 @endif
                                 @if ($res->status !== 'rejected')
                                     <flux:modal.trigger name="reject-reservation"><flux:button size="sm" variant="danger" wire:click="selectForDecision({{ $res->id }})">Reject</flux:button></flux:modal.trigger>
@@ -175,7 +179,13 @@
                             @if ($occurrence->trashed())
                                 @if ($isFacilityAdmin) <flux:button size="sm" wire:click="restoreReservation({{ $occurrence->id }})">Restore for approval</flux:button> @endif
                             @else
-                                @if ($occurrence->status !== 'approved') <flux:modal.trigger name="approve-reservation"><flux:button size="sm" variant="primary" wire:click="selectForDecision({{ $occurrence->id }})">Approve</flux:button></flux:modal.trigger> @endif
+                                @if ($occurrence->status !== 'approved')
+                                    @if ($occurrenceConflicts)
+                                        <flux:button size="sm" variant="primary" disabled title="Resolve the conflict before approval">Approve</flux:button>
+                                    @else
+                                        <flux:modal.trigger name="approve-reservation"><flux:button size="sm" variant="primary" wire:click="selectForDecision({{ $occurrence->id }})">Approve</flux:button></flux:modal.trigger>
+                                    @endif
+                                @endif
                                 @if ($occurrence->status !== 'rejected') <flux:modal.trigger name="reject-reservation"><flux:button size="sm" variant="danger" wire:click="selectForDecision({{ $occurrence->id }})">Reject</flux:button></flux:modal.trigger> @endif
                                 @if ($isFacilityAdmin)
                                     <flux:modal.trigger name="edit-reservation"><flux:button size="sm" wire:click="selectForEdit({{ $occurrence->id }})">Edit</flux:button></flux:modal.trigger>
@@ -194,9 +204,9 @@
         <div class="space-y-4 p-4">
             @php $conflictRequest = $this->conflictRequest; @endphp
             <div>
-                <h2 class="text-lg font-semibold">Manage conflict for request #{{ $conflictRequest?->id }}</h2>
+                <h2 class="text-lg font-semibold">Manage conflict for {{ $conflictRequest?->title }}</h2>
                 @if ($conflictRequest)
-                    <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ $conflictRequest->title }} · {{ $conflictRequest->start_datetime->format('M j, Y g:i A') }}–{{ $conflictRequest->end_datetime->format('g:i A') }}</p>
+                    <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ $conflictRequest->start_datetime->format('M j, Y g:i A') }}–{{ $conflictRequest->end_datetime->format('g:i A') }} · Request #{{ $conflictRequest->id }}</p>
                 @endif
             </div>
             <p class="text-sm">Move or reject an approved booking, or edit this request. Approval becomes available once the conflict is resolved.</p>

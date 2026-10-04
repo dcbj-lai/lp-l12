@@ -37,15 +37,15 @@
         </div>
         <div>
             <label class="text-xs font-medium">Setup arrangement *</label>
-            <input type="text" list="setup-options" wire:model="setup_arrangement"
-                class="w-full rounded-md border px-3 py-2 text-sm" placeholder="Select or enter an arrangement">
-            <datalist id="setup-options">
-                <option value="Workshop">
-                <option value="Theater">
-                <option value="Classroom">
-                <option value="Boardroom">
-                <option value="External (c/o organizer)">
-            </datalist>
+            <select wire:model.change="setup_arrangement"
+                class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
+                <option value="">Select an arrangement</option>
+                <option value="Workshop">Workshop</option>
+                <option value="Theater">Theater</option>
+                <option value="Classroom">Classroom</option>
+                <option value="Boardroom">Boardroom</option>
+                <option value="External (c/o organizer)">External (c/o organizer)</option>
+            </select>
             @error('setup_arrangement') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
         </div>
 
@@ -406,8 +406,14 @@
         <div class="space-y-2 rounded-md border border-zinc-200 p-3 text-sm dark:border-zinc-700">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <p>Requests with schedule conflicts can still be submitted. An admin must resolve a conflict before approval.</p>
-                <flux:button size="sm" wire:click="checkSchedule">Check schedule</flux:button>
+                <flux:button size="sm" wire:click="checkSchedule" wire:loading.attr="disabled" wire:target="checkSchedule">
+                    <span wire:loading.remove wire:target="checkSchedule">Check schedule</span>
+                    <span wire:loading wire:target="checkSchedule">Checking...</span>
+                </flux:button>
             </div>
+            @if ($scheduleCheckAttempted && ($errors->has('resource_id') || $errors->has('event_date') || $errors->has('start_time') || $errors->has('end_time') || $errors->has('recurrence')))
+                <p role="alert" class="rounded-md bg-red-50 p-2 text-red-800 dark:bg-red-950 dark:text-red-100">Select a room and enter a valid event date and time to check the schedule. Review any field errors above.</p>
+            @endif
             @if ($scheduleConflictWarnings)
                 <div class="rounded-md bg-amber-50 p-2 text-amber-900 dark:bg-amber-950 dark:text-amber-100">
                     <div class="font-semibold">Conflict with approved booking</div>
@@ -415,6 +421,8 @@
                         <div>{{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}: {{ implode(', ', $names) }}</div>
                     @endforeach
                 </div>
+            @elseif ($scheduleChecked)
+                <p role="status" class="rounded-md bg-green-50 p-2 text-green-900 dark:bg-green-950 dark:text-green-100">No conflicts with approved bookings were found for the selected date{{ $recurrence === 'none' ? '' : 's' }}. You can submit the request for approval.</p>
             @else
                 <p class="text-xs text-zinc-500">Use Check schedule to see current approved booking conflicts.</p>
             @endif

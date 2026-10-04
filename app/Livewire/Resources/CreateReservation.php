@@ -71,9 +71,16 @@ class CreateReservation extends Component
     public $selected_equipment_to_add = null;
     public $selected_equipment_quantity = 1;
     public array $scheduleConflictWarnings = [];
+    public bool $scheduleChecked = false;
+    public bool $scheduleCheckAttempted = false;
 
     #[Validate('nullable|string|max:500')]
     public $notes = '';
+
+    protected function messages(): array
+    {
+        return ['resource_id.required' => 'Room selection is required.'];
+    }
 
     public function mount()
     {
@@ -110,32 +117,41 @@ class CreateReservation extends Component
         if (in_array($property, ['resource_id', 'event_date', 'start_time', 'end_time', 'recurrence', 'occurrences', 'recurrence_ends', 'recurrence_until', 'custom_interval', 'custom_unit', 'custom_weekdays'], true)
             || str_starts_with($property, 'equipment_quantities.')) {
             $this->scheduleConflictWarnings = [];
+            $this->scheduleChecked = false;
+            $this->scheduleCheckAttempted = false;
         }
     }
 
     public function submitReservation(ResourceReservationService $service)
     {
-        $this->validate();
-        $this->validate(['equipment_quantities.*' => 'integer|min:1']);
-        if ($this->end_time <= $this->start_time) {
-            throw ValidationException::withMessages(['end_time' => 'End time must be after start time.']);
-        }
-
+        $this->scheduleCheckAttempted = false;
         $recurrenceDates = [];
-        if ($this->recurrence !== 'none') {
-            $this->validate([
-                'recurrence_ends' => 'required|in:on,after',
-                'recurrence_until' => 'required_if:recurrence_ends,on|nullable|date',
-                'custom_interval' => 'required_if:recurrence,custom|integer|min:1|max:52',
-                'custom_unit' => 'required_if:recurrence,custom|in:day,week,month,year',
-                'custom_weekdays' => 'array',
-                'custom_weekdays.*' => 'integer|between:0,6',
-            ]);
-            try {
-                $recurrenceDates = $this->recurrenceDates();
-            } catch (\InvalidArgumentException $e) {
-                throw ValidationException::withMessages(['recurrence' => $e->getMessage()]);
+        try {
+            $this->validate();
+            $this->validate(['equipment_quantities.*' => 'integer|min:1']);
+            if ($this->end_time <= $this->start_time) {
+                throw ValidationException::withMessages(['end_time' => 'End time must be after start time.']);
             }
+
+            if ($this->recurrence !== 'none') {
+                $this->validate([
+                    'recurrence_ends' => 'required|in:on,after',
+                    'recurrence_until' => 'required_if:recurrence_ends,on|nullable|date',
+                    'custom_interval' => 'required_if:recurrence,custom|integer|min:1|max:52',
+                    'custom_unit' => 'required_if:recurrence,custom|in:day,week,month,year',
+                    'custom_weekdays' => 'array',
+                    'custom_weekdays.*' => 'integer|between:0,6',
+                ]);
+                try {
+                    $recurrenceDates = $this->recurrenceDates();
+                } catch (\InvalidArgumentException $e) {
+                    throw ValidationException::withMessages(['recurrence' => $e->getMessage()]);
+                }
+            }
+        } catch (ValidationException $e) {
+            $this->setErrorBag($e->validator->errors());
+            $this->dispatch('flash', type: 'error', message: 'Please complete or correct the highlighted fields before submitting.');
+            return;
         }
 
         $startDateTime = $this->event_date . ' ' . $this->start_time;
@@ -205,6 +221,8 @@ class CreateReservation extends Component
                 'floor_plan',
                 'gate_pass',
                 'scheduleConflictWarnings',
+                'scheduleChecked',
+                'scheduleCheckAttempted',
             ]);
             $this->recurrence = 'none';
             $this->occurrences = 13;
@@ -231,6 +249,8 @@ class CreateReservation extends Component
 
     public function checkSchedule(ResourceReservationService $service): void
     {
+        $this->scheduleChecked = false;
+        $this->scheduleCheckAttempted = true;
         $this->validate([
             'resource_id' => 'required|exists:resources,id',
             'event_date' => 'required|date',
@@ -241,6 +261,7 @@ class CreateReservation extends Component
             $dates = $this->recurrence === 'none' ? [] : $this->recurrenceDates();
             $service->validateRequestResources((int) $this->resource_id, $this->equipment_quantities);
             $this->scheduleConflictWarnings = $this->approvedScheduleConflicts($service, $dates);
+            $this->scheduleChecked = true;
         } catch (\InvalidArgumentException $e) {
             throw ValidationException::withMessages(['recurrence' => $e->getMessage()]);
         }
@@ -327,6 +348,8 @@ class CreateReservation extends Component
 
         $this->equipment_quantities[(int) $this->selected_equipment_to_add] = max(1, (int) $this->selected_equipment_quantity);
         $this->scheduleConflictWarnings = [];
+        $this->scheduleChecked = false;
+        $this->scheduleCheckAttempted = false;
 
         $this->selected_equipment_to_add = null;
         $this->selected_equipment_quantity = 1;
@@ -336,6 +359,8 @@ class CreateReservation extends Component
     {
         unset($this->equipment_quantities[$id]);
         $this->scheduleConflictWarnings = [];
+        $this->scheduleChecked = false;
+        $this->scheduleCheckAttempted = false;
     }
 
     public function render()
