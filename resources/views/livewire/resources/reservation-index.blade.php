@@ -34,12 +34,10 @@
                         @php $res = $group['representative']; @endphp
                         @if ($group['is_series'])
                             <article wire:key="series-{{ $group['series_id'] }}" class="rounded-lg border bg-white p-4 shadow-sm dark:bg-zinc-800 space-y-3">
-                                <div class="flex flex-wrap items-start justify-between gap-2">
-                                    <div>
-                                        <div class="font-semibold">{{ $res->title }} <span class="text-xs font-normal text-zinc-500">· Recurring event</span></div>
-                                        <div class="text-xs text-zinc-500">{{ $res->recurrence_label ?: 'Recurring reservation' }} · {{ $res->resource?->name ?? 'No room' }} · {{ $res->requester_email }}</div>
-                                    </div>
-                                    <div class="flex flex-wrap gap-2">
+                                <div>
+                                    <div class="font-semibold">{{ $res->title }} <span class="text-xs font-normal text-zinc-500">· Recurring event</span></div>
+                                    <div class="text-xs text-zinc-500">{{ $res->recurrence_label ?: 'Recurring reservation' }} · {{ $res->resource?->name ?? 'No room' }} · {{ $res->requester_email }}</div>
+                                    <div class="mt-2 flex flex-wrap items-center gap-2">
                                         <flux:badge color="zinc">{{ $res->recurrence_total ?: $group['matched_count'] }} dates</flux:badge>
                                         @if ($group['conflict_count']) <flux:badge color="red">Conflict with approved booking: {{ $group['conflict_count'] }} {{ \Illuminate\Support\Str::plural('date', $group['conflict_count']) }}</flux:badge> @endif
                                         @if ($statusFilter === 'all')
@@ -156,14 +154,10 @@
                                 @endif
                             </div>
                         @endif
-                        <div class="flex flex-wrap items-start justify-between gap-2" @if (!$occurrence->trashed() && $isFacilityAdmin) style="padding-right: 3rem;" @endif>
-                            <div class="flex items-start gap-2">
-                                <div>
-                                    <div class="font-medium">{{ $occurrence->start_datetime->format('D, M j, Y') }} · {{ $occurrence->start_datetime->format('g:i A') }}–{{ $occurrence->end_datetime->format('g:i A') }}</div>
-                                    <div class="text-xs text-zinc-500">#{{ $occurrence->id }} · {{ $occurrence->recurrence_position }} of {{ $occurrence->recurrence_total }} · {{ $occurrence->resource?->name ?? 'No room' }}</div>
-                                </div>
-                            </div>
-                            <div class="flex flex-wrap items-start justify-end gap-2">
+                        <div @if (!$occurrence->trashed() && $isFacilityAdmin) style="padding-right: 3rem;" @endif>
+                            <div class="font-medium">{{ $occurrence->start_datetime->format('D, M j, Y') }} · {{ $occurrence->start_datetime->format('g:i A') }}–{{ $occurrence->end_datetime->format('g:i A') }}</div>
+                            <div class="text-xs text-zinc-500">#{{ $occurrence->id }} · {{ $occurrence->recurrence_position }} of {{ $occurrence->recurrence_total }} · {{ $occurrence->resource?->name ?? 'No room' }}</div>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
                                 <flux:badge color="{{ $occurrence->trashed() ? 'zinc' : ($occurrence->status === 'approved' ? 'green' : ($occurrence->status === 'rejected' ? 'red' : 'yellow')) }}">{{ $occurrence->trashed() ? 'Deleted' : (['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$occurrence->status] ?? $occurrence->status) }}</flux:badge>
                                 @if ($occurrenceConflicts) <flux:badge color="red">Conflict with approved booking</flux:badge> @endif
                             </div>
