@@ -142,7 +142,7 @@
 
             <!-- Selector -->
             <div class="flex gap-2">
-                <select wire:model="selected_equipment_to_add"
+                <select wire:model.live="selected_equipment_to_add"
                     class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
 
                     <option value="">Select equipment...</option>
@@ -157,9 +157,21 @@
 
                 </select>
 
-                <input type="number" min="1" wire:model="selected_equipment_quantity" aria-label="Equipment quantity" class="w-20 rounded-md border px-2 py-2 text-sm">
+                @php $availableEquipmentQuantity = $this->selectedEquipmentAvailableQuantity(app(\App\Services\ResourceReservationService::class)); @endphp
+                <select wire:model="selected_equipment_quantity" aria-label="Equipment quantity" class="w-24 rounded-md border px-2 py-2 text-sm" @disabled(!$selected_equipment_to_add || $availableEquipmentQuantity < 1)>
+                    @if (!$selected_equipment_to_add)
+                        <option value="1">Quantity</option>
+                    @elseif ($availableEquipmentQuantity < 1)
+                        <option value="0">0 available</option>
+                    @else
+                        @for ($quantity = 1; $quantity <= $availableEquipmentQuantity; $quantity++)
+                            <option value="{{ $quantity }}">{{ $quantity }}</option>
+                        @endfor
+                    @endif
+                </select>
 
                 <button type="button" wire:click="addEquipment"
+                    @disabled(!$selected_equipment_to_add || $availableEquipmentQuantity < 1)
                     class="px-4 py-2 bg-[#9E1D20] text-white rounded-md text-sm hover:bg-[#690F0D] shadow-sm">
                     Add
                 </button>

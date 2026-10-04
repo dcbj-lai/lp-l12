@@ -112,6 +112,11 @@ class CreateReservation extends Component
         }
     }
 
+    public function updatedSelectedEquipmentToAdd(): void
+    {
+        $this->selected_equipment_quantity = 1;
+    }
+
     public function updated($property): void
     {
         if (in_array($property, ['resource_id', 'event_date', 'start_time', 'end_time', 'recurrence', 'occurrences', 'recurrence_ends', 'recurrence_until', 'custom_interval', 'custom_unit', 'custom_weekdays'], true)
@@ -119,6 +124,12 @@ class CreateReservation extends Component
             $this->scheduleConflictWarnings = [];
             $this->scheduleChecked = false;
             $this->scheduleCheckAttempted = false;
+            if ($this->selected_equipment_to_add) {
+                $available = $this->selectedEquipmentAvailableQuantity(app(ResourceReservationService::class));
+                $this->selected_equipment_quantity = $available > 0
+                    ? min($available, max(1, (int) $this->selected_equipment_quantity))
+                    : 0;
+            }
         }
     }
 
@@ -346,7 +357,12 @@ class CreateReservation extends Component
             return;
         }
 
-        $this->equipment_quantities[(int) $this->selected_equipment_to_add] = max(1, (int) $this->selected_equipment_quantity);
+        $available = $this->selectedEquipmentAvailableQuantity(app(ResourceReservationService::class));
+        if ($available < 1) {
+            return;
+        }
+
+        $this->equipment_quantities[(int) $this->selected_equipment_to_add] = min($available, max(1, (int) $this->selected_equipment_quantity));
         $this->scheduleConflictWarnings = [];
         $this->scheduleChecked = false;
         $this->scheduleCheckAttempted = false;
@@ -361,6 +377,41 @@ class CreateReservation extends Component
         $this->scheduleConflictWarnings = [];
         $this->scheduleChecked = false;
         $this->scheduleCheckAttempted = false;
+    }
+
+    public function selectedEquipmentAvailableQuantity(ResourceReservationService $service): int
+    {
+        $item = $this->selected_equipment_to_add
+            ? Resource::where('type', 'equipment')->where('total_quantity', '>', 0)
+                ->find((int) $this->selected_equipment_to_add)
+            : null;
+        if (!$item) {
+            return 0;
+        }
+
+        $total = (int) $item->total_quantity;
+        if (!$this->event_date || !$this->start_time || !$this->end_time || $this->end_time <= $this->start_time) {
+            return $total;
+        }
+
+        try {
+            $dates = $this->recurrence === 'none' ? [$this->event_date] : $this->recurrenceDates();
+            if (!$dates) {
+                return $total;
+            }
+
+            foreach ($dates as $date) {
+                $total = min($total, $service->availableEquipmentQuantity(
+                    (int) $item->id,
+                    $date . ' ' . $this->start_time,
+                    $date . ' ' . $this->end_time
+                ));
+            }
+        } catch (\InvalidArgumentException $e) {
+            return (int) $item->total_quantity;
+        }
+
+        return $total;
     }
 
     public function render()
