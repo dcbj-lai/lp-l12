@@ -14,6 +14,7 @@ class Resource extends Model
         'type',
         'description',
         'location',
+        'floor',
         'capacity',
         'created_by',
         'image_path',
@@ -22,6 +23,23 @@ class Resource extends Model
     ];
 
     protected $casts = ['total_quantity' => 'integer'];
+
+    public function floorLabel(): string
+    {
+        return $this->floor ?: 'Floor not set';
+    }
+
+    public function floorSortKey(): int
+    {
+        if (preg_match('/^Ground/i', (string) $this->floor)) {
+            return 0;
+        }
+        if (preg_match('/^(\d+)/', (string) $this->floor, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return 999;
+    }
 
     // 🔗 Who created it
     public function creator()

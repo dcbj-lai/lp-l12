@@ -40,6 +40,7 @@ class ResourceReservation extends Model
         'soa_sent_at',
         'payment_due_at',
         'paid_at',
+        'payment_proof_path',
     ];
 
     protected $casts = [

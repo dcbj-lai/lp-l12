@@ -305,6 +305,7 @@ class FacilityReservationController extends Controller
             'soa_sent_at' => $reservation->soa_sent_at?->toDateString(),
             'payment_due_at' => $reservation->payment_due_at?->toDateString(),
             'paid_at' => $reservation->paid_at?->toISOString(),
+            'payment_proof_path' => $reservation->payment_proof_path,
             'approved_by' => $reservation->approved_by,
             'approved_at' => $reservation->approved_at?->toISOString(),
             'approver' => $reservation->approver ? [

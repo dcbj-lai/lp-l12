@@ -84,7 +84,8 @@ class CreateReservation extends Component
 
     public function mount()
     {
-        $this->rooms = Resource::where('type', 'room')->where('capacity', '>', 0)->orderBy('name')->get();
+        $this->rooms = Resource::where('type', 'room')->where('capacity', '>', 0)->get()
+            ->sort(fn ($a, $b) => ($a->floorSortKey() <=> $b->floorSortKey()) ?: strcmp($a->name, $b->name))->values();
         $this->equipment = Resource::where('type', 'equipment')->where('total_quantity', '>', 0)->orderBy('name')->get();
     }
 

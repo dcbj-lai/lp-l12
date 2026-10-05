@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ResourceBookingEdited;
 use App\Livewire\Resources\ReservationIndex;
 use App\Livewire\Resources\CreateReservation;
 use App\Livewire\Resources\ResourceIndex;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Http\UploadedFile;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
@@ -43,15 +45,15 @@ class FacilityReservationWorkflowTest extends TestCase
         $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
 
         Livewire::actingAs($admin)->test(ResourceIndex::class)
-            ->set('name', 'First Room')->set('capacity', 5)->call('store')->assertHasNoErrors();
+            ->set('name', 'First Room')->set('capacity', 5)->set('floor', '2nd Floor')->call('store')->assertHasNoErrors();
         Livewire::actingAs($admin)->test(ResourceIndex::class)
-            ->set('name', 'Second Room')->set('capacity', 8)->call('store')->assertHasNoErrors();
+            ->set('name', 'Second Room')->set('capacity', 8)->set('floor', '2nd Floor')->call('store')->assertHasNoErrors();
         $this->assertSame(2, Resource::whereNull('control_number')->count());
 
         Livewire::actingAs($admin)->test(ResourceIndex::class)
-            ->set('name', 'Numbered Room')->set('capacity', 5)->set('control_number', 'RM-101')->call('store')->assertHasNoErrors();
+            ->set('name', 'Numbered Room')->set('capacity', 5)->set('floor', '14th Floor')->set('control_number', 'RM-101')->call('store')->assertHasNoErrors();
         Livewire::actingAs($admin)->test(ResourceIndex::class)
-            ->set('name', 'Duplicate Number')->set('capacity', 5)->set('control_number', 'RM-101')->call('store')
+            ->set('name', 'Duplicate Number')->set('capacity', 5)->set('floor', '14th Floor')->set('control_number', 'RM-101')->call('store')
             ->assertHasErrors(['control_number' => 'unique']);
     }
 
@@ -558,11 +560,18 @@ class FacilityReservationWorkflowTest extends TestCase
         $this->assertSame('2026-10-13', $reservation->payment_due_at->toDateString());
         Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->soa_path);
 
-        Livewire::actingAs($admin)->test(ReservationIndex::class)->call('markPaid', $reservation->id);
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('selectForPayment', $reservation->id)
+            ->set('paymentDate', '2026-10-01')
+            ->call('recordPayment')->assertHasErrors(['paymentProof'])
+            ->set('paymentProof', UploadedFile::fake()->create('receipt.pdf', 100, 'application/pdf'))
+            ->call('recordPayment')->assertHasNoErrors();
         $this->assertSame('paid', $reservation->fresh()->billing_status);
+        $this->assertSame('2026-10-01', $reservation->fresh()->paid_at->toDateString());
+        Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->fresh()->payment_proof_path);
     }
 
-    public function test_admin_can_mark_billed_reservation_paid_while_editing(): void
+    public function test_billed_reservation_requires_payment_proof_and_keeps_approval(): void
     {
         $admin = User::factory()->create();
         $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
@@ -576,18 +585,74 @@ class FacilityReservationWorkflowTest extends TestCase
             'approved_by' => $admin->id, 'approved_at' => now(),
         ]);
 
+        Storage::fake(config('filesystems.facility_upload_disk'));
         Livewire::actingAs($admin)->test(ReservationIndex::class)
-            ->call('selectForEdit', $reservation->id)
-            ->assertSet('editBillingStatus', 'billed')
-            ->set('editBillingStatus', 'paid')
-            ->call('saveEdit')
-            ->assertHasNoErrors();
+            ->call('selectForPayment', $reservation->id)
+            ->set('paymentDate', '2026-10-02')
+            ->set('paymentProof', UploadedFile::fake()->create('payment.pdf', 100, 'application/pdf'))
+            ->call('recordPayment')->assertHasNoErrors();
 
         $reservation->refresh();
         $this->assertSame('approved', $reservation->status);
         $this->assertSame('paid', $reservation->billing_status);
         $this->assertNotNull($reservation->paid_at);
         $this->assertSame('2026-10-13', $reservation->payment_due_at->toDateString());
+    }
+
+    public function test_approved_recurring_dates_appear_separately_and_bulk_approval_skips_conflicts(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
+        $room = Resource::create(['name' => 'Series room', 'type' => 'room', 'floor' => '14th Floor', 'capacity' => 20, 'created_by' => $admin->id]);
+        $seriesId = (string) Str::uuid();
+        $first = ResourceReservation::create(['requester_email' => 'qa@example.test', 'resource_id' => $room->id, 'title' => 'Series QA', 'start_datetime' => '2026-12-01 09:00', 'end_datetime' => '2026-12-01 10:00', 'status' => 'pending', 'recurrence_series_id' => $seriesId]);
+        $second = ResourceReservation::create(['requester_email' => 'qa@example.test', 'resource_id' => $room->id, 'title' => 'Series QA', 'start_datetime' => '2026-12-08 09:00', 'end_datetime' => '2026-12-08 10:00', 'status' => 'pending', 'recurrence_series_id' => $seriesId]);
+        $third = ResourceReservation::create(['requester_email' => 'qa@example.test', 'resource_id' => $room->id, 'title' => 'Series QA', 'start_datetime' => '2027-01-05 09:00', 'end_datetime' => '2027-01-05 10:00', 'status' => 'pending', 'recurrence_series_id' => $seriesId]);
+        ResourceReservation::create(['requester_email' => 'other@example.test', 'resource_id' => $room->id, 'title' => 'Blocking event', 'start_datetime' => '2026-12-08 09:30', 'end_datetime' => '2026-12-08 10:30', 'status' => 'approved']);
+
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('showRecurringSeries', $seriesId)
+            ->call('approvePendingSeries');
+
+        $this->assertSame('approved', $first->fresh()->status);
+        $this->assertSame('pending', $second->fresh()->status);
+        $this->assertSame('approved', $third->fresh()->status);
+        $groups = Livewire::actingAs($admin)->test(ReservationIndex::class)->set('statusFilter', 'approved')->instance()->bookingGroups->flatten(1);
+        $this->assertTrue($groups->contains(fn ($group) => $group['representative']->id === $first->id && !$group['is_series']));
+        $this->assertTrue($groups->contains(fn ($group) => $group['representative']->id === $third->id && !$group['is_series']));
+    }
+
+    public function test_deleted_recurring_dates_can_be_restored_together(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
+        $room = Resource::create(['name' => 'Restore room', 'type' => 'room', 'floor' => '2nd Floor', 'capacity' => 20, 'created_by' => $admin->id]);
+        $seriesId = (string) Str::uuid();
+        $dates = ['2026-12-01', '2026-12-08'];
+        foreach ($dates as $date) {
+            $reservation = ResourceReservation::create(['requester_email' => 'qa@example.test', 'resource_id' => $room->id, 'title' => 'Restore QA', 'start_datetime' => "$date 09:00", 'end_datetime' => "$date 10:00", 'status' => 'approved', 'recurrence_series_id' => $seriesId]);
+            $reservation->delete();
+        }
+        Livewire::actingAs($admin)->test(ReservationIndex::class)->call('showRecurringSeries', $seriesId)->call('restoreDeletedSeries');
+        $this->assertSame(2, ResourceReservation::where('recurrence_series_id', $seriesId)->where('status', 'pending')->count());
+    }
+
+    public function test_admin_edit_email_is_sent_only_when_button_is_used(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
+        $room = Resource::create(['name' => 'Edit room', 'type' => 'room', 'floor' => '3rd Floor', 'capacity' => 20, 'created_by' => $admin->id]);
+        $reservation = ResourceReservation::create(['requester_email' => 'qa@example.test', 'resource_id' => $room->id, 'title' => 'Edit QA', 'start_datetime' => '2026-12-01 09:00', 'end_datetime' => '2026-12-01 10:00', 'status' => 'pending']);
+
+        Livewire::actingAs($admin)->test(ReservationIndex::class)->call('selectForEdit', $reservation->id)
+            ->set('editNotes', 'Updated setup instructions')->call('saveEdit')->assertHasNoErrors();
+        Mail::assertNotQueued(ResourceBookingEdited::class);
+        Livewire::actingAs($admin)->test(ReservationIndex::class)->call('emailReservationChanges', $reservation->id);
+        Mail::assertQueued(ResourceBookingEdited::class, fn ($mail) => $mail->reservation->id === $reservation->id && collect($mail->changes)->contains('label', 'Notes'));
+        $this->assertDatabaseHas('resource_reservation_edits', ['reservation_id' => $reservation->id, 'email_available' => true]);
+        $this->assertNotNull(DB::table('resource_reservation_edits')->where('reservation_id', $reservation->id)->value('email_queued_at'));
     }
 
     public function test_approved_reservation_cannot_be_deleted_until_soa_is_removed(): void

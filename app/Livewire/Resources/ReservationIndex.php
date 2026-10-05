@@ -2,10 +2,13 @@
 
 namespace App\Livewire\Resources;
 
+use App\Mail\ResourceBookingEdited;
 use App\Models\Resource;
 use App\Models\ResourceReservation;
 use App\Services\ResourceReservationService;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -34,7 +37,6 @@ class ReservationIndex extends Component
     public string $editContact = '';
     public string $editNotes = '';
     public string $editConsumables = '';
-    public string $editBillingStatus = 'unbilled';
     public array $editEquipment = [];
     public ?int $editEquipmentToAdd = null;
     public $editFloorPlan;
@@ -44,6 +46,9 @@ class ReservationIndex extends Component
     public bool $showRemoveSoaModal = false;
     public $soaFile;
     public string $soaSentDate = '';
+    public ?int $paymentId = null;
+    public string $paymentDate = '';
+    public $paymentProof;
 
     public function mount(): void
     {
@@ -66,11 +71,12 @@ class ReservationIndex extends Component
     public function getBookingGroupsProperty()
     {
         $byRequestDate = $this->statusFilter === 'pending';
+        $showIndividualOccurrences = in_array($this->statusFilter, ['approved', 'rejected'], true);
         $reservations = $this->reservations->flatten(1);
 
         $groups = $reservations
-            ->groupBy(fn ($reservation) => $reservation->recurrence_series_id ?: 'single-' . $reservation->id)
-            ->map(function ($occurrences, $key) use ($byRequestDate) {
+            ->groupBy(fn ($reservation) => !$showIndividualOccurrences && $reservation->recurrence_series_id ? $reservation->recurrence_series_id : 'single-' . $reservation->id)
+            ->map(function ($occurrences, $key) use ($byRequestDate, $showIndividualOccurrences) {
                 $ordered = $occurrences->sortBy('start_datetime')->values();
                 $upcoming = $ordered->first(fn ($reservation) => $reservation->start_datetime->gte(now()));
                 $representative = $upcoming ?? $ordered->last();
@@ -80,7 +86,7 @@ class ReservationIndex extends Component
 
                 return [
                     'key' => $key,
-                    'is_series' => (bool) $representative->recurrence_series_id,
+                    'is_series' => !$showIndividualOccurrences && (bool) $representative->recurrence_series_id,
                     'series_id' => $representative->recurrence_series_id,
                     'representative' => $representative,
                     'display_date' => $byRequestDate ? $requestDate : $representative->start_datetime,
@@ -166,6 +172,85 @@ class ReservationIndex extends Component
             ->orderBy('start_datetime')->get();
     }
 
+    public function getUnsentEditCountsProperty(): array
+    {
+        return DB::table('resource_reservation_edits')->where('email_available', true)->whereNull('email_queued_at')
+            ->selectRaw('reservation_id, count(*) as edits_count')->groupBy('reservation_id')
+            ->pluck('edits_count', 'reservation_id')->all();
+    }
+
+    public function emailReservationChanges(int $id): void
+    {
+        abort_unless(auth()->user()->hasRole('facility.admin'), 403);
+        $reservation = ResourceReservation::with(['resource', 'equipment'])->findOrFail($id);
+        $edits = DB::table('resource_reservation_edits')->where('reservation_id', $id)
+            ->where('email_available', true)->whereNull('email_queued_at')->orderBy('id')->get();
+        if ($edits->isEmpty()) {
+            $this->dispatch('flash', type: 'error', message: 'There are no unsent changes for this reservation.');
+            return;
+        }
+
+        $before = json_decode($edits->first()->before, true) ?: [];
+        $after = json_decode($edits->last()->after, true) ?: [];
+        $labels = [
+            'title' => 'Event name', 'resource_id' => 'Room', 'start_datetime' => 'Start',
+            'end_datetime' => 'End', 'number_of_pax' => 'Number of pax',
+            'setup_arrangement' => 'Setup arrangement', 'contact_number' => 'Contact number',
+            'notes' => 'Notes', 'consumables' => 'Consumables',
+            'equipment_quantities' => 'Equipment', 'floor_plan_path' => 'Floor plan',
+            'gate_pass_path' => 'Gate pass',
+        ];
+        $changes = [];
+        foreach ($labels as $field => $label) {
+            if (($before[$field] ?? null) == ($after[$field] ?? null)) {
+                continue;
+            }
+            $changes[] = [
+                'label' => $label,
+                'before' => $this->formatEditValue($field, $before[$field] ?? null, false),
+                'after' => $this->formatEditValue($field, $after[$field] ?? null, true),
+            ];
+        }
+        if (!$changes) {
+            DB::table('resource_reservation_edits')->whereIn('id', $edits->pluck('id'))->update(['email_queued_at' => now()]);
+            $this->dispatch('flash', type: 'success', message: 'No net changes remain to email.');
+            return;
+        }
+        if (!$reservation->requester_email) {
+            $this->dispatch('flash', type: 'error', message: 'This reservation has no requester email address.');
+            return;
+        }
+        try {
+            Mail::to($reservation->requester_email)->queue(new ResourceBookingEdited($reservation, $changes));
+            DB::table('resource_reservation_edits')->whereIn('id', $edits->pluck('id'))->update(['email_queued_at' => now()]);
+            $this->dispatch('flash', type: 'success', message: 'Reservation changes queued for email to the requester.');
+        } catch (\Throwable $e) {
+            report($e);
+            $this->dispatch('flash', type: 'error', message: 'The change email could not be queued. Please try again.');
+        }
+    }
+
+    private function formatEditValue(string $field, mixed $value, bool $isAfter): string
+    {
+        if ($value === null || $value === '' || $value === []) {
+            return 'None';
+        }
+        if ($field === 'resource_id') {
+            return Resource::find($value)?->name ?? 'Room #' . $value;
+        }
+        if ($field === 'equipment_quantities') {
+            $names = Resource::whereIn('id', array_keys((array) $value))->pluck('name', 'id');
+            return collect($value)->map(fn ($quantity, $id) => ($names[$id] ?? 'Equipment #' . $id) . ' × ' . $quantity)->join(', ') ?: 'None';
+        }
+        if (in_array($field, ['start_datetime', 'end_datetime'], true)) {
+            return \Carbon\Carbon::parse($value)->format('M j, Y g:i A');
+        }
+        if (in_array($field, ['floor_plan_path', 'gate_pass_path'], true)) {
+            return $isAfter ? 'Updated attachment' : 'Previous attachment';
+        }
+        return (string) $value;
+    }
+
     public function showRecurringSeries(string $seriesId): void
     {
         $this->selectedSeriesId = $seriesId;
@@ -174,7 +259,8 @@ class ReservationIndex extends Component
 
     public function getRoomsProperty()
     {
-        return Resource::where('type', 'room')->where('capacity', '>', 0)->orderBy('name')->get();
+        return Resource::where('type', 'room')->where('capacity', '>', 0)->get()
+            ->sort(fn ($a, $b) => ($a->floorSortKey() <=> $b->floorSortKey()) ?: strcmp($a->name, $b->name))->values();
     }
 
     public function getEquipmentProperty()
@@ -207,6 +293,33 @@ class ReservationIndex extends Component
         } catch (\Throwable $e) {
             $this->dispatch('flash', type: 'error', message: $e->getMessage());
         }
+    }
+
+    public function approvePendingSeries(): void
+    {
+        abort_unless(auth()->user()->hasAnyRole(['facility.admin', 'facility.approver']), 403);
+        abort_unless($this->selectedSeriesId, 422);
+
+        $approved = 0;
+        $blocked = [];
+        $pending = ResourceReservation::where('recurrence_series_id', $this->selectedSeriesId)
+            ->where('status', 'pending')->orderBy('start_datetime')->get();
+
+        foreach ($pending as $reservation) {
+            try {
+                app(ResourceReservationService::class)->approveReservation($reservation, auth()->id());
+                $approved++;
+            } catch (\Throwable $e) {
+                $blocked[] = $reservation->start_datetime->format('M j') . ': ' . $e->getMessage();
+            }
+        }
+
+        $this->modal('approve-series')->close();
+        $message = "Approved {$approved} of {$pending->count()} pending dates.";
+        if ($blocked) {
+            $message .= ' Still pending: ' . implode(' | ', $blocked);
+        }
+        $this->dispatch('flash', type: $blocked ? 'error' : 'success', message: $message);
     }
 
     public function confirmReject(): void
@@ -276,6 +389,32 @@ class ReservationIndex extends Component
         }
     }
 
+    public function restoreDeletedSeries(): void
+    {
+        abort_unless(auth()->user()->hasRole('facility.admin'), 403);
+        abort_unless($this->selectedSeriesId, 422);
+
+        $restored = 0;
+        $blocked = [];
+        $deleted = ResourceReservation::onlyTrashed()->where('recurrence_series_id', $this->selectedSeriesId)
+            ->orderBy('start_datetime')->get();
+        foreach ($deleted as $reservation) {
+            try {
+                app(ResourceReservationService::class)->restoreReservation($reservation);
+                $restored++;
+            } catch (\Throwable $e) {
+                $blocked[] = $reservation->start_datetime->format('M j') . ': ' . $e->getMessage();
+            }
+        }
+
+        $this->modal('restore-series')->close();
+        $message = "Restored {$restored} of {$deleted->count()} deleted dates for approval.";
+        if ($blocked) {
+            $message .= ' Not restored: ' . implode(' | ', $blocked);
+        }
+        $this->dispatch('flash', type: $blocked ? 'error' : 'success', message: $message);
+    }
+
     public function selectForEdit(int $id): void
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
@@ -290,7 +429,6 @@ class ReservationIndex extends Component
         $this->editContact = $reservation->contact_number ?? '';
         $this->editNotes = $reservation->notes ?? '';
         $this->editConsumables = $reservation->consumables ?? '';
-        $this->editBillingStatus = $reservation->billing_status;
         $this->editEquipment = $reservation->equipment->mapWithKeys(fn ($item) => [$item->id => $item->pivot->quantity])->all();
         $this->editEquipmentToAdd = null;
         $this->editFloorPlan = null;
@@ -329,10 +467,6 @@ class ReservationIndex extends Component
         $paths = [];
         try {
             $reservation = ResourceReservation::findOrFail($this->editId);
-            $canEditBilling = in_array($reservation->billing_status, ['billed', 'paid'], true);
-            if ($canEditBilling) {
-                $this->validate(['editBillingStatus' => 'required|in:billed,paid']);
-            }
             foreach (['editFloorPlan' => 'floor_plan_path', 'editGatePass' => 'gate_pass_path'] as $property => $column) {
                 if ($this->{$property}) {
                     $paths[$column] = $this->{$property}->storeAs('reservations', Str::uuid() . '.' . $this->{$property}->getClientOriginalExtension(), config('filesystems.facility_upload_disk'));
@@ -346,12 +480,6 @@ class ReservationIndex extends Component
                 'consumables' => $this->editConsumables,
                 'equipment_quantities' => array_filter($this->editEquipment, fn ($quantity) => (int) $quantity > 0),
             ] + $paths);
-            if ($canEditBilling && $this->editBillingStatus !== $reservation->billing_status) {
-                $reservation->update([
-                    'billing_status' => $this->editBillingStatus,
-                    'paid_at' => $this->editBillingStatus === 'paid' ? now() : null,
-                ]);
-            }
             $this->editId = null;
             $this->modal('edit-reservation')->close();
             $this->dispatch('flash', type: 'success', message: 'Reservation updated.');
@@ -442,10 +570,14 @@ class ReservationIndex extends Component
             if (!\Storage::disk(config('filesystems.facility_upload_disk'))->delete($reservation->soa_path)) {
                 throw new \RuntimeException('SOA file could not be removed.');
             }
+            $paymentProofPath = $reservation->payment_proof_path;
             $reservation->update([
                 'soa_path' => null, 'soa_sent_at' => null, 'payment_due_at' => null,
-                'billing_status' => 'unbilled', 'paid_at' => null,
+                'billing_status' => 'unbilled', 'paid_at' => null, 'payment_proof_path' => null,
             ]);
+            if ($paymentProofPath) {
+                \Storage::disk(config('filesystems.facility_upload_disk'))->delete($paymentProofPath);
+            }
             $this->removeSoaId = null;
             $this->showRemoveSoaModal = false;
             $this->dispatch('flash', type: 'success', message: 'SOA removed. The reservation can now be deleted.');
@@ -454,13 +586,53 @@ class ReservationIndex extends Component
         }
     }
 
-    public function markPaid(int $id): void
+    public function selectForPayment(int $id): void
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
         $reservation = ResourceReservation::findOrFail($id);
-        abort_unless($reservation->billing_status === 'billed', 422);
-        $reservation->update(['billing_status' => 'paid', 'paid_at' => now()]);
-        $this->dispatch('flash', type: 'success', message: 'Payment recorded.');
+        abort_unless($reservation->status === 'approved' && $reservation->soa_path && in_array($reservation->billing_status, ['billed', 'paid'], true), 422);
+        $this->paymentId = $id;
+        $this->paymentDate = $reservation->paid_at?->toDateString() ?? now()->toDateString();
+        $this->paymentProof = null;
+        $this->resetValidation(['paymentDate', 'paymentProof']);
+    }
+
+    public function recordPayment(): void
+    {
+        abort_unless(auth()->user()->hasRole('facility.admin'), 403);
+        $reservation = ResourceReservation::findOrFail($this->paymentId);
+        abort_unless($reservation->status === 'approved' && $reservation->soa_path && in_array($reservation->billing_status, ['billed', 'paid'], true), 422);
+        $this->validate([
+            'paymentDate' => 'required|date|before_or_equal:today',
+            'paymentProof' => ($reservation->payment_proof_path ? 'nullable' : 'required') . '|file|max:10240|mimes:pdf,jpg,jpeg,png',
+        ]);
+
+        $oldPath = $reservation->payment_proof_path;
+        $path = null;
+        try {
+            if ($this->paymentProof) {
+                $path = $this->paymentProof->storeAs('reservations/payments', Str::uuid() . '.' . $this->paymentProof->getClientOriginalExtension(), config('filesystems.facility_upload_disk'));
+                if (!$path) {
+                    throw new \RuntimeException('Payment proof upload failed.');
+                }
+            }
+            $reservation->update([
+                'billing_status' => 'paid',
+                'paid_at' => \Carbon\Carbon::parse($this->paymentDate)->startOfDay(),
+                'payment_proof_path' => $path ?: $oldPath,
+            ]);
+            if ($path && $oldPath && $oldPath !== $path) {
+                \Storage::disk(config('filesystems.facility_upload_disk'))->delete($oldPath);
+            }
+            $this->modal('payment-reservation')->close();
+            $this->dispatch('flash', type: 'success', message: 'Payment and proof recorded.');
+        } catch (\Throwable $e) {
+            if ($path) {
+                \Storage::disk(config('filesystems.facility_upload_disk'))->delete($path);
+            }
+            report($e);
+            $this->addError('paymentProof', 'Payment could not be recorded. Please try again.');
+        }
     }
 
     public function render()

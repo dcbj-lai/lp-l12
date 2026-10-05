@@ -13,10 +13,11 @@
         </flux:modal.trigger>
 
     </div>
-    <!-- GRID -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
-        @forelse ($resources as $resource)
+    @forelse ($sections as $section)
+    <section class="space-y-3">
+        <h2 class="text-lg font-semibold">{{ $section['title'] }}</h2>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        @foreach ($section['items'] as $resource)
             <x-ui.card class="p-4">
 
                 <!-- Image -->
@@ -44,7 +45,7 @@
                 <!-- Meta -->
                 @if ($resource->type === 'room')
                     <div class="text-xs text-gray-500 mt-1">
-                        {{ $resource->location ?? '—' }} • Capacity: {{ $resource->capacity ?? '—' }}
+                        {{ $resource->floorLabel() }}@if ($resource->location && $resource->location !== $resource->floor) · {{ $resource->location }}@endif • Capacity: {{ $resource->capacity ?? '—' }}
                     </div>
                 @endif
                 @if ($resource->type === 'equipment')
@@ -76,13 +77,12 @@
                 </div>
 
             </x-ui.card>
-        @empty
-            <div class="col-span-full text-center text-gray-500">
-                No resources available.
-            </div>
-        @endforelse
-
-    </div>
+        @endforeach
+        </div>
+    </section>
+    @empty
+        <div class="text-center text-gray-500">No resources available.</div>
+    @endforelse
     <flux:modal name="manage-resource-modal" class="md:w-[500px]">
 
         <div class="space-y-6">
@@ -151,6 +151,7 @@
                 </flux:select>
 
                 @if ($type === 'room')
+                    <flux:input wire:model="floor" label="Floor" placeholder="e.g. 14th Floor or Ground Floor" />
                     <flux:input wire:model="location" label="Location" />
                     <flux:input wire:model="capacity" type="number" min="1" label="Capacity" />
                 @else

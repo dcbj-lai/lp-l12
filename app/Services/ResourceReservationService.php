@@ -487,11 +487,12 @@ class ResourceReservationService
             $after = $reservation->fresh()->only(array_diff(array_keys($before), ['equipment_quantities']));
             $after['equipment_quantities'] = $equipment;
 
-            DB::table('resource_reservation_edits')->insert([
+            if (json_encode($before) !== json_encode($after)) DB::table('resource_reservation_edits')->insert([
                 'reservation_id' => $reservation->id,
                 'edited_by' => auth()->id(),
                 'before' => json_encode($before),
                 'after' => json_encode($after),
+                'email_available' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

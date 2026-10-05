@@ -34,6 +34,7 @@ class ResourceIndex extends Component
     public $description = '';
 
     public $location = '';
+    public $floor = '';
     #[Validate('nullable|integer|min:0')]
     public $capacity = null;
     #[Validate('required|integer|min:1')]
@@ -50,7 +51,22 @@ class ResourceIndex extends Component
 
     public function loadResources()
     {
-        $this->resources = Resource::latest()->get();
+        $this->resources = Resource::all();
+    }
+
+    public function resourceSections(): array
+    {
+        $rooms = $this->resources->where('type', 'room')->sort(fn ($a, $b) => ($a->floorSortKey() <=> $b->floorSortKey()) ?: strcmp($a->name, $b->name));
+        $sections = [];
+        foreach ($rooms->groupBy(fn ($room) => $room->floorLabel()) as $floor => $items) {
+            $sections[] = ['title' => 'Rooms / Facilities · ' . $floor, 'items' => $items];
+        }
+        $equipment = $this->resources->where('type', 'equipment')->sortBy('name');
+        if ($equipment->isNotEmpty()) {
+            $sections[] = ['title' => 'Equipment', 'items' => $equipment];
+        }
+
+        return $sections;
     }
 
     public function availabilityNow(): array
@@ -115,6 +131,7 @@ class ResourceIndex extends Component
         $this->type = $resource->type;
         $this->description = $resource->description;
         $this->location = $resource->location;
+        $this->floor = $resource->floor;
         $this->capacity = $resource->capacity;
         $this->total_quantity = $resource->total_quantity;
         $this->control_number = $resource->control_number;
@@ -125,6 +142,7 @@ class ResourceIndex extends Component
         $this->control_number = trim((string) $this->control_number);
         $this->validate();
         $this->validate(['capacity' => 'required_if:type,room|nullable|integer|min:1']);
+        $this->validate(['floor' => 'required_if:type,room|nullable|string|max:50']);
 
         $resource = Resource::findOrFail($this->selectedResourceId);
         $this->validate(['control_number' => ['nullable', 'string', 'max:255', Rule::unique('resources', 'control_number')->ignore($resource->id)]]);
@@ -160,6 +178,7 @@ class ResourceIndex extends Component
             'type' => $this->type,
             'description' => $this->description,
             'location' => $this->type === 'room' ? $this->location : null,
+            'floor' => $this->type === 'room' ? $this->floor : null,
             'capacity' => $this->type === 'room' ? $this->capacity : null,
             'total_quantity' => $this->type === 'equipment' ? $this->total_quantity : 1,
             'image_path' => $resource->image_path,
@@ -191,6 +210,7 @@ class ResourceIndex extends Component
             'type',
             'description',
             'location',
+            'floor',
             'capacity',
             'total_quantity',
             'control_number',
@@ -211,6 +231,7 @@ class ResourceIndex extends Component
             'type',
             'description',
             'location',
+            'floor',
             'capacity',
             'total_quantity',
             'image',
@@ -226,6 +247,7 @@ class ResourceIndex extends Component
         $this->control_number = trim((string) $this->control_number);
         $this->validate();
         $this->validate(['capacity' => 'required_if:type,room|nullable|integer|min:1']);
+        $this->validate(['floor' => 'required_if:type,room|nullable|string|max:50']);
         $this->validate(['control_number' => ['nullable', 'string', 'max:255', Rule::unique('resources', 'control_number')]]);
 
         $resource = Resource::create([
@@ -233,6 +255,7 @@ class ResourceIndex extends Component
             'type' => $this->type,
             'description' => $this->description,
             'location' => $this->type === 'room' ? $this->location : null,
+            'floor' => $this->type === 'room' ? $this->floor : null,
             'capacity' => $this->type === 'room' ? $this->capacity : null,
             'total_quantity' => $this->type === 'equipment' ? $this->total_quantity : 1,
             'created_by' => auth()->id(),
@@ -263,6 +286,7 @@ class ResourceIndex extends Component
             'type',
             'description',
             'location',
+            'floor',
             'capacity',
             'total_quantity',
             'image',
@@ -276,6 +300,6 @@ class ResourceIndex extends Component
 
     public function render()
     {
-        return view('livewire.resources.resource-index', ['availabilityNow' => $this->availabilityNow()]);
+        return view('livewire.resources.resource-index', ['availabilityNow' => $this->availabilityNow(), 'sections' => $this->resourceSections()]);
     }
 }

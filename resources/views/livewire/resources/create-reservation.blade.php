@@ -51,6 +51,142 @@
 
     </div>
 
+    <!-- SECTION: Schedule -->
+    <div
+        class="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-4 shadow-sm">
+
+        <div class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 border-b pb-2">
+            Schedule
+        </div>
+
+        <div class="space-y-1">
+            <label for="event_date" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Event Date *</label>
+            <input id="event_date" type="date" wire:model.live="event_date"
+                class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2 py-2 text-sm">
+            @error('event_date') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            <div class="space-y-1">
+                <label for="start_time" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Start Time *</label>
+                <input id="start_time" type="time" wire:model.change="start_time"
+                    class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
+                @error('start_time')
+                    <span class="text-red-500 text-xs">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="space-y-1">
+                <label for="end_time" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">End Time *</label>
+                <input id="end_time" type="time" wire:model.change="end_time"
+                    class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
+                @error('end_time')
+                    <span class="text-red-500 text-xs">{{ $message }}</span>
+                @enderror
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="rounded-lg border border-zinc-200 bg-white p-4 space-y-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 border-b pb-2">Recurring Event <span class="font-normal text-zinc-500">(optional)</span></div>
+        <p class="text-xs text-zinc-500">The event date above is the first booking. Each repeat uses the same room, equipment, and time.</p>
+        <div class="space-y-1">
+                <label for="recurrence" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Repeat</label>
+                <select id="recurrence" wire:model.live="recurrence" class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-800">
+                    <option value="none">Does not repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekdays">Every weekday (Monday to Friday)</option>
+                    <option value="weekly">Weekly{{ $event_date ? ' on ' . \Carbon\CarbonImmutable::parse($event_date)->format('l') : '' }}</option>
+                    <option value="monthly">Monthly{{ $event_date ? ' on the ' . $this->monthlyPatternLabel() : '' }}</option>
+                    <option value="yearly">Yearly{{ $event_date ? ' on ' . \Carbon\CarbonImmutable::parse($event_date)->format('F j') : '' }}</option>
+                    <option value="custom">Custom...</option>
+                </select>
+                @error('recurrence') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+        </div>
+        @if ($recurrence !== 'none')
+            @if ($recurrence === 'custom')
+                <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3 space-y-3 dark:border-zinc-700 dark:bg-zinc-800">
+                    <div class="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Custom recurrence</div>
+                    <div class="space-y-1">
+                        <label for="custom_interval" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Repeat every</label>
+                        <div class="grid grid-cols-2 gap-2">
+                        <input id="custom_interval" type="number" min="1" max="52" wire:model.live="custom_interval" class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-900">
+                        <select wire:model.live="custom_unit" aria-label="Repeat unit" class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-900">
+                            <option value="day">day</option><option value="week">week</option><option value="month">month</option><option value="year">year</option>
+                        </select>
+                        </div>
+                    </div>
+                    @if ($custom_unit === 'week')
+                        <fieldset class="space-y-2"><legend class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Repeat on</legend>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day => $label)
+                                    <label class="inline-flex min-w-10 items-center justify-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-2 text-xs dark:border-zinc-600 dark:bg-zinc-900"><input type="checkbox" value="{{ $day }}" wire:model.live="custom_weekdays" style="accent-color: #9E1D20">{{ $label }}</label>
+                                @endforeach
+                            </div>
+                        </fieldset>
+                    @endif
+                    @error('custom_weekdays') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                </div>
+            @endif
+            <fieldset class="space-y-2"><legend class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Ends</legend>
+                <label class="flex items-center gap-2 text-sm"><input type="radio" value="on" wire:model.live="recurrence_ends" style="accent-color: #9E1D20"> On a date</label>
+                @if ($recurrence_ends === 'on')
+                    <input type="date" wire:model.live="recurrence_until" aria-label="Recurrence end date" class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-800">
+                    @error('recurrence_until') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                @endif
+                <label class="flex items-center gap-2 text-sm"><input type="radio" value="after" wire:model.live="recurrence_ends" style="accent-color: #9E1D20"> After a number of occurrences</label>
+                @if ($recurrence_ends === 'after')
+                    <div class="flex items-center gap-2"><input id="occurrences" type="number" min="2" max="52" wire:model.live="occurrences" aria-label="Number of occurrences" class="w-24 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-800"> <span class="text-xs text-zinc-500">occurrences (2–52)</span></div>
+                    @error('occurrences') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                @endif
+            </fieldset>
+            @error('recurrence') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            <p class="text-xs text-zinc-500">Recurring bookings are limited to one year and 52 event dates.</p>
+            @if ($event_date)
+                @php try { $previewDates = $this->recurrenceDates(); } catch (\Throwable $e) { $previewDates = []; } @endphp
+                @if ($previewDates)
+                    <div class="rounded-md bg-zinc-50 p-3 text-xs dark:bg-zinc-800">
+                        <div class="font-medium">{{ count($previewDates) }} event dates</div>
+                        <div class="mt-1">{{ collect($previewDates)->take(8)->map(fn ($date) => \Carbon\CarbonImmutable::parse($date)->format('M j, Y'))->join(' · ') }}@if (count($previewDates) > 8) · and {{ count($previewDates) - 8 }} more @endif</div>
+                        @if (count($previewDates) > 8)
+                            <details class="mt-2"><summary class="cursor-pointer font-medium">View all dates</summary>
+                                <div class="mt-1 grid grid-cols-2 gap-1 sm:grid-cols-3">@foreach ($previewDates as $previewDate)<span>{{ \Carbon\CarbonImmutable::parse($previewDate)->format('M j, Y') }}</span>@endforeach</div>
+                            </details>
+                        @endif
+                    </div>
+                @endif
+            @endif
+            <p class="text-xs text-zinc-500">Every date will be submitted for approval. Dates that overlap approved bookings will be flagged for admin review.</p>
+        @endif
+        <div class="space-y-2 rounded-md border border-zinc-200 p-3 text-sm dark:border-zinc-700">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <p>Requests with schedule conflicts can still be submitted. An admin must resolve a conflict before approval.</p>
+                <flux:button size="sm" wire:click="checkSchedule" wire:loading.attr="disabled" wire:target="checkSchedule">
+                    <span wire:loading.remove wire:target="checkSchedule">Check schedule</span>
+                    <span wire:loading wire:target="checkSchedule">Checking...</span>
+                </flux:button>
+            </div>
+            @if ($scheduleCheckAttempted && ($errors->has('resource_id') || $errors->has('event_date') || $errors->has('start_time') || $errors->has('end_time') || $errors->has('recurrence')))
+                <p role="alert" class="rounded-md bg-red-50 p-2 text-red-800 dark:bg-red-950 dark:text-red-100">Select a room and enter a valid event date and time to check the schedule. Review any field errors above.</p>
+            @endif
+            @if ($scheduleConflictWarnings)
+                <div class="rounded-md bg-amber-50 p-2 text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+                    <div class="font-semibold">Conflict with approved booking</div>
+                    @foreach ($scheduleConflictWarnings as $date => $names)
+                        <div>{{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}: {{ implode(', ', $names) }}</div>
+                    @endforeach
+                </div>
+            @elseif ($scheduleChecked)
+                <p role="status" class="rounded-md bg-green-50 p-2 text-green-900 dark:bg-green-950 dark:text-green-100">No conflicts with approved bookings were found for the selected date{{ $recurrence === 'none' ? '' : 's' }}. You can submit the request for approval.</p>
+            @else
+                <p class="text-xs text-zinc-500">Use Check schedule to see current approved booking conflicts.</p>
+            @endif
+        </div>
+    </div>
+
     <!-- SECTION: Resource -->
     <div
         class="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-4 shadow-sm">
@@ -65,8 +201,12 @@
             <select wire:model.change="resource_id"
                 class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
                 <option value="">Select a room</option>
-                @foreach ($rooms as $room)
-                    <option value="{{ $room->id }}">{{ $room->name }}</option>
+                @foreach ($rooms->groupBy(fn ($room) => $room->floorLabel()) as $floor => $floorRooms)
+                    <optgroup label="{{ $floor }}">
+                        @foreach ($floorRooms as $room)
+                            <option value="{{ $room->id }}">{{ $room->name }}</option>
+                        @endforeach
+                    </optgroup>
                 @endforeach
             </select>
         </div>
@@ -303,142 +443,6 @@
         @error('gate_pass')
             <span class="mt-1 block text-xs text-red-500">{{ $message }}</span>
         @enderror
-    </div>
-
-    <!-- SECTION: Schedule -->
-    <div
-        class="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-4 shadow-sm">
-
-        <div class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 border-b pb-2">
-            Schedule
-        </div>
-
-        <div class="space-y-1">
-            <label for="event_date" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Event Date *</label>
-            <input id="event_date" type="date" wire:model.live="event_date"
-                class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2 py-2 text-sm">
-            @error('event_date') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-            <div class="space-y-1">
-                <label for="start_time" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Start Time *</label>
-                <input id="start_time" type="time" wire:model.change="start_time"
-                    class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
-                @error('start_time')
-                    <span class="text-red-500 text-xs">{{ $message }}</span>
-                @enderror
-            </div>
-
-            <div class="space-y-1">
-                <label for="end_time" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">End Time *</label>
-                <input id="end_time" type="time" wire:model.change="end_time"
-                    class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
-                @error('end_time')
-                    <span class="text-red-500 text-xs">{{ $message }}</span>
-                @enderror
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="rounded-lg border border-zinc-200 bg-white p-4 space-y-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-        <div class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 border-b pb-2">Recurring Event <span class="font-normal text-zinc-500">(optional)</span></div>
-        <p class="text-xs text-zinc-500">The event date above is the first booking. Each repeat uses the same room, equipment, and time.</p>
-        <div class="space-y-1">
-                <label for="recurrence" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Repeat</label>
-                <select id="recurrence" wire:model.live="recurrence" class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-800">
-                    <option value="none">Does not repeat</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly{{ $event_date ? ' on ' . \Carbon\CarbonImmutable::parse($event_date)->format('l') : '' }}</option>
-                    <option value="monthly">Monthly{{ $event_date ? ' on the ' . $this->monthlyPatternLabel() : '' }}</option>
-                    <option value="yearly">Yearly{{ $event_date ? ' on ' . \Carbon\CarbonImmutable::parse($event_date)->format('F j') : '' }}</option>
-                    <option value="weekdays">Every weekday (Monday to Friday)</option>
-                    <option value="custom">Custom...</option>
-                </select>
-                @error('recurrence') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-        </div>
-        @if ($recurrence !== 'none')
-            @if ($recurrence === 'custom')
-                <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3 space-y-3 dark:border-zinc-700 dark:bg-zinc-800">
-                    <div class="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Custom recurrence</div>
-                    <div class="space-y-1">
-                        <label for="custom_interval" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Repeat every</label>
-                        <div class="grid grid-cols-2 gap-2">
-                        <input id="custom_interval" type="number" min="1" max="52" wire:model.live="custom_interval" class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-900">
-                        <select wire:model.live="custom_unit" aria-label="Repeat unit" class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-900">
-                            <option value="day">day</option><option value="week">week</option><option value="month">month</option><option value="year">year</option>
-                        </select>
-                        </div>
-                    </div>
-                    @if ($custom_unit === 'week')
-                        <fieldset class="space-y-2"><legend class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Repeat on</legend>
-                            <div class="flex flex-wrap gap-2">
-                                @foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day => $label)
-                                    <label class="inline-flex min-w-10 items-center justify-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-2 text-xs dark:border-zinc-600 dark:bg-zinc-900"><input type="checkbox" value="{{ $day }}" wire:model.live="custom_weekdays" style="accent-color: #9E1D20">{{ $label }}</label>
-                                @endforeach
-                            </div>
-                        </fieldset>
-                    @endif
-                    @error('custom_weekdays') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
-                </div>
-            @endif
-            <fieldset class="space-y-2"><legend class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Ends</legend>
-                <label class="flex items-center gap-2 text-sm"><input type="radio" value="on" wire:model.live="recurrence_ends" style="accent-color: #9E1D20"> On a date</label>
-                @if ($recurrence_ends === 'on')
-                    <input type="date" wire:model.live="recurrence_until" aria-label="Recurrence end date" class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-800">
-                    @error('recurrence_until') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
-                @endif
-                <label class="flex items-center gap-2 text-sm"><input type="radio" value="after" wire:model.live="recurrence_ends" style="accent-color: #9E1D20"> After a number of occurrences</label>
-                @if ($recurrence_ends === 'after')
-                    <div class="flex items-center gap-2"><input id="occurrences" type="number" min="2" max="52" wire:model.live="occurrences" aria-label="Number of occurrences" class="w-24 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-800"> <span class="text-xs text-zinc-500">occurrences (2–52)</span></div>
-                    @error('occurrences') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                @endif
-            </fieldset>
-            @error('recurrence') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            <p class="text-xs text-zinc-500">Recurring bookings are limited to one year and 52 event dates.</p>
-            @if ($event_date)
-                @php try { $previewDates = $this->recurrenceDates(); } catch (\Throwable $e) { $previewDates = []; } @endphp
-                @if ($previewDates)
-                    <div class="rounded-md bg-zinc-50 p-3 text-xs dark:bg-zinc-800">
-                        <div class="font-medium">{{ count($previewDates) }} event dates</div>
-                        <div class="mt-1">{{ collect($previewDates)->take(8)->map(fn ($date) => \Carbon\CarbonImmutable::parse($date)->format('M j, Y'))->join(' · ') }}@if (count($previewDates) > 8) · and {{ count($previewDates) - 8 }} more @endif</div>
-                        @if (count($previewDates) > 8)
-                            <details class="mt-2"><summary class="cursor-pointer font-medium">View all dates</summary>
-                                <div class="mt-1 grid grid-cols-2 gap-1 sm:grid-cols-3">@foreach ($previewDates as $previewDate)<span>{{ \Carbon\CarbonImmutable::parse($previewDate)->format('M j, Y') }}</span>@endforeach</div>
-                            </details>
-                        @endif
-                    </div>
-                @endif
-            @endif
-            <p class="text-xs text-zinc-500">Every date will be submitted for approval. Dates that overlap approved bookings will be flagged for admin review.</p>
-        @endif
-        <div class="space-y-2 rounded-md border border-zinc-200 p-3 text-sm dark:border-zinc-700">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-                <p>Requests with schedule conflicts can still be submitted. An admin must resolve a conflict before approval.</p>
-                <flux:button size="sm" wire:click="checkSchedule" wire:loading.attr="disabled" wire:target="checkSchedule">
-                    <span wire:loading.remove wire:target="checkSchedule">Check schedule</span>
-                    <span wire:loading wire:target="checkSchedule">Checking...</span>
-                </flux:button>
-            </div>
-            @if ($scheduleCheckAttempted && ($errors->has('resource_id') || $errors->has('event_date') || $errors->has('start_time') || $errors->has('end_time') || $errors->has('recurrence')))
-                <p role="alert" class="rounded-md bg-red-50 p-2 text-red-800 dark:bg-red-950 dark:text-red-100">Select a room and enter a valid event date and time to check the schedule. Review any field errors above.</p>
-            @endif
-            @if ($scheduleConflictWarnings)
-                <div class="rounded-md bg-amber-50 p-2 text-amber-900 dark:bg-amber-950 dark:text-amber-100">
-                    <div class="font-semibold">Conflict with approved booking</div>
-                    @foreach ($scheduleConflictWarnings as $date => $names)
-                        <div>{{ \Carbon\CarbonImmutable::parse($date)->format('M j, Y') }}: {{ implode(', ', $names) }}</div>
-                    @endforeach
-                </div>
-            @elseif ($scheduleChecked)
-                <p role="status" class="rounded-md bg-green-50 p-2 text-green-900 dark:bg-green-950 dark:text-green-100">No conflicts with approved bookings were found for the selected date{{ $recurrence === 'none' ? '' : 's' }}. You can submit the request for approval.</p>
-            @else
-                <p class="text-xs text-zinc-500">Use Check schedule to see current approved booking conflicts.</p>
-            @endif
-        </div>
     </div>
 
     <!-- Submit -->
