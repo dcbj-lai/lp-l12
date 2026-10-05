@@ -21,6 +21,7 @@ class ResourceIndex extends Component
     #[Validate('nullable|image|max:2048')]
     public $image;
     public $resources = [];
+    public string $activeTab = 'room';
 
     public $selectedResourceId = null;
 
@@ -58,15 +59,23 @@ class ResourceIndex extends Component
     {
         $rooms = $this->resources->where('type', 'room')->sort(fn ($a, $b) => ($a->floorSortKey() <=> $b->floorSortKey()) ?: strcmp($a->name, $b->name));
         $sections = [];
-        foreach ($rooms->groupBy(fn ($room) => $room->floorLabel()) as $floor => $items) {
-            $sections[] = ['title' => 'Rooms / Facilities · ' . $floor, 'items' => $items];
+        if ($this->activeTab === 'room') {
+            foreach ($rooms->groupBy(fn ($room) => $room->floorLabel()) as $floor => $items) {
+                $sections[] = ['title' => $floor, 'items' => $items];
+            }
         }
         $equipment = $this->resources->where('type', 'equipment')->sortBy('name');
-        if ($equipment->isNotEmpty()) {
+        if ($this->activeTab === 'equipment' && $equipment->isNotEmpty()) {
             $sections[] = ['title' => 'Equipment', 'items' => $equipment];
         }
 
         return $sections;
+    }
+
+    public function showTab(string $tab): void
+    {
+        abort_unless(in_array($tab, ['room', 'equipment'], true), 422);
+        $this->activeTab = $tab;
     }
 
     public function availabilityNow(): array
@@ -135,6 +144,7 @@ class ResourceIndex extends Component
         $this->capacity = $resource->capacity;
         $this->total_quantity = $resource->total_quantity;
         $this->control_number = $resource->control_number;
+        $this->modal('manage-resource-modal')->show();
     }
 
     public function updateSelected()
@@ -188,6 +198,7 @@ class ResourceIndex extends Component
         $this->reset('image'); // clear temp
 
         $this->loadResources();
+        $this->activeTab = $this->type;
 
         $this->dispatch('resource-updated');
 
@@ -238,8 +249,9 @@ class ResourceIndex extends Component
             'control_number',
         ]);
 
-        $this->type = 'room';
+        $this->type = $this->activeTab;
         $this->total_quantity = 1;
+        $this->modal('manage-resource-modal')->show();
     }
 
     public function store()
@@ -261,6 +273,7 @@ class ResourceIndex extends Component
             'created_by' => auth()->id(),
             'control_number' => $this->control_number !== '' ? $this->control_number : null,
         ]);
+        $this->activeTab = $resource->type;
 
         // 🖼️ Handle image
         if ($this->image) {

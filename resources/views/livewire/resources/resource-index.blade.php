@@ -1,16 +1,23 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
 
 <div class="space-y-6" wire:poll.60s x-data x-on:wheel.capture="if ($event.target.matches('input[type=number]')) $event.target.blur()">
-    <p class="text-sm text-zinc-500">The remaining count accounts for approved bookings that have not ended and updates every minute. Pending requests hold their selected time slots when new reservations are checked.</p>
-    <div class="flex justify-end">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="inline-flex rounded-lg border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-700 dark:bg-zinc-800" role="tablist" aria-label="Resource types">
+            <button type="button" role="tab" aria-selected="{{ $activeTab === 'room' ? 'true' : 'false' }}"
+                wire:click="showTab('room')"
+                class="rounded-md px-4 py-2 text-sm font-medium {{ $activeTab === 'room' ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white' }}">
+                Rooms ({{ $resources->where('type', 'room')->count() }})
+            </button>
+            <button type="button" role="tab" aria-selected="{{ $activeTab === 'equipment' ? 'true' : 'false' }}"
+                wire:click="showTab('equipment')"
+                class="rounded-md px-4 py-2 text-sm font-medium {{ $activeTab === 'equipment' ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white' }}">
+                Equipment ({{ $resources->where('type', 'equipment')->count() }})
+            </button>
+        </div>
 
-        <flux:modal.trigger name="manage-resource-modal">
-
-            <flux:button wire:click="createNew" variant="primary">
-                + Add Resource
-            </flux:button>
-
-        </flux:modal.trigger>
+        <flux:button wire:click="createNew" variant="primary">
+            + Add {{ $activeTab === 'room' ? 'Room' : 'Equipment' }}
+        </flux:button>
 
     </div>
     @forelse ($sections as $section)
@@ -54,25 +61,23 @@
 
                 @php $availability = $availabilityNow[$resource->id]; @endphp
                 <div class="mt-2 text-sm font-medium {{ $availability['bookable'] > 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
-                    @if ($resource->isRoom())
-                        {{ $availability['bookable'] ? 'Uncommitted' : 'Committed to approved booking' }}
+                    @if ($resource->isRoom() && $availability['total'] === 0)
+                        Not available: capacity not set
                     @else
-                        Uncommitted: {{ $availability['bookable'] }} of {{ $availability['total'] }}
+                        Available: {{ $availability['bookable'] }}/{{ $availability['total'] }}
                     @endif
                 </div>
                 @if ($availability['approved'])
-                    <p class="text-xs text-zinc-500">Committed to approved bookings: {{ $availability['approved'] }}</p>
+                    <p class="text-xs text-zinc-500">Reserved for approved bookings: {{ $availability['approved'] }}</p>
                 @endif
 
                 <!-- Manage -->
                 <div class="mt-3">
 
-                    <flux:modal.trigger name="manage-resource-modal">
-                        <button wire:click="selectResource({{ $resource->id }})"
-                            class="text-sm text-blue-600 hover:underline">
-                            Manage
-                        </button>
-                    </flux:modal.trigger>
+                    <button wire:click="selectResource({{ $resource->id }})"
+                        class="text-sm text-blue-600 hover:underline">
+                        Manage
+                    </button>
 
                 </div>
 
@@ -81,7 +86,7 @@
         </div>
     </section>
     @empty
-        <div class="text-center text-gray-500">No resources available.</div>
+        <div class="text-center text-gray-500">No {{ $activeTab === 'room' ? 'rooms' : 'equipment' }} available.</div>
     @endforelse
     <flux:modal name="manage-resource-modal" class="md:w-[500px]">
 
@@ -90,10 +95,10 @@
             <!-- Header -->
             <div>
                 <flux:heading size="lg">
-                    {{ $selectedResourceId ? 'Manage Resource' : 'Add Resource' }}
+                    {{ $selectedResourceId ? 'Manage Resource' : 'Add ' . ($type === 'room' ? 'Room' : 'Equipment') }}
                 </flux:heading>
                 <flux:text class="text-sm text-gray-500">
-                    Edit resource details
+                    {{ $selectedResourceId ? 'Edit resource details' : 'Enter resource details' }}
                 </flux:text>
             </div>
             <div class="flex flex-col items-center gap-3">

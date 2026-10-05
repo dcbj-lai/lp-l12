@@ -4,10 +4,10 @@
         $unsentEditCounts = $isFacilityAdmin ? $this->unsentEditCounts : [];
     @endphp
 
-    <div class="flex flex-wrap gap-2">
+    <div class="inline-flex max-w-full flex-wrap rounded-lg border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-700 dark:bg-zinc-800" role="tablist" aria-label="Reservation status">
         @foreach (['all' => 'All', 'pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected', 'deleted' => 'Deleted'] as $status => $label)
-            <button type="button" wire:click="$set('statusFilter', '{{ $status }}')"
-                class="rounded-md border px-3 py-2 text-sm {{ $statusFilter === $status ? 'bg-[#9E1D20] text-white' : 'bg-white dark:bg-zinc-800' }}">{{ $label }}</button>
+            <button type="button" role="tab" aria-selected="{{ $statusFilter === $status ? 'true' : 'false' }}" wire:click="$set('statusFilter', '{{ $status }}')"
+                class="rounded-md px-4 py-2 text-sm font-medium {{ $statusFilter === $status ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white' }}">{{ $label }}</button>
         @endforeach
     </div>
 
