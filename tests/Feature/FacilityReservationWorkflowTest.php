@@ -637,6 +637,36 @@ class FacilityReservationWorkflowTest extends TestCase
         $this->assertSame('2026-10-13', $reservation->payment_due_at->toDateString());
     }
 
+    public function test_payment_can_be_recorded_after_soa_upload_before_email_is_sent(): void
+    {
+        Mail::fake();
+        Storage::fake(config('filesystems.facility_upload_disk'));
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
+        $reservation = ResourceReservation::create([
+            'requester_email' => 'a@example.com', 'title' => 'Uploaded SOA',
+            'start_datetime' => now()->addDay(), 'end_datetime' => now()->addDay()->addHour(),
+            'status' => 'approved', 'billing_status' => 'unbilled',
+            'soa_path' => 'reservations/soa/example.pdf', 'soa_email_pending' => true,
+            'payment_due_at' => today()->addDays(15),
+        ]);
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('selectForPayment', $reservation->id)->assertStatus(200)
+            ->set('paymentDate', today()->toDateString())
+            ->set('paymentProofs', [UploadedFile::fake()->create('proof.pdf', 100, 'application/pdf')])
+            ->call('recordPayment')->assertHasNoErrors();
+        $reservation->refresh();
+        $this->assertSame('paid', $reservation->billing_status);
+        $this->assertSame('approved', $reservation->status);
+        $this->assertNull($reservation->soa_sent_at);
+        $this->assertFalse($reservation->soa_email_pending);
+        $this->assertSame(1, $reservation->paymentProofs()->count());
+        Mail::assertQueued(\App\Mail\FacilityPaymentReceived::class, 1);
+        $reservation->update(['soa_path' => null]);
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('selectForPayment', $reservation->id)->assertStatus(422);
+    }
+
     public function test_approved_recurring_dates_appear_separately_and_bulk_approval_skips_conflicts(): void
     {
         Mail::fake();
@@ -723,7 +753,45 @@ class FacilityReservationWorkflowTest extends TestCase
         $this->assertDatabaseHas('resource_reservations', ['id' => $reservation->id, 'soa_path' => null, 'billing_status' => 'unbilled']);
     }
 
-    public function test_paid_soa_cannot_be_replaced_or_removed_even_from_stale_dialogs(): void
+    public function test_additional_payment_proofs_append_without_removing_existing_files(): void
+    {
+        Mail::fake();
+        Storage::fake(config('filesystems.facility_upload_disk'));
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
+        $oldPath = 'reservations/payments/approved.pdf';
+        Storage::disk(config('filesystems.facility_upload_disk'))->put($oldPath, 'old proof');
+        $reservation = ResourceReservation::create([
+            'requester_email' => 'a@example.com', 'title' => 'Additional payment',
+            'start_datetime' => now()->addDays(2), 'end_datetime' => now()->addDays(2)->addHour(),
+            'status' => 'approved', 'billing_status' => 'paid', 'soa_path' => 'soa.pdf',
+            'paid_at' => today()->subDay(), 'payment_proof_path' => $oldPath,
+        ]);
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('selectForPayment', $reservation->id)
+            ->set('paymentDate', today()->toDateString())
+            ->set('paymentProofs', [
+                UploadedFile::fake()->create('bank.pdf', 100, 'application/pdf'),
+                UploadedFile::fake()->create('receipt.pdf', 100, 'application/pdf'),
+            ])
+            ->call('recordPayment')->assertHasNoErrors();
+        $reservation->refresh();
+        $this->assertCount(3, $reservation->paymentProofs);
+        $this->assertSame($oldPath, $reservation->payment_proof_path);
+        $this->assertSame('paid', $reservation->billing_status);
+        foreach ($reservation->paymentProofs as $proof) {
+            Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($proof->path);
+        }
+        $this->assertSame(today()->subDay()->toDateString(), $reservation->paymentProofs->first()->paid_on->toDateString());
+        Mail::assertQueued(\App\Mail\FacilityPaymentReceived::class, 1);
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('selectForPayment', $reservation->id)
+            ->set('paymentProofs', [UploadedFile::fake()->create('invalid.txt', 10, 'text/plain')])
+            ->call('recordPayment')->assertHasErrors(['paymentProofs.0']);
+        $this->assertSame(3, $reservation->paymentProofs()->count());
+    }
+
+    public function test_paid_soa_replacement_requires_reason_and_preserves_payment_while_removal_stays_blocked(): void
     {
         Storage::fake(config('filesystems.facility_upload_disk'));
         $admin = User::factory()->create();
@@ -742,18 +810,24 @@ class FacilityReservationWorkflowTest extends TestCase
             ->set('billingId', $reservation->id)
             ->set('soaFile', UploadedFile::fake()->create('replacement.pdf', 100, 'application/pdf'))
             ->call('markBilled')
-            ->assertHasErrors(['soaFile']);
+            ->assertHasErrors(['soaReplacementReason']);
         Livewire::actingAs($admin)->test(ReservationIndex::class)
             ->set('removeSoaId', $reservation->id)->call('confirmSoaRemoval');
         Livewire::actingAs($admin)->test(ReservationIndex::class)
-            ->call('selectForBilling', $reservation->id)->assertStatus(422);
+            ->call('selectForBilling', $reservation->id)->assertStatus(200)
+            ->set('soaReplacementReason', 'Corrected organizer name')
+            ->set('soaFile', UploadedFile::fake()->create('replacement.pdf', 100, 'application/pdf'))
+            ->call('markBilled')->assertHasNoErrors();
         Livewire::actingAs($admin)->test(ReservationIndex::class)
             ->call('selectForSoaRemoval', $reservation->id)->assertStatus(422);
 
         $reservation->refresh();
         $this->assertSame('paid', $reservation->billing_status);
         $this->assertTrue($reservation->paid_at->equalTo($paidAt));
-        $this->assertSame($oldPath, $reservation->soa_path);
+        $this->assertNotSame($oldPath, $reservation->soa_path);
+        $this->assertSame('2026-10-13', $reservation->payment_due_at->toDateString());
+        $this->assertFalse($reservation->soa_email_pending);
+        $this->assertSame('Corrected organizer name', $reservation->soaRevisions()->first()->reason);
         Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($oldPath);
         Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->soa_path);
     }

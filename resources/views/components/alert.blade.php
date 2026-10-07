@@ -32,6 +32,7 @@
     show: false,
     message: '',
     type: 'success',
+    hideTimer: null,
     icons: @js($icons),
     borderColors: @js($borderColors),
     bgColors: @js($bgColors),
@@ -46,7 +47,8 @@
         this.type = typ;
         this.show = true;
 
-        setTimeout(() => this.show = false, 5000);
+        clearTimeout(this.hideTimer);
+        this.hideTimer = setTimeout(() => this.show = false, typ === 'warning' ? 10000 : 5000);
     }
 }" {{-- ✅ Session flash (on page load) --}} x-init="const initialMessage = @js($message);
 const initialType = @js($type);
@@ -60,11 +62,11 @@ if (initialMessage) {
     x-transition:enter="transform transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-x-10"
     x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transform transition ease-in duration-500"
     x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 translate-x-10"
-    class="fixed top-5 right-5 z-50 flex items-center space-x-3 px-5 py-3 rounded-lg border-l-4 shadow-lg"
+    class="fixed top-5 right-5 z-50 flex max-w-[calc(100vw-2.5rem)] sm:max-w-xl items-center space-x-3 px-5 py-3 rounded-lg border-l-4 shadow-lg"
     :class="styles">
     <span x-text="icons[type] ?? 'ℹ️'"></span>
 
-    <span class="text-sm flex-1" x-text="message"></span>
+    <span class="text-sm flex-1 min-w-0 break-words" x-text="message"></span>
 
     <button @click="show = false"
         class="text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-lg font-bold">

@@ -239,11 +239,13 @@ class FacilityBillingEmailTest extends TestCase
         $component = \Livewire\Livewire::test(\App\Livewire\Resources\ReservationIndex::class)
             ->call('selectForBilling', $reservation->id)
             ->set('soaFile', \Illuminate\Http\UploadedFile::fake()->create('new.pdf', 10, 'application/pdf'))
+            ->set('soaReplacementReason', 'Corrected statement')
             ->call('markBilled')->assertHasNoErrors();
         $this->assertSame('2026-10-22', $reservation->fresh()->payment_due_at->toDateString());
         $this->travel(2)->days();
         $component->call('selectForBilling', $reservation->id)
             ->set('soaFile', \Illuminate\Http\UploadedFile::fake()->create('replacement.pdf', 10, 'application/pdf'))
+            ->set('soaReplacementReason', 'Corrected statement')
             ->call('markBilled')->assertHasNoErrors();
         $this->assertSame('2026-10-24', $reservation->fresh()->payment_due_at->toDateString());
         $this->travel(1)->days();

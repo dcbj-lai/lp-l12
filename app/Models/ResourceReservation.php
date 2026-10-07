@@ -63,6 +63,16 @@ class ResourceReservation extends Model
         return $this->hasMany(FacilityBillingEmail::class, 'reservation_id');
     }
 
+    public function paymentProofs()
+    {
+        return $this->hasMany(FacilityPaymentProof::class, 'reservation_id')->orderBy('id');
+    }
+
+    public function soaRevisions()
+    {
+        return $this->hasMany(FacilitySoaRevision::class, 'reservation_id')->latest('id');
+    }
+
     public function latestBillingEmail()
     {
         return $this->hasOne(FacilityBillingEmail::class, 'reservation_id')->latestOfMany();

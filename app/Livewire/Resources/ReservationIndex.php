@@ -145,6 +145,10 @@ class ReservationIndex extends Component
     public ?int $removeSoaId = null;
     public bool $showRemoveSoaModal = false;
     public $soaFile;
+    public string $soaReplacementReason = '';
+    public bool $replacingSoa = false;
+    public bool $replacingPaidSoa = false;
+    public bool $billingFromDone = false;
     public string $soaSentDate = '';
     public ?int $billingEmailId = null;
     public string $billingEmailAction = 'soa';
@@ -152,6 +156,7 @@ class ReservationIndex extends Component
     public ?int $paymentId = null;
     public string $paymentDate = '';
     public $paymentProof;
+    public array $paymentProofs = [];
     public ?int $finishId = null;
 
     public function confirmFinishedEvent(): void
@@ -186,7 +191,7 @@ class ReservationIndex extends Component
         $direction = ($byRequestDate ? $this->requestDateSort : $this->eventDateSort) === 'desc' ? 'desc' : 'asc';
         $dateColumn = $byRequestDate ? 'created_at' : 'start_datetime';
 
-        return ResourceReservation::with(['resource', 'rooms', 'equipment', 'items.resource', 'latestBillingEmail', 'latestPaymentReminder'])
+        return ResourceReservation::with(['resource', 'rooms', 'equipment', 'items.resource', 'latestBillingEmail', 'latestPaymentReminder', 'paymentProofs', 'soaRevisions'])
             ->when($this->statusFilter === 'deleted', fn ($query) => $query->onlyTrashed())
             ->when($this->statusFilter === 'archive', fn ($query) => $query->archived())
             ->when(in_array($this->statusFilter, ['billed', 'paid']), fn ($query) => $query->where('status', 'approved')->where('billing_status', $this->statusFilter))
@@ -295,7 +300,7 @@ class ReservationIndex extends Component
             return collect();
         }
 
-        return ResourceReservation::withTrashed()->with(['resource', 'rooms', 'equipment', 'latestBillingEmail', 'latestPaymentReminder'])
+        return ResourceReservation::withTrashed()->with(['resource', 'rooms', 'equipment', 'latestBillingEmail', 'latestPaymentReminder', 'paymentProofs', 'soaRevisions'])
             ->where('recurrence_series_id', $this->selectedSeriesId)
             ->orderBy('start_datetime')->get();
     }
@@ -632,9 +637,13 @@ class ReservationIndex extends Component
     public function selectForBilling(int $id): void
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
-        $this->resetValidation(['soaFile', 'soaSentDate']);
+        $this->resetValidation(['soaFile', 'soaReplacementReason']);
         $reservation = ResourceReservation::findOrFail($id);
-        abort_if($reservation->soa_locked, 422, 'The SOA cannot be changed after payment is recorded.');
+        abort_unless($reservation->status === 'approved', 422);
+        $this->replacingSoa = (bool) $reservation->soa_path;
+        $this->replacingPaidSoa = $reservation->soa_locked;
+        $this->billingFromDone = $reservation->is_archived;
+        $this->soaReplacementReason = '';
         $this->billingId = $id;
         $this->soaSentDate = $reservation->soa_sent_at?->toDateString() ?? now()->toDateString();
         $this->soaFile = null;
@@ -646,47 +655,79 @@ class ReservationIndex extends Component
         $this->resetValidation('soaFile');
     }
 
+    private function cleanFailedUpload(string $path): void
+    {
+        try {
+            \Storage::disk(config('filesystems.facility_upload_disk'))->delete($path);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+    }
+
     public function markBilled(): void
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
-        $this->validate(['soaFile' => 'required|file|max:10240|mimes:pdf,doc,docx']);
         $reservation = ResourceReservation::findOrFail($this->billingId);
         abort_unless($reservation->status === 'approved', 422);
-        if ($reservation->soa_locked) {
-            $this->addError('soaFile', 'The SOA cannot be changed after payment is recorded.');
-            return;
-        }
+        $this->soaReplacementReason = trim($this->soaReplacementReason);
+        $this->validate([
+            'soaFile' => 'required|file|max:10240|mimes:pdf,doc,docx',
+            'soaReplacementReason' => ($reservation->soa_path ? 'required' : 'nullable').'|string|max:2000',
+        ], [
+            'soaFile.required' => 'Upload an SOA file.',
+            'soaFile.mimes' => 'The SOA must be a PDF or Word file.',
+            'soaFile.max' => 'The SOA must be 10 MB or smaller.',
+            'soaReplacementReason.required' => 'Enter a reason for replacing the SOA.',
+        ]);
         $oldPath = $reservation->soa_path;
         $path = null;
         try {
             \DB::transaction(function () use (&$reservation, &$oldPath, &$path) {
                 $reservation = ResourceReservation::whereKey($this->billingId)->lockForUpdate()->firstOrFail();
-                if ($reservation->soa_locked || $reservation->status !== 'approved') {
-                    throw new \RuntimeException('The SOA cannot be changed after payment is recorded.');
+                if ($reservation->status !== 'approved') {
+                    throw new \RuntimeException('Only approved reservations can upload an SOA.');
                 }
                 $oldPath = $reservation->soa_path;
+                if ($oldPath && trim($this->soaReplacementReason) === '') {
+                    throw new \RuntimeException('A reason is required to replace the SOA.');
+                }
                 $path = $this->soaFile->storeAs('reservations/soa', Str::uuid() . '.' . $this->soaFile->getClientOriginalExtension(), config('filesystems.facility_upload_disk'));
-                if (!$path) {
+                if (!$path || !\Storage::disk(config('filesystems.facility_upload_disk'))->exists($path)) {
                     throw new \RuntimeException('SOA upload failed. Please try again.');
                 }
-                $reservation->update([
-                    'soa_path' => $path, 'soa_email_pending' => true,
-                    'payment_due_at' => today()->addDays(15),
-                ]);
+                if ($oldPath) {
+                    $reservation->soaRevisions()->create([
+                        'previous_path' => $oldPath, 'replacement_path' => $path,
+                        'reason' => $this->soaReplacementReason, 'replaced_by' => auth()->id(),
+                    ]);
+                }
+                $updates = ['soa_path' => $path, 'soa_email_pending' => !$reservation->soa_locked];
+                if (!$reservation->soa_locked) {
+                    $updates['payment_due_at'] = today()->addDays(15);
+                    $updates['finished_confirmed_at'] = null;
+                    $updates['finished_confirmed_by'] = null;
+                }
+                $reservation->update($updates);
             });
         } catch (\Throwable $e) {
             if ($path) {
-                \Storage::disk(config('filesystems.facility_upload_disk'))->delete($path);
+                $this->cleanFailedUpload($path);
             }
             report($e);
             $this->addError('soaFile', $e instanceof \RuntimeException ? $e->getMessage() : 'SOA upload failed. Please try again.');
             return;
         }
-        if ($oldPath && $oldPath !== $path && !\Storage::disk(config('filesystems.facility_upload_disk'))->delete($oldPath)) {
-            report(new \RuntimeException('Unable to remove replaced SOA file: ' . $oldPath));
-        }
         $this->modal('billing-reservation')->close();
-        $this->dispatch('flash', type: 'success', message: 'SOA saved. Payment is due 15 days from today. Use Send SOA to requester to email it.');
+        $destination = $reservation->is_archived ? 'archive'
+            : (in_array($reservation->billing_status, ['billed', 'paid'], true) ? $reservation->billing_status : 'approved');
+        $tab = ['archive' => 'Done', 'approved' => 'Approved', 'billed' => 'Billed', 'paid' => 'Paid'][$destination];
+        $billingLabel = ucfirst($reservation->billing_status);
+        $this->statusFilter = $destination;
+        $message = 'SOA saved for "'.$reservation->title.'". Status: Approved · '.$billingLabel.'. View: '.$tab.'. ';
+        $message .= $reservation->soa_locked
+            ? 'Payment records retained.'
+            : ($reservation->soa_sent_at ? 'Updated SOA not sent. Use Billing → Send updated SOA.' : 'SOA not sent. Use Billing → Send SOA to requester.');
+        $this->dispatch('flash', type: $reservation->soa_locked ? 'success' : 'warning', message: $message);
     }
 
     public function selectBillingEmail(int $id, string $action = 'soa'): void
@@ -764,6 +805,7 @@ class ReservationIndex extends Component
                     'soa_path' => null, 'soa_sent_at' => null, 'payment_due_at' => null,
                     'billing_status' => 'unbilled', 'paid_at' => null, 'payment_proof_path' => null,
                     'soa_email_pending' => false,
+                    'finished_confirmed_at' => null, 'finished_confirmed_by' => null,
                 ]);
                 if ($paymentProofPath) {
                     \Storage::disk(config('filesystems.facility_upload_disk'))->delete($paymentProofPath);
@@ -771,7 +813,8 @@ class ReservationIndex extends Component
             });
             $this->removeSoaId = null;
             $this->showRemoveSoaModal = false;
-            $this->dispatch('flash', type: 'success', message: 'SOA removed. The reservation can now be deleted.');
+            $this->statusFilter = 'approved';
+            $this->dispatch('flash', type: 'success', message: 'SOA removed. Status: Approved · Unbilled. View: Approved. The reservation can now be deleted.');
         } catch (\Throwable $e) {
             $this->dispatch('flash', type: 'error', message: $e->getMessage());
         }
@@ -781,46 +824,70 @@ class ReservationIndex extends Component
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
         $reservation = ResourceReservation::findOrFail($id);
-        abort_unless($reservation->status === 'approved' && $reservation->soa_path && in_array($reservation->billing_status, ['billed', 'paid'], true), 422);
+        abort_unless($reservation->status === 'approved' && $reservation->soa_path, 422);
         $this->paymentId = $id;
         $this->paymentDate = $reservation->paid_at?->toDateString() ?? now()->toDateString();
         $this->paymentProof = null;
-        $this->resetValidation(['paymentDate', 'paymentProof']);
+        $this->paymentProofs = [];
+        $this->resetValidation(['paymentDate', 'paymentProof', 'paymentProofs']);
+    }
+
+    public function getPaymentReservationProperty()
+    {
+        return $this->paymentId ? ResourceReservation::with('paymentProofs')->find($this->paymentId) : null;
     }
 
     public function recordPayment(): void
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
         $reservation = ResourceReservation::findOrFail($this->paymentId);
-        abort_unless($reservation->status === 'approved' && $reservation->soa_path && in_array($reservation->billing_status, ['billed', 'paid'], true), 422);
+        abort_unless($reservation->status === 'approved' && $reservation->soa_path, 422);
         $this->validate([
             'paymentDate' => 'required|date|before_or_equal:today',
-            'paymentProof' => ($reservation->payment_proof_path ? 'nullable' : 'required') . '|file|max:10240|mimes:pdf,jpg,jpeg,png',
-        ]);
+            'paymentProof' => (!$reservation->payment_proof_path && !$reservation->paymentProofs()->exists() && !$this->paymentProofs ? 'required' : 'nullable') . '|file|max:10240|mimes:pdf,jpg,jpeg,png',
+            'paymentProofs' => 'array|max:10',
+            'paymentProofs.*' => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png',
+        ], ['paymentProof.required' => 'Upload at least one payment proof.']);
 
-        $oldPath = $reservation->payment_proof_path;
-        $path = null;
+        $paths = [];
         $paymentReceipt = null;
+        $paymentStatusMessage = '';
+        $savedReservation = null;
         try {
-            if ($this->paymentProof) {
-                $path = $this->paymentProof->storeAs('reservations/payments', Str::uuid() . '.' . $this->paymentProof->getClientOriginalExtension(), config('filesystems.facility_upload_disk'));
-                if (!$path) {
+            $uploads = $this->paymentProofs;
+            if ($this->paymentProof) { $uploads[] = $this->paymentProof; }
+            foreach ($uploads as $upload) {
+                $path = $upload->storeAs('reservations/payments', Str::uuid() . '.' . $upload->getClientOriginalExtension(), config('filesystems.facility_upload_disk'));
+                if ($path) {
+                    $paths[] = ['path' => $path, 'original_name' => $upload->getClientOriginalName()];
+                }
+                if (!$path || !\Storage::disk(config('filesystems.facility_upload_disk'))->exists($path)) {
                     throw new \RuntimeException('Payment proof upload failed.');
                 }
             }
-            \DB::transaction(function () use ($path, &$paymentReceipt) {
+            \DB::transaction(function () use ($paths, &$paymentReceipt, &$savedReservation) {
                 $reservation = ResourceReservation::whereKey($this->paymentId)->lockForUpdate()->firstOrFail();
-                if ($reservation->status !== 'approved' || !$reservation->soa_path || !in_array($reservation->billing_status, ['billed', 'paid'], true)) {
-                    throw new \RuntimeException('An approved billed reservation with an SOA is required.');
+                if ($reservation->status !== 'approved' || !$reservation->soa_path) {
+                    throw new \RuntimeException('An approved reservation with an SOA is required.');
                 }
                 $firstPayment = !$reservation->soa_locked;
+                if ($reservation->payment_proof_path && !$reservation->paymentProofs()->where('path', $reservation->payment_proof_path)->exists()) {
+                    $reservation->paymentProofs()->create([
+                        'path' => $reservation->payment_proof_path, 'original_name' => basename($reservation->payment_proof_path),
+                        'paid_on' => $reservation->paid_at?->toDateString(),
+                    ]);
+                }
+                foreach ($paths as $proof) {
+                    $reservation->paymentProofs()->create($proof + ['paid_on' => $this->paymentDate, 'recorded_by' => auth()->id()]);
+                }
                 $reservation->update([
                     'billing_status' => 'paid',
                     'paid_at' => \Carbon\Carbon::parse($this->paymentDate)->startOfDay(),
-                    'payment_proof_path' => $path ?: $reservation->payment_proof_path,
+                    'payment_proof_path' => $reservation->payment_proof_path ?: ($paths[0]['path'] ?? null),
                     'soa_email_pending' => false,
                 ]);
-                if ($firstPayment) {
+                $savedReservation = $reservation;
+                if ($firstPayment || $paths) {
                     $paymentReceipt = [
                         'recipient' => $reservation->requester_email,
                         'title' => $reservation->title, 'reservation_id' => $reservation->id,
@@ -829,14 +896,13 @@ class ReservationIndex extends Component
                     ];
                 }
             });
-            if ($path && $oldPath && $oldPath !== $path) {
-                \Storage::disk(config('filesystems.facility_upload_disk'))->delete($oldPath);
-            }
+            $this->statusFilter = $savedReservation->is_archived ? 'archive' : 'paid';
+            $tab = $savedReservation->is_archived ? 'Done' : 'Paid';
+            $paymentStatusMessage = 'Payment recorded for "'.$savedReservation->title.'". Status: Approved · Paid. View: '.$tab.'.';
             $this->modal('payment-reservation')->close();
-            $this->dispatch('flash', type: 'success', message: 'Payment and proof recorded.');
         } catch (\Throwable $e) {
-            if ($path) {
-                \Storage::disk(config('filesystems.facility_upload_disk'))->delete($path);
+            foreach ($paths as $proof) {
+                $this->cleanFailedUpload($proof['path']);
             }
             report($e);
             $this->addError('paymentProof', 'Payment could not be recorded. Please try again.');
@@ -848,11 +914,13 @@ class ReservationIndex extends Component
                     throw new \RuntimeException('A valid requester email address is required.');
                 }
                 Mail::to($paymentReceipt['recipient'])->queue(new \App\Mail\FacilityPaymentReceived($paymentReceipt));
-                $this->dispatch('flash', type: 'success', message: 'Payment recorded. Payment received email queued for the requester.');
+                $this->dispatch('flash', type: 'success', message: $paymentStatusMessage.' Payment received email queued.');
             } catch (\Throwable $e) {
                 report($e);
-                $this->dispatch('flash', type: 'error', message: 'Payment recorded, but its confirmation email could not be queued.');
+                $this->dispatch('flash', type: 'error', message: $paymentStatusMessage.' Confirmation email could not be queued.');
             }
+        } else {
+            $this->dispatch('flash', type: 'success', message: $paymentStatusMessage);
         }
     }
 

@@ -108,9 +108,10 @@
                                 <div class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">Rejection reason: {{ $res->approval_note }}</div>
                             @endif
                             <div class="flex flex-wrap gap-3 text-sm">
-                                @foreach (['floor_plan_path' => 'Floor plan', 'gate_pass_path' => 'Gate pass', 'attachment_path' => 'Attachment', 'soa_path' => 'SOA', 'payment_proof_path' => 'Payment proof'] as $field => $label)
+                                @foreach (['floor_plan_path' => 'Floor plan', 'gate_pass_path' => 'Gate pass', 'attachment_path' => 'Attachment', 'soa_path' => 'SOA'] as $field => $label)
                                     @if ($res->{$field}) <a class="text-blue-700 underline" href="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($res->{$field}) }}" target="_blank" rel="noopener">{{ $label }}</a> @endif
                                 @endforeach
+                                @include('livewire.resources.payment-proofs', ['reservation' => $res])
                             </div>
                             @if ($res->soa_sent_at) <div class="text-xs text-zinc-500">{{ $res->soa_email_pending ? 'Previous SOA sent' : 'SOA sent' }} {{ $res->soa_sent_at->format('M j, Y') }} · Due {{ $res->payment_due_at?->format('M j, Y') }}</div> @endif
                             @if ($res->paid_at) <div class="text-xs text-zinc-500">Paid {{ $res->paid_at->format('M j, Y') }}</div> @endif
@@ -138,7 +139,7 @@
                                     @if ($res->status === 'approved')
                                         @include('livewire.resources.soa-actions', ['reservation' => $res])
                                     @endif
-                                    @if ($res->soa_path && in_array($res->billing_status, ['billed', 'paid'], true)) <flux:modal.trigger name="payment-reservation"><flux:button size="sm" wire:click="selectForPayment({{ $res->id }})">{{ $res->billing_status === 'paid' ? 'Edit payment' : 'Record payment' }}</flux:button></flux:modal.trigger> @endif
+                                    @if ($res->status === 'approved' && $res->soa_path) <flux:modal.trigger name="payment-reservation"><flux:button size="sm" wire:click="selectForPayment({{ $res->id }})">Record payment</flux:button></flux:modal.trigger> @endif
                                 @endif
                                 @endif
                             </div>
@@ -196,9 +197,10 @@
                         @if ($occurrence->notes) <div class="text-xs whitespace-pre-line">Notes: {{ $occurrence->notes }}</div> @endif
                         @if ($occurrence->status === 'rejected' && $occurrence->approval_note) <div class="text-xs text-red-700">Rejection reason: {{ $occurrence->approval_note }}</div> @endif
                         <div class="flex flex-wrap items-center gap-3 text-xs">
-                            @foreach (['floor_plan_path' => 'Floor plan', 'gate_pass_path' => 'Gate pass', 'soa_path' => 'SOA', 'payment_proof_path' => 'Payment proof'] as $field => $label)
+                            @foreach (['floor_plan_path' => 'Floor plan', 'gate_pass_path' => 'Gate pass', 'soa_path' => 'SOA'] as $field => $label)
                                 @if ($occurrence->{$field}) <a class="text-blue-700 underline" href="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($occurrence->{$field}) }}" target="_blank" rel="noopener">{{ $label }}</a> @endif
                             @endforeach
+                                @include('livewire.resources.payment-proofs', ['reservation' => $occurrence])
                         </div>
                         <div class="flex flex-wrap gap-2">
                             @if ($occurrence->trashed())
@@ -218,7 +220,7 @@
                                     @if ($occurrence->status === 'approved')
                                         @include('livewire.resources.soa-actions', ['reservation' => $occurrence])
                                         @if ($occurrence->soa_path)
-                                            @if (in_array($occurrence->billing_status, ['billed', 'paid'])) <flux:modal.trigger name="payment-reservation"><flux:button size="sm" wire:click="selectForPayment({{ $occurrence->id }})">{{ $occurrence->billing_status === 'paid' ? 'Edit payment' : 'Record payment' }}</flux:button></flux:modal.trigger> @endif
+                                            <flux:modal.trigger name="payment-reservation"><flux:button size="sm" wire:click="selectForPayment({{ $occurrence->id }})">Record payment</flux:button></flux:modal.trigger>
                                         @endif
                                     @endif
                                 @endif
@@ -340,12 +342,35 @@
         @if ($billingEmailAction === 'reminder') <p class="text-sm">{{ $emailReservation?->payment_due_at?->isBefore(today()) ? 'This email will indicate that payment is overdue.' : 'This email will state the payment due date.' }}</p> @endif
         <div class="flex justify-end gap-2"><flux:button wire:click="cancelBillingEmail">Cancel</flux:button><flux:button variant="primary" wire:click="sendBillingEmail" wire:loading.attr="disabled" wire:target="sendBillingEmail">Send email</flux:button></div>
     </div></flux:modal>
-    <flux:modal name="billing-reservation" size="md"><div class="space-y-4 p-4"><h2 class="font-semibold">Statement of Account for #{{ $billingId }}</h2><flux:input type="file" wire:model="soaFile" label="Upload SOA (PDF or Word)" accept=".pdf,.doc,.docx" /><div wire:loading wire:target="soaFile" class="text-xs text-zinc-500">Uploading SOA...</div>@if ($soaFile) <p class="text-xs text-green-700">Ready: {{ $soaFile->getClientOriginalName() }}</p> @endif<p class="text-xs text-zinc-500">Saving does not send an email. Use Send SOA to requester after upload. Each upload or replacement resets the payment due date to 15 days from today. SOAs cannot be changed after payment.</p><div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="markBilled" wire:loading.attr="disabled" wire:target="soaFile,markBilled">Save SOA</flux:button></div></div></flux:modal>
-    <flux:modal name="payment-reservation" size="md"><div class="space-y-4 p-4"><h2 class="font-semibold">Record payment for #{{ $paymentId }}</h2>
+    <flux:modal name="billing-reservation" size="md"><div class="space-y-4 p-4">
+        <h2 class="font-semibold">Statement of Account for #{{ $billingId }}</h2>
+        @if ($billingFromDone && !$replacingPaidSoa)
+            <p class="text-sm text-amber-700">Uploading an SOA removes the “No payment required” designation. This booking will move from Done to Approved until payment is recorded.</p>
+        @endif
+        <flux:input type="file" wire:model="soaFile" label="Upload SOA (PDF or Word)" accept=".pdf,.doc,.docx" />
+        <div wire:loading wire:target="soaFile" class="text-xs text-zinc-500">Uploading SOA...</div>
+        @if ($soaFile) <p class="text-xs text-green-700">Ready: {{ $soaFile->getClientOriginalName() }}</p> @endif
+        @if ($replacingSoa) <flux:textarea wire:model="soaReplacementReason" label="Reason for replacing SOA" required maxlength="2000" /> @endif
+        <p class="text-xs text-zinc-500">@if ($replacingPaidSoa) Recorded payment and existing proofs will be retained. The previous SOA and replacement reason are kept for the record. @else Saving does not send an email. Each upload or replacement resets the payment due date to 15 days from today. Use Send SOA to requester after upload. @endif</p>
+        <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="markBilled" wire:loading.attr="disabled" wire:target="soaFile,markBilled">Save SOA</flux:button></div>
+    </div></flux:modal>
+    <flux:modal name="payment-reservation" size="md"><div class="space-y-4 p-4">
+        <h2 class="font-semibold">Record payment for #{{ $paymentId }}</h2>
+        @php $paymentReservation = $this->paymentReservation; @endphp
+        @if ($paymentReservation?->paymentProofs->isNotEmpty())
+            <h3 class="text-sm font-semibold">Recorded payment proofs</h3>
+            @foreach ($paymentReservation->paymentProofs as $proof)
+                <p class="text-sm"><a href="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($proof->path) }}" target="_blank" rel="noopener" class="text-blue-700 underline">{{ $proof->original_name }}</a> · {{ $proof->paid_on?->format('M j, Y') }}</p>
+            @endforeach
+        @endif
         <flux:input type="date" wire:model="paymentDate" label="Date paid" />
-        <flux:input type="file" wire:model="paymentProof" label="Proof of payment (PDF or image)" accept=".pdf,.jpg,.jpeg,.png" />
-        <div wire:loading wire:target="paymentProof" class="text-xs text-zinc-500">Uploading proof...</div>
-        @if ($paymentProof) <p class="text-xs text-green-700">Ready: {{ $paymentProof->getClientOriginalName() }}</p> @endif
-        <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="recordPayment" wire:loading.attr="disabled" wire:target="paymentProof,recordPayment">Save payment</flux:button></div>
+        <flux:input type="file" wire:model="paymentProofs" label="Payment proofs (PDF or images)" accept=".pdf,.jpg,.jpeg,.png" multiple />
+        <p class="text-xs text-zinc-500">Add up to 10 files, 10 MB each. Previously recorded files are retained.</p>
+        <div wire:loading wire:target="paymentProofs" class="text-xs text-zinc-500">Uploading proofs...</div>
+        @foreach ($paymentProofs as $proof) <p class="text-xs text-green-700">Ready: {{ $proof->getClientOriginalName() }}</p> @endforeach
+        @error('paymentProof') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+        @error('paymentProofs') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+        @foreach ($errors->get('paymentProofs.*') as $messages) @foreach ($messages as $message) <p class="text-sm text-red-600">{{ $message }}</p> @endforeach @endforeach
+        <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="recordPayment" wire:loading.attr="disabled" wire:target="paymentProofs,recordPayment">Save payment</flux:button></div>
     </div></flux:modal>
 </div>

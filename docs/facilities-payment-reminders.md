@@ -1,8 +1,8 @@
 # Facilities payment reminders
 
-Recording the first payment with proof queues a Payment received email to the requester. It confirms the Paid status, event, rooms, schedule, and date paid. Editing an already recorded payment does not send another confirmation. The local preview is /dev/facilities/billing-email/payment_received. No additional migration is required for this confirmation.
+Recording the first payment or adding a new batch of payment proofs queues a Payment received email to the requester. It confirms the Paid status, event, rooms, schedule, and date paid. Saving only a date correction does not send another confirmation. The local preview is /dev/facilities/billing-email/payment_received. No additional migration is required for this confirmation.
 
-Each SOA upload or replacement sets payment_due_at to 15 calendar days after upload in Asia/Manila. Sending the SOA preserves that date and marks the reservation Billed after successful delivery. Replacements must be sent before reminders resume. Paid reservations cannot change or remove their SOA.
+For unpaid bookings, each SOA upload or replacement sets payment_due_at to 15 calendar days after upload in Asia/Manila. Sending the SOA preserves that date and marks the reservation Billed after successful delivery. Replacements must be sent before reminders resume. Paid reservations may replace an SOA with a required reason, preserving payment records and due date, but cannot remove the SOA or send further billing reminders.
 
 The first scheduled task in this repository is facilities:payment-reminders, registered in routes/console.php for 08:00 Asia/Manila daily. It sends one upcoming reminder exactly seven days before the due date, only for approved unpaid billed reservations with the current SOA sent. It skips deleted reservations, missing or invalid recipients, queued billing emails, reminders already sent that day, and prior upcoming reminders for the same SOA. Queued jobs recheck payment and attachment state before sending. No automatic due-day or overdue emails are registered.
 
