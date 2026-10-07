@@ -48,7 +48,7 @@
                             <article wire:key="series-{{ $group['series_id'] }}" class="rounded-lg border bg-white p-4 shadow-sm dark:bg-zinc-800 space-y-3">
                                 <div>
                                     <div class="font-semibold">{{ $res->title }} <span class="text-xs font-normal text-zinc-500">· Recurring event</span></div>
-                                    <div class="text-xs text-zinc-500">{{ $res->recurrence_label ?: 'Recurring reservation' }} · {{ $res->room_names }} · {{ $res->requester_email }}</div>
+                                    <div class="text-xs text-zinc-500">{{ $res->recurrence_label ?: 'Recurring reservation' }} · {{ $res->room_names }} · @if($res->requester_name){{ $res->requester_name }} · @endif{{ $res->requester_email }}</div>
                                     <div class="mt-2 flex flex-wrap items-center gap-2">
                                         <flux:badge color="zinc">{{ $res->recurrence_total ?: $group['matched_count'] }} dates</flux:badge>
                                         @if ($group['conflict_count']) <flux:badge color="red">Conflict with approved booking: {{ $group['conflict_count'] }} {{ \Illuminate\Support\Str::plural('date', $group['conflict_count']) }}</flux:badge> @endif
@@ -80,7 +80,7 @@
                             @endif
                             <div @if ($statusFilter !== 'deleted' && $isFacilityAdmin) style="padding-right: 3rem;" @endif>
                                 <div class="font-semibold">{{ $res->title }} <span class="text-xs font-normal text-zinc-500">#{{ $res->id }}</span></div>
-                                <div class="text-xs text-zinc-500">Event: {{ $res->start_datetime->format('M j, Y g:i A') }}–{{ $res->end_datetime->format('M j, Y g:i A') }} · {{ $res->room_names }} · {{ $res->requester_email }}</div>
+                                <div class="text-xs text-zinc-500">Event: {{ $res->start_datetime->format('M j, Y g:i A') }}–{{ $res->end_datetime->format('M j, Y g:i A') }} · {{ $res->room_names }} · @if($res->requester_name){{ $res->requester_name }} · @endif{{ $res->requester_email }}</div>
                                 <div class="mt-2 flex flex-wrap items-center gap-2">
                                     <flux:badge color="{{ $res->status === 'approved' ? 'green' : ($res->status === 'rejected' ? 'red' : 'yellow') }}">{{ ['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$res->status] ?? $res->status }}</flux:badge>
                                     @if ($res->is_archived) <flux:badge color="zinc">Done{{ $res->finished_confirmed_at ? ' · No payment required' : '' }}</flux:badge> @endif
@@ -187,6 +187,7 @@
                         <div @if (!$occurrence->trashed() && $isFacilityAdmin) style="padding-right: 3rem;" @endif>
                             <div class="font-medium">{{ $occurrence->start_datetime->format('D, M j, Y') }} · {{ $occurrence->start_datetime->format('g:i A') }}–{{ $occurrence->end_datetime->format('g:i A') }}</div>
                             <div class="text-xs text-zinc-500">#{{ $occurrence->id }} · {{ $occurrence->recurrence_position }} of {{ $occurrence->recurrence_total }} · {{ $occurrence->room_names }}</div>
+                            @if($occurrence->requester_name)<div class="text-xs text-zinc-500">Requester: {{ $occurrence->requester_name }}</div>@endif
                             <div class="mt-2 flex flex-wrap items-center gap-2">
                                 <flux:badge color="{{ $occurrence->trashed() ? 'zinc' : ($occurrence->status === 'approved' ? 'green' : ($occurrence->status === 'rejected' ? 'red' : 'yellow')) }}">{{ $occurrence->trashed() ? 'Deleted' : (['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$occurrence->status] ?? $occurrence->status) }}</flux:badge>
                                 @if ($occurrenceConflicts) <flux:badge color="red">Conflict with approved booking</flux:badge> @endif
@@ -308,6 +309,7 @@
     <flux:modal name="remove-soa" size="sm" wire:key="remove-soa-modal" wire:model="showRemoveSoaModal"><div class="space-y-4 p-4"><h2 class="font-semibold">Remove SOA from reservation #{{ $removeSoaId }}</h2><p class="text-sm">This deletes the SOA file and clears billing and payment status and dates. The reservation will remain approved.</p><div class="flex justify-end gap-2"><flux:button wire:click="cancelSoaRemoval">Cancel</flux:button><flux:button variant="danger" wire:click="confirmSoaRemoval" wire:loading.attr="disabled" wire:target="confirmSoaRemoval" :disabled="$removeSoaId === null">Remove SOA</flux:button></div></div></flux:modal>
     <flux:modal name="edit-reservation" class="md:w-[600px]"><div class="space-y-3 p-4"><h2 class="font-semibold">Edit reservation #{{ $editId }}</h2>
         <flux:input wire:model="editTitle" label="Event name" />
+        <flux:input wire:model="editRequesterName" label="Name" maxlength="255" />
         <fieldset class="space-y-2 rounded-md border p-3"><legend class="px-1 text-sm font-medium">Rooms</legend>
             @foreach ($this->rooms->groupBy(fn ($room) => $room->floorLabel()) as $floor => $floorRooms)
                 <div class="text-xs font-semibold text-zinc-500">{{ $floor }}</div>

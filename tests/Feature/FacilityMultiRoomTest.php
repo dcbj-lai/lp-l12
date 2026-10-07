@@ -35,7 +35,7 @@ class FacilityMultiRoomTest extends TestCase
 
     private function payload(array $roomIds): array
     {
-        return ['title' => 'Two rooms', 'room_ids' => $roomIds, 'requester_email' => 'multi@example.test',
+        return ['title' => 'Two rooms', 'room_ids' => $roomIds, 'requester_name' => 'Multi Room Booker', 'requester_email' => 'multi@example.test',
             'start_datetime' => now()->addMonth()->startOfDay()->addHours(10), 'end_datetime' => now()->addMonth()->startOfDay()->addHours(11)];
     }
 

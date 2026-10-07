@@ -13,6 +13,7 @@ class ResourceReservation extends Model
     protected $fillable = [
         'user_id',
         'requester_email',
+        'requester_name',
         'resource_id',
         'title',
         'description',

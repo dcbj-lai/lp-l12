@@ -28,6 +28,9 @@ class CreateReservation extends Component
     #[Validate('required|email')]
     public $requester_email = '';
 
+    #[Validate('required|string|max:255', as: 'requester name')]
+    public $requester_name = '';
+
     #[Validate('nullable|exists:resources,id')]
     public $resource_id = null;
     #[Validate('required_without:resource_id|array|max:50')]
@@ -188,6 +191,7 @@ class CreateReservation extends Component
             $data = [
                 'user_id' => null, // 🔥 public booking
                 'requester_email' => $this->requester_email,
+                'requester_name' => trim($this->requester_name),
                 'resource_id' => $this->resource_id,
                 'room_ids' => $this->selectedRoomIds(),
                 'equipment_quantities' => $this->equipment_quantities,
@@ -217,6 +221,7 @@ class CreateReservation extends Component
 
             $this->reset([
                 'requester_email',
+                'requester_name',
                 'resource_id',
                 'room_ids',
                 'selected_room_to_add',

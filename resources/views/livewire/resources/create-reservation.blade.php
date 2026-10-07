@@ -11,6 +11,13 @@
             Request Details
         </div>
 
+        <div class="space-y-1">
+            <label for="requester_name" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Name</label>
+            <input id="requester_name" type="text" wire:model="requester_name" autocomplete="name" maxlength="255" aria-required="true"
+                class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
+            @error('requester_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+        </div>
+
         <!-- Email -->
         <div class="space-y-1">
             <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Your Email</label>

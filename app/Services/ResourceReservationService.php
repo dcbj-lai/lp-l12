@@ -223,6 +223,7 @@ class ResourceReservationService
             $reservation = ResourceReservation::create([
                 'user_id' => $data['user_id'] ?? null,
                 'requester_email' => $data['requester_email'] ?? null,
+                'requester_name' => $data['requester_name'] ?? null,
                 'resource_id' => $data['resource_id'] ?? null,
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
@@ -300,6 +301,7 @@ class ResourceReservationService
                 $reservation = ResourceReservation::create([
                     'user_id' => $data['user_id'] ?? null,
                     'requester_email' => $data['requester_email'] ?? null,
+                    'requester_name' => $data['requester_name'] ?? null,
                     'resource_id' => $data['resource_id'] ?? null,
                     'title' => $data['title'],
                     'start_datetime' => $occurrenceStart,
@@ -363,6 +365,7 @@ class ResourceReservationService
                 $reservation = ResourceReservation::create([
                     'user_id' => $data['user_id'] ?? null,
                     'requester_email' => $data['requester_email'] ?? null,
+                    'requester_name' => $data['requester_name'] ?? null,
                     'resource_id' => $data['resource_id'] ?? null,
                     'title' => $data['title'],
                     'start_datetime' => $occurrenceStart,
@@ -456,6 +459,7 @@ class ResourceReservationService
         $payload = array_merge([
             'user_id' => $reservation->user_id,
             'requester_email' => $reservation->requester_email,
+            'requester_name' => $reservation->requester_name,
             'resource_id' => $reservation->resource_id,
             'room_ids' => $reservation->roomIds(),
             'equipment_ids' => $reservation->equipment()->pluck('resources.id')->all(),
@@ -502,12 +506,13 @@ class ResourceReservationService
                 $this->validateRequestResources($payload['room_ids'], $equipment);
             }
 
-            $before = $reservation->only(['resource_id', 'title', 'start_datetime', 'end_datetime', 'notes', 'number_of_pax', 'setup_arrangement', 'contact_number', 'consumables', 'floor_plan_path', 'gate_pass_path']);
+            $before = $reservation->only(['requester_name', 'resource_id', 'title', 'start_datetime', 'end_datetime', 'notes', 'number_of_pax', 'setup_arrangement', 'contact_number', 'consumables', 'floor_plan_path', 'gate_pass_path']);
             $before['room_ids'] = $reservation->roomIds();
             $before['equipment_quantities'] = $reservation->equipment()->pluck('resource_reservation_items.quantity', 'resources.id')->all();
             $reservation->update([
                 'user_id' => $payload['user_id'] ?? null,
                 'requester_email' => $payload['requester_email'] ?? null,
+                'requester_name' => $payload['requester_name'] ?? null,
                 'resource_id' => $payload['resource_id'] ?? null,
                 'title' => $payload['title'],
                 'description' => $payload['description'] ?? null,

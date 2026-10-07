@@ -239,6 +239,7 @@ class FacilityReservationWorkflowTest extends TestCase
         $room = Resource::create(['name' => 'Room A', 'type' => 'room', 'capacity' => 20, 'created_by' => $owner->id]);
 
         Livewire::test(CreateReservation::class)
+            ->set('requester_name', '   ')
             ->set('requester_email', 'booker@example.com')
             ->set('resource_id', $room->id)
             ->set('title', 'Workshop')
@@ -246,7 +247,7 @@ class FacilityReservationWorkflowTest extends TestCase
             ->set('start_time', '09:00')
             ->set('end_time', '10:00')
             ->call('submitReservation')
-            ->assertHasErrors(['floor_plan', 'number_of_pax', 'setup_arrangement', 'contact_number']);
+            ->assertHasErrors(['requester_name', 'floor_plan', 'number_of_pax', 'setup_arrangement', 'contact_number']);
     }
 
     public function test_public_form_creates_recurring_booking_with_floor_plan_and_equipment_quantity(): void
@@ -258,6 +259,7 @@ class FacilityReservationWorkflowTest extends TestCase
         $display = Resource::create(['name' => 'Display', 'type' => 'equipment', 'total_quantity' => 3, 'created_by' => $owner->id]);
 
         Livewire::test(CreateReservation::class)
+            ->set('requester_name', 'Test Booker')
             ->set('requester_email', 'booker@example.com')
             ->set('resource_id', $room->id)
             ->set('title', 'Workshop')
@@ -275,6 +277,7 @@ class FacilityReservationWorkflowTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertDatabaseCount('resource_reservations', 2);
+        $this->assertSame(2, ResourceReservation::where('requester_name', 'Test Booker')->count());
         $this->assertDatabaseHas('resource_reservations', ['start_datetime' => '2026-10-06 09:00:00', 'end_datetime' => '2026-10-06 10:00:00']);
         $this->assertDatabaseHas('resource_reservation_items', ['resource_id' => $display->id, 'quantity' => 2]);
         $seriesIds = ResourceReservation::pluck('recurrence_series_id')->unique();
@@ -288,6 +291,7 @@ class FacilityReservationWorkflowTest extends TestCase
         $room = Resource::create(['name' => 'Room A', 'type' => 'room', 'capacity' => 20, 'created_by' => $owner->id]);
 
         Livewire::test(CreateReservation::class)
+            ->set('requester_name', 'Test Booker')
             ->set('requester_email', 'booker@example.com')
             ->set('resource_id', $room->id)
             ->set('title', 'Workshop')
@@ -313,6 +317,7 @@ class FacilityReservationWorkflowTest extends TestCase
         $room = Resource::create(['name' => 'Room A', 'type' => 'room', 'capacity' => 20, 'created_by' => $admin->id]);
 
         Livewire::test(CreateReservation::class)
+            ->set('requester_name', 'Test Booker')
             ->set('requester_email', 'booker@example.com')
             ->set('resource_id', $room->id)
             ->set('title', 'Weekly workshop')
@@ -391,6 +396,7 @@ class FacilityReservationWorkflowTest extends TestCase
         ]);
 
         Livewire::test(CreateReservation::class)
+            ->set('requester_name', 'Test Booker')
             ->set('requester_email', 'booker@example.com')
             ->set('resource_id', $room->id)
             ->set('title', 'Conflicting workshop')

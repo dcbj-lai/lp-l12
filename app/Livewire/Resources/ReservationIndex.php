@@ -128,6 +128,7 @@ class ReservationIndex extends Component
     }
     public ?int $editId = null;
     public string $editTitle = '';
+    public string $editRequesterName = '';
     public ?int $editRoomId = null;
     public array $editRoomIds = [];
     public string $editStart = '';
@@ -331,7 +332,7 @@ class ReservationIndex extends Component
             }
         }
         $labels = [
-            'title' => 'Event name', 'room_ids' => 'Rooms', 'start_datetime' => 'Start',
+            'requester_name' => 'Requester name', 'title' => 'Event name', 'room_ids' => 'Rooms', 'start_datetime' => 'Start',
             'end_datetime' => 'End', 'number_of_pax' => 'Number of pax',
             'setup_arrangement' => 'Setup arrangement', 'contact_number' => 'Contact number',
             'notes' => 'Notes', 'consumables' => 'Consumables',
@@ -572,6 +573,7 @@ class ReservationIndex extends Component
         $this->reset('reservationId', 'approvalNote');
         $this->editId = $id;
         $this->editTitle = $reservation->title;
+        $this->editRequesterName = $reservation->requester_name ?? '';
         $this->editRoomId = $reservation->resource_id;
         $this->editRoomIds = $reservation->roomIds();
         $this->editStart = $reservation->start_datetime->format('Y-m-d\TH:i');
@@ -615,6 +617,7 @@ class ReservationIndex extends Component
             return;
         }
         $this->validate([
+            'editRequesterName' => 'nullable|string|max:255',
             'editTitle' => 'required|string|max:255', 'editRoomIds' => 'required|array|min:1|max:50',
             'editRoomIds.*' => 'integer|distinct|exists:resources,id',
             'editStart' => 'required|date', 'editEnd' => 'required|date|after:editStart',
@@ -633,6 +636,7 @@ class ReservationIndex extends Component
                 }
             }
             $reservation = app(ResourceReservationService::class)->update($reservation, [
+                'requester_name' => trim($this->editRequesterName) ?: null,
                 'title' => $this->editTitle, 'room_ids' => $this->editRoomIds,
                 'start_datetime' => $this->editStart, 'end_datetime' => $this->editEnd,
                 'number_of_pax' => $this->editPax, 'setup_arrangement' => $this->editSetup,

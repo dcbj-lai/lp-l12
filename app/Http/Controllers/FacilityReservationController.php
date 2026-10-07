@@ -221,6 +221,7 @@ class FacilityReservationController extends Controller
 
         $validated = $request->validate([
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'requester_name' => [$partial ? 'sometimes' : 'required', 'string', 'max:255'],
             'requester_email' => [$partial ? 'sometimes' : 'required_without:user_id', 'nullable', 'email', 'max:255'],
             'resource_id' => [$partial ? 'sometimes' : 'required_without:room_ids', 'integer', Rule::exists('resources', 'id')->where(fn ($query) => $query->where('type', 'room'))],
             'room_ids' => [$partial ? 'sometimes' : 'required_without:resource_id', 'array', 'min:1', 'max:50'],
@@ -269,6 +270,7 @@ class FacilityReservationController extends Controller
             'description' => $reservation->description,
             'status' => $reservation->status,
             'requester_email' => $reservation->requester_email,
+            'requester_name' => $reservation->requester_name,
             'user' => $reservation->user ? [
                 'id' => $reservation->user->id,
                 'name' => $reservation->user->name,
