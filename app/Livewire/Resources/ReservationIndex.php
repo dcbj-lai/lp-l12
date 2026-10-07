@@ -426,6 +426,12 @@ class ReservationIndex extends Component
 
     public function confirmApprove(): void
     {
+        if (!$this->reservationId || !ResourceReservation::whereKey($this->reservationId)->exists()) {
+            $this->modal('approve-reservation')->close();
+            $this->reset('reservationId', 'approvalNote');
+            $this->dispatch('flash', type: 'warning', message: 'Please reopen the reservation before approving it.');
+            return;
+        }
         try {
             app(ResourceReservationService::class)->approveReservation(ResourceReservation::findOrFail($this->reservationId), auth()->id(), $this->approvalNote);
             $this->reset('reservationId', 'approvalNote');
@@ -560,6 +566,10 @@ class ReservationIndex extends Component
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
         $reservation = ResourceReservation::with('equipment')->findOrFail($id);
+        // Editing must not leave a previous decision dialog underneath it.
+        $this->modal('approve-reservation')->close();
+        $this->modal('reject-reservation')->close();
+        $this->reset('reservationId', 'approvalNote');
         $this->editId = $id;
         $this->editTitle = $reservation->title;
         $this->editRoomId = $reservation->resource_id;
@@ -575,6 +585,7 @@ class ReservationIndex extends Component
         $this->editEquipmentToAdd = null;
         $this->editFloorPlan = null;
         $this->editGatePass = null;
+        $this->modal('edit-reservation')->show();
     }
 
     public function addEditEquipment(): void
@@ -597,6 +608,12 @@ class ReservationIndex extends Component
     public function saveEdit(): void
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
+        if (!$this->editId || !ResourceReservation::whereKey($this->editId)->exists()) {
+            $this->modal('edit-reservation')->close();
+            $this->editId = null;
+            $this->dispatch('flash', type: 'warning', message: 'Please reopen the reservation before saving changes.');
+            return;
+        }
         $this->validate([
             'editTitle' => 'required|string|max:255', 'editRoomIds' => 'required|array|min:1|max:50',
             'editRoomIds.*' => 'integer|distinct|exists:resources,id',

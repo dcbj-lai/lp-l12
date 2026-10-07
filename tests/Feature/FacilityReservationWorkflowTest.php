@@ -24,6 +24,56 @@ class FacilityReservationWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_orphaned_approval_dialog_cannot_expose_a_model_query_error(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->set('approvalNote', 'An old dialog note')
+            ->call('confirmApprove')
+            ->assertDispatched('flash', type: 'warning', message: 'Please reopen the reservation before approving it.')
+            ->assertSet('approvalNote', null)
+            ->set('reservationId', 999999)->call('confirmApprove')
+            ->assertSet('reservationId', null);
+    }
+
+    public function test_opening_edit_clears_previous_decision_and_repeated_save_is_safe(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
+        $room = Resource::create(['name' => 'Modal QA Room', 'type' => 'room', 'capacity' => 20, 'created_by' => $admin->id]);
+        $reservation = ResourceReservation::create([
+            'resource_id' => $room->id, 'title' => 'Modal QA', 'status' => 'approved',
+            'start_datetime' => '2027-10-11 18:00', 'end_datetime' => '2027-10-11 18:30',
+        ]);
+        $component = Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('selectForDecision', $reservation->id)->set('approvalNote', 'Stale decision')
+            ->call('selectForEdit', $reservation->id)
+            ->assertSet('reservationId', null)->assertSet('approvalNote', null)
+            ->set('editNotes', 'Only the notes changed')
+            ->call('saveEdit')->assertHasNoErrors()->assertSet('editId', null);
+        $this->assertSame('approved', $reservation->fresh()->status);
+        $this->assertSame('Only the notes changed', $reservation->fresh()->notes);
+        $component->call('saveEdit')->assertHasNoErrors()
+            ->assertDispatched('flash', type: 'warning', message: 'Please reopen the reservation before saving changes.');
+        $this->assertSame(1, DB::table('resource_reservation_edits')->where('reservation_id', $reservation->id)->count());
+    }
+
+    public function test_booking_emails_include_equipment_quantity_and_approval_note(): void
+    {
+        $user = User::factory()->create();
+        $equipment = Resource::create(['name' => 'Smartboard QA', 'type' => 'equipment', 'total_quantity' => 3, 'created_by' => $user->id]);
+        $reservation = ResourceReservation::create([
+            'title' => 'Email quantities QA', 'status' => 'approved', 'approval_note' => 'Use the approved layout.',
+            'start_datetime' => '2027-10-11 18:00', 'end_datetime' => '2027-10-11 18:30',
+        ]);
+        $reservation->equipment()->attach($equipment->id, ['quantity' => 2]);
+        foreach (['requester', 'requester-approved', 'requester-rejected'] as $template) {
+            $this->assertStringContainsString('Smartboard QA × 2', view('emails.resource-booking.'.$template, ['reservation' => $reservation->fresh()])->render());
+        }
+        $this->assertStringContainsString('Use the approved layout.', (new \App\Mail\ResourceBookingApproved($reservation->fresh()))->render());
+    }
+
     public function test_bulk_deletion_protects_soa_and_only_deletes_confirmed_series_dates(): void
     {
         $admin = User::factory()->create();

@@ -134,7 +134,7 @@
                                     @if ($res->status === 'approved' && !$res->is_archived && $res->end_datetime->lte(now()) && !$res->soa_path && $res->billing_status === 'unbilled')
                                         <flux:modal.trigger name="finish-reservation"><flux:button size="sm" wire:click="$set('finishId', {{ $res->id }})">Confirm finished</flux:button></flux:modal.trigger>
                                     @endif
-                                    <flux:modal.trigger name="edit-reservation"><flux:button size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $res->id }})">Edit</flux:button></flux:modal.trigger>
+                                    <flux:button wire:key="edit-action-{{ $res->id }}" size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $res->id }})" wire:loading.attr="disabled">Edit</flux:button>
                                     @if (($unsentEditCounts[$res->id] ?? 0) > 0) <flux:button size="sm" wire:click="emailReservationChanges({{ $res->id }})" wire:loading.attr="disabled" wire:target="emailReservationChanges({{ $res->id }})">Email changes to requester</flux:button> @endif
                                     @if ($res->status === 'approved')
                                         @include('livewire.resources.soa-actions', ['reservation' => $res])
@@ -215,7 +215,7 @@
                                 @endif
                                 @if ($occurrence->status !== 'rejected') <flux:modal.trigger name="reject-reservation"><flux:button size="sm" variant="danger" wire:click="selectForDecision({{ $occurrence->id }})">Reject</flux:button></flux:modal.trigger> @endif
                                 @if ($isFacilityAdmin)
-                                    <flux:modal.trigger name="edit-reservation"><flux:button size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $occurrence->id }})">Edit</flux:button></flux:modal.trigger>
+                                    <flux:button wire:key="edit-occurrence-action-{{ $occurrence->id }}" size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $occurrence->id }})" wire:loading.attr="disabled">Edit</flux:button>
                                     @if (($unsentEditCounts[$occurrence->id] ?? 0) > 0) <flux:button size="sm" wire:click="emailReservationChanges({{ $occurrence->id }})">Email changes to requester</flux:button> @endif
                                     @if ($occurrence->status === 'approved')
                                         @include('livewire.resources.soa-actions', ['reservation' => $occurrence])
@@ -302,7 +302,7 @@
         @if ($this->decisionConflicts)
             <div class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">Cannot approve while this conflicts with an approved booking: {{ implode(', ', $this->decisionConflicts) }}. Edit the request or resolve the existing booking first.</div>
         @endif
-        <textarea wire:model="approvalNote" rows="3" class="w-full rounded-md border p-2" placeholder="Note (optional)"></textarea><div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="confirmApprove" :disabled="(bool) $this->decisionConflicts">Confirm</flux:button></div></div></flux:modal>
+        <textarea wire:model="approvalNote" rows="3" class="w-full rounded-md border p-2" placeholder="Note (optional)"></textarea><div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="confirmApprove" wire:loading.attr="disabled" wire:target="confirmApprove" :disabled="(bool) $this->decisionConflicts"><span wire:loading.remove wire:target="confirmApprove">Confirm</span><span wire:loading wire:target="confirmApprove">Approving…</span></flux:button></div></div></flux:modal>
     <flux:modal name="reject-reservation" size="md"><div class="space-y-4 p-4"><h2 class="font-semibold">Reject reservation</h2><textarea wire:model="approvalNote" rows="3" class="w-full rounded-md border p-2" placeholder="Reason (required)"></textarea>@error('approvalNote') <span class="text-xs text-red-600">{{ $message }}</span> @enderror<div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="danger" wire:click="confirmReject">Confirm</flux:button></div></div></flux:modal>
     <flux:modal name="delete-reservation" size="sm" wire:key="delete-reservation-modal" wire:model="showDeleteModal"><div class="space-y-4 p-4"><h2 class="font-semibold">Delete reservation #{{ $deleteId }}</h2><p class="text-sm">This reservation will be removed from the active list and can be restored from the database.</p><div class="flex justify-end gap-2"><flux:button wire:click="cancelDelete">Cancel</flux:button><flux:button variant="danger" wire:click="confirmDelete" wire:loading.attr="disabled" wire:target="confirmDelete" :disabled="$deleteId === null">Delete this reservation</flux:button></div></div></flux:modal>
     <flux:modal name="remove-soa" size="sm" wire:key="remove-soa-modal" wire:model="showRemoveSoaModal"><div class="space-y-4 p-4"><h2 class="font-semibold">Remove SOA from reservation #{{ $removeSoaId }}</h2><p class="text-sm">This deletes the SOA file and clears billing and payment status and dates. The reservation will remain approved.</p><div class="flex justify-end gap-2"><flux:button wire:click="cancelSoaRemoval">Cancel</flux:button><flux:button variant="danger" wire:click="confirmSoaRemoval" wire:loading.attr="disabled" wire:target="confirmSoaRemoval" :disabled="$removeSoaId === null">Remove SOA</flux:button></div></div></flux:modal>
@@ -331,7 +331,7 @@
             @endforelse
             <div class="flex items-end gap-2"><div class="flex-1"><flux:select wire:model="editEquipmentToAdd" label="Add equipment"><option value="">Select equipment</option>@foreach ($this->equipment as $item)@if (!array_key_exists($item->id, $editEquipment))<option value="{{ $item->id }}">{{ $item->name }}</option>@endif @endforeach</flux:select></div><flux:button wire:click="addEditEquipment">Add</flux:button></div>
         </div>
-        <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="saveEdit">Save changes</flux:button></div>
+        <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="saveEdit" wire:loading.attr="disabled" wire:target="saveEdit"><span wire:loading.remove wire:target="saveEdit">Save changes</span><span wire:loading wire:target="saveEdit">Saving…</span></flux:button></div>
     </div></flux:modal>
     <flux:modal name="billing-email" size="md" wire:model="showBillingEmailModal"><div class="space-y-4 p-4">
         @php $emailReservation = $this->billingEmailReservation; @endphp
