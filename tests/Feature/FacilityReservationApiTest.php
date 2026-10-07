@@ -20,7 +20,7 @@ class FacilityReservationApiTest extends TestCase
     {
         $admin = $this->facilityUser('facility.admin');
         $reservation = ResourceReservation::create([
-            'requester_email' => 'requester@example.com', 'title' => 'Workshop',
+            'requester_name' => 'API Test Booker', 'requester_email' => 'requester@example.com', 'title' => 'Workshop',
             'start_datetime' => '2026-10-06 09:00', 'end_datetime' => '2026-10-06 10:00',
             'status' => 'approved', 'billing_status' => 'billed',
             'soa_path' => 'reservations/soa/example.pdf',
@@ -53,9 +53,14 @@ class FacilityReservationApiTest extends TestCase
             'created_by' => $admin->id,
         ]);
 
+        $this->actingAs($admin, 'sanctum')
+            ->postJson(route('facility-reservations.api.store'), ['requester_name' => '   '])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['requester_name']);
+
         $createResponse = $this->actingAs($admin, 'sanctum')
             ->postJson(route('facility-reservations.api.store'), [
-                'requester_email' => 'requester@example.com',
+                'requester_name' => 'API Test Booker', 'requester_email' => 'requester@example.com',
                 'resource_id' => $room->id,
                 'equipment_ids' => [$projector->id],
                 'title' => 'Strategy Meeting',
@@ -69,6 +74,7 @@ class FacilityReservationApiTest extends TestCase
             ])
             ->assertCreated()
             ->assertJsonPath('data.title', 'Strategy Meeting')
+            ->assertJsonPath('data.requester_name', 'API Test Booker')
             ->assertJsonPath('data.status', 'pending')
             ->assertJsonPath('data.resource.id', $room->id)
             ->assertJsonPath('data.equipment.0.id', $projector->id);
@@ -126,7 +132,7 @@ class FacilityReservationApiTest extends TestCase
 
         $approver = $this->facilityUser('facility.approver');
         $reservation = ResourceReservation::create([
-            'requester_email' => 'requester@example.com',
+            'requester_name' => 'API Test Booker', 'requester_email' => 'requester@example.com',
             'title' => 'Facility Reservation',
             'start_datetime' => '2026-07-06 09:00:00',
             'end_datetime' => '2026-07-06 10:00:00',
@@ -160,7 +166,7 @@ class FacilityReservationApiTest extends TestCase
 
         $approver = $this->facilityUser('facility.approver');
         $reservation = ResourceReservation::create([
-            'requester_email' => 'requester@example.com',
+            'requester_name' => 'API Test Booker', 'requester_email' => 'requester@example.com',
             'title' => 'Facility Reservation',
             'start_datetime' => '2026-07-06 09:00:00',
             'end_datetime' => '2026-07-06 10:00:00',

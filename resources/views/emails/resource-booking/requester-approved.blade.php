@@ -46,7 +46,7 @@
                                 <p><strong>Equipment:</strong></p>
                                 <ul>
                                     @foreach ($reservation->equipment as $item)
-                                        <li>{{ $item->name }}</li>
+                                        <li>{{ $item->name }} × {{ $item->pivot->quantity }}</li>
                                     @endforeach
                                 </ul>
                             @endif

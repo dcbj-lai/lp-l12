@@ -128,6 +128,7 @@ class ReservationIndex extends Component
     }
     public ?int $editId = null;
     public string $editTitle = '';
+    public string $editRequesterName = '';
     public ?int $editRoomId = null;
     public array $editRoomIds = [];
     public string $editStart = '';
@@ -331,7 +332,7 @@ class ReservationIndex extends Component
             }
         }
         $labels = [
-            'title' => 'Event name', 'room_ids' => 'Rooms', 'start_datetime' => 'Start',
+            'requester_name' => 'Requester name', 'title' => 'Event name', 'room_ids' => 'Rooms', 'start_datetime' => 'Start',
             'end_datetime' => 'End', 'number_of_pax' => 'Number of pax',
             'setup_arrangement' => 'Setup arrangement', 'contact_number' => 'Contact number',
             'notes' => 'Notes', 'consumables' => 'Consumables',
@@ -426,6 +427,12 @@ class ReservationIndex extends Component
 
     public function confirmApprove(): void
     {
+        if (!$this->reservationId || !ResourceReservation::whereKey($this->reservationId)->exists()) {
+            $this->modal('approve-reservation')->close();
+            $this->reset('reservationId', 'approvalNote');
+            $this->dispatch('flash', type: 'warning', message: 'Please reopen the reservation before approving it.');
+            return;
+        }
         try {
             app(ResourceReservationService::class)->approveReservation(ResourceReservation::findOrFail($this->reservationId), auth()->id(), $this->approvalNote);
             $this->reset('reservationId', 'approvalNote');
@@ -560,8 +567,13 @@ class ReservationIndex extends Component
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
         $reservation = ResourceReservation::with('equipment')->findOrFail($id);
+        // Editing must not leave a previous decision dialog underneath it.
+        $this->modal('approve-reservation')->close();
+        $this->modal('reject-reservation')->close();
+        $this->reset('reservationId', 'approvalNote');
         $this->editId = $id;
         $this->editTitle = $reservation->title;
+        $this->editRequesterName = $reservation->requester_name ?? '';
         $this->editRoomId = $reservation->resource_id;
         $this->editRoomIds = $reservation->roomIds();
         $this->editStart = $reservation->start_datetime->format('Y-m-d\TH:i');
@@ -575,6 +587,7 @@ class ReservationIndex extends Component
         $this->editEquipmentToAdd = null;
         $this->editFloorPlan = null;
         $this->editGatePass = null;
+        $this->modal('edit-reservation')->show();
     }
 
     public function addEditEquipment(): void
@@ -597,7 +610,14 @@ class ReservationIndex extends Component
     public function saveEdit(): void
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
+        if (!$this->editId || !ResourceReservation::whereKey($this->editId)->exists()) {
+            $this->modal('edit-reservation')->close();
+            $this->editId = null;
+            $this->dispatch('flash', type: 'warning', message: 'Please reopen the reservation before saving changes.');
+            return;
+        }
         $this->validate([
+            'editRequesterName' => 'nullable|string|max:255',
             'editTitle' => 'required|string|max:255', 'editRoomIds' => 'required|array|min:1|max:50',
             'editRoomIds.*' => 'integer|distinct|exists:resources,id',
             'editStart' => 'required|date', 'editEnd' => 'required|date|after:editStart',
@@ -616,6 +636,7 @@ class ReservationIndex extends Component
                 }
             }
             $reservation = app(ResourceReservationService::class)->update($reservation, [
+                'requester_name' => trim($this->editRequesterName) ?: null,
                 'title' => $this->editTitle, 'room_ids' => $this->editRoomIds,
                 'start_datetime' => $this->editStart, 'end_datetime' => $this->editEnd,
                 'number_of_pax' => $this->editPax, 'setup_arrangement' => $this->editSetup,

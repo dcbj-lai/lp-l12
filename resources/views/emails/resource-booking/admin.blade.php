@@ -27,6 +27,7 @@
                         <td style="padding:20px;color:#18181b;font-size:14px;line-height:1.6;">
 
                             <!-- Requester -->
+                            @if($reservation->requester_name)<p><strong>Requester name:</strong> {{ $reservation->requester_name }}</p>@endif
                             <p style="margin:0 0 12px 0;">
                                 <strong>Requester Email:</strong><br>
                                 {{ $reservation->requester_email }}

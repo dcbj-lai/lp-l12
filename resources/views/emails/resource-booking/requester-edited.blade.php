@@ -9,6 +9,7 @@
         $details = [
             'Reservation number' => '#' . $reservation->id,
             'Event name' => $reservation->title,
+            'Requester name' => $reservation->requester_name,
             'Requester email' => $reservation->requester_email,
             'Rooms' => $reservation->room_names,
             'Start' => $reservation->start_datetime?->format('M j, Y g:i A'),

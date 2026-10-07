@@ -48,7 +48,7 @@
                             <article wire:key="series-{{ $group['series_id'] }}" class="rounded-lg border bg-white p-4 shadow-sm dark:bg-zinc-800 space-y-3">
                                 <div>
                                     <div class="font-semibold">{{ $res->title }} <span class="text-xs font-normal text-zinc-500">· Recurring event</span></div>
-                                    <div class="text-xs text-zinc-500">{{ $res->recurrence_label ?: 'Recurring reservation' }} · {{ $res->room_names }} · {{ $res->requester_email }}</div>
+                                    <div class="text-xs text-zinc-500">{{ $res->recurrence_label ?: 'Recurring reservation' }} · {{ $res->room_names }} · @if($res->requester_name){{ $res->requester_name }} · @endif{{ $res->requester_email }}</div>
                                     <div class="mt-2 flex flex-wrap items-center gap-2">
                                         <flux:badge color="zinc">{{ $res->recurrence_total ?: $group['matched_count'] }} dates</flux:badge>
                                         @if ($group['conflict_count']) <flux:badge color="red">Conflict with approved booking: {{ $group['conflict_count'] }} {{ \Illuminate\Support\Str::plural('date', $group['conflict_count']) }}</flux:badge> @endif
@@ -80,7 +80,7 @@
                             @endif
                             <div @if ($statusFilter !== 'deleted' && $isFacilityAdmin) style="padding-right: 3rem;" @endif>
                                 <div class="font-semibold">{{ $res->title }} <span class="text-xs font-normal text-zinc-500">#{{ $res->id }}</span></div>
-                                <div class="text-xs text-zinc-500">Event: {{ $res->start_datetime->format('M j, Y g:i A') }}–{{ $res->end_datetime->format('M j, Y g:i A') }} · {{ $res->room_names }} · {{ $res->requester_email }}</div>
+                                <div class="text-xs text-zinc-500">Event: {{ $res->start_datetime->format('M j, Y g:i A') }}–{{ $res->end_datetime->format('M j, Y g:i A') }} · {{ $res->room_names }} · @if($res->requester_name){{ $res->requester_name }} · @endif{{ $res->requester_email }}</div>
                                 <div class="mt-2 flex flex-wrap items-center gap-2">
                                     <flux:badge color="{{ $res->status === 'approved' ? 'green' : ($res->status === 'rejected' ? 'red' : 'yellow') }}">{{ ['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$res->status] ?? $res->status }}</flux:badge>
                                     @if ($res->is_archived) <flux:badge color="zinc">Done{{ $res->finished_confirmed_at ? ' · No payment required' : '' }}</flux:badge> @endif
@@ -134,7 +134,7 @@
                                     @if ($res->status === 'approved' && !$res->is_archived && $res->end_datetime->lte(now()) && !$res->soa_path && $res->billing_status === 'unbilled')
                                         <flux:modal.trigger name="finish-reservation"><flux:button size="sm" wire:click="$set('finishId', {{ $res->id }})">Confirm finished</flux:button></flux:modal.trigger>
                                     @endif
-                                    <flux:modal.trigger name="edit-reservation"><flux:button size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $res->id }})">Edit</flux:button></flux:modal.trigger>
+                                    <flux:button wire:key="edit-action-{{ $res->id }}" size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $res->id }})" wire:loading.attr="disabled">Edit</flux:button>
                                     @if (($unsentEditCounts[$res->id] ?? 0) > 0) <flux:button size="sm" wire:click="emailReservationChanges({{ $res->id }})" wire:loading.attr="disabled" wire:target="emailReservationChanges({{ $res->id }})">Email changes to requester</flux:button> @endif
                                     @if ($res->status === 'approved')
                                         @include('livewire.resources.soa-actions', ['reservation' => $res])
@@ -187,6 +187,7 @@
                         <div @if (!$occurrence->trashed() && $isFacilityAdmin) style="padding-right: 3rem;" @endif>
                             <div class="font-medium">{{ $occurrence->start_datetime->format('D, M j, Y') }} · {{ $occurrence->start_datetime->format('g:i A') }}–{{ $occurrence->end_datetime->format('g:i A') }}</div>
                             <div class="text-xs text-zinc-500">#{{ $occurrence->id }} · {{ $occurrence->recurrence_position }} of {{ $occurrence->recurrence_total }} · {{ $occurrence->room_names }}</div>
+                            @if($occurrence->requester_name)<div class="text-xs text-zinc-500">Requester: {{ $occurrence->requester_name }}</div>@endif
                             <div class="mt-2 flex flex-wrap items-center gap-2">
                                 <flux:badge color="{{ $occurrence->trashed() ? 'zinc' : ($occurrence->status === 'approved' ? 'green' : ($occurrence->status === 'rejected' ? 'red' : 'yellow')) }}">{{ $occurrence->trashed() ? 'Deleted' : (['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$occurrence->status] ?? $occurrence->status) }}</flux:badge>
                                 @if ($occurrenceConflicts) <flux:badge color="red">Conflict with approved booking</flux:badge> @endif
@@ -215,7 +216,7 @@
                                 @endif
                                 @if ($occurrence->status !== 'rejected') <flux:modal.trigger name="reject-reservation"><flux:button size="sm" variant="danger" wire:click="selectForDecision({{ $occurrence->id }})">Reject</flux:button></flux:modal.trigger> @endif
                                 @if ($isFacilityAdmin)
-                                    <flux:modal.trigger name="edit-reservation"><flux:button size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $occurrence->id }})">Edit</flux:button></flux:modal.trigger>
+                                    <flux:button wire:key="edit-occurrence-action-{{ $occurrence->id }}" size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $occurrence->id }})" wire:loading.attr="disabled">Edit</flux:button>
                                     @if (($unsentEditCounts[$occurrence->id] ?? 0) > 0) <flux:button size="sm" wire:click="emailReservationChanges({{ $occurrence->id }})">Email changes to requester</flux:button> @endif
                                     @if ($occurrence->status === 'approved')
                                         @include('livewire.resources.soa-actions', ['reservation' => $occurrence])
@@ -302,12 +303,13 @@
         @if ($this->decisionConflicts)
             <div class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">Cannot approve while this conflicts with an approved booking: {{ implode(', ', $this->decisionConflicts) }}. Edit the request or resolve the existing booking first.</div>
         @endif
-        <textarea wire:model="approvalNote" rows="3" class="w-full rounded-md border p-2" placeholder="Note (optional)"></textarea><div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="confirmApprove" :disabled="(bool) $this->decisionConflicts">Confirm</flux:button></div></div></flux:modal>
+        <textarea wire:model="approvalNote" rows="3" class="w-full rounded-md border p-2" placeholder="Note (optional)"></textarea><div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="confirmApprove" wire:loading.attr="disabled" wire:target="confirmApprove" :disabled="(bool) $this->decisionConflicts"><span wire:loading.remove wire:target="confirmApprove">Confirm</span><span wire:loading wire:target="confirmApprove">Approving…</span></flux:button></div></div></flux:modal>
     <flux:modal name="reject-reservation" size="md"><div class="space-y-4 p-4"><h2 class="font-semibold">Reject reservation</h2><textarea wire:model="approvalNote" rows="3" class="w-full rounded-md border p-2" placeholder="Reason (required)"></textarea>@error('approvalNote') <span class="text-xs text-red-600">{{ $message }}</span> @enderror<div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="danger" wire:click="confirmReject">Confirm</flux:button></div></div></flux:modal>
     <flux:modal name="delete-reservation" size="sm" wire:key="delete-reservation-modal" wire:model="showDeleteModal"><div class="space-y-4 p-4"><h2 class="font-semibold">Delete reservation #{{ $deleteId }}</h2><p class="text-sm">This reservation will be removed from the active list and can be restored from the database.</p><div class="flex justify-end gap-2"><flux:button wire:click="cancelDelete">Cancel</flux:button><flux:button variant="danger" wire:click="confirmDelete" wire:loading.attr="disabled" wire:target="confirmDelete" :disabled="$deleteId === null">Delete this reservation</flux:button></div></div></flux:modal>
     <flux:modal name="remove-soa" size="sm" wire:key="remove-soa-modal" wire:model="showRemoveSoaModal"><div class="space-y-4 p-4"><h2 class="font-semibold">Remove SOA from reservation #{{ $removeSoaId }}</h2><p class="text-sm">This deletes the SOA file and clears billing and payment status and dates. The reservation will remain approved.</p><div class="flex justify-end gap-2"><flux:button wire:click="cancelSoaRemoval">Cancel</flux:button><flux:button variant="danger" wire:click="confirmSoaRemoval" wire:loading.attr="disabled" wire:target="confirmSoaRemoval" :disabled="$removeSoaId === null">Remove SOA</flux:button></div></div></flux:modal>
     <flux:modal name="edit-reservation" class="md:w-[600px]"><div class="space-y-3 p-4"><h2 class="font-semibold">Edit reservation #{{ $editId }}</h2>
         <flux:input wire:model="editTitle" label="Event name" />
+        <flux:input wire:model="editRequesterName" label="Name" maxlength="255" />
         <fieldset class="space-y-2 rounded-md border p-3"><legend class="px-1 text-sm font-medium">Rooms</legend>
             @foreach ($this->rooms->groupBy(fn ($room) => $room->floorLabel()) as $floor => $floorRooms)
                 <div class="text-xs font-semibold text-zinc-500">{{ $floor }}</div>
@@ -331,7 +333,7 @@
             @endforelse
             <div class="flex items-end gap-2"><div class="flex-1"><flux:select wire:model="editEquipmentToAdd" label="Add equipment"><option value="">Select equipment</option>@foreach ($this->equipment as $item)@if (!array_key_exists($item->id, $editEquipment))<option value="{{ $item->id }}">{{ $item->name }}</option>@endif @endforeach</flux:select></div><flux:button wire:click="addEditEquipment">Add</flux:button></div>
         </div>
-        <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="saveEdit">Save changes</flux:button></div>
+        <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="saveEdit" wire:loading.attr="disabled" wire:target="saveEdit"><span wire:loading.remove wire:target="saveEdit">Save changes</span><span wire:loading wire:target="saveEdit">Saving…</span></flux:button></div>
     </div></flux:modal>
     <flux:modal name="billing-email" size="md" wire:model="showBillingEmailModal"><div class="space-y-4 p-4">
         @php $emailReservation = $this->billingEmailReservation; @endphp
