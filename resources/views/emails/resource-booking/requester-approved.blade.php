@@ -39,7 +39,7 @@
                             </p>
 
                             @if ($reservation->resource)
-                                <p><strong>Room:</strong><br>{{ $reservation->resource->name }}</p>
+                                <p><strong>Rooms:</strong><br>{{ $reservation->room_names }}</p>
                             @endif
 
                             @if ($reservation->equipment->count())
@@ -53,6 +53,13 @@
 
                             @if ($reservation->notes)
                                 <p><strong>Notes:</strong><br>{{ $reservation->notes }}</p>
+                            @endif
+
+                            @if (filled($reservation->approval_note))
+                                <div style="margin:16px 0;padding:12px 16px;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:4px;">
+                                    <strong>Approval note:</strong><br>
+                                    <div style="margin-top:6px;white-space:pre-line;">{{ $reservation->approval_note }}</div>
+                                </div>
                             @endif
 
                             <p style="margin-top:16px;">

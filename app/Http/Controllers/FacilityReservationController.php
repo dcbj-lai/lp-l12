@@ -32,11 +32,12 @@ class FacilityReservationController extends Controller
         $perPage = (int) ($validated['per_page'] ?? 25);
 
         $reservations = ResourceReservation::query()
-            ->with(['resource', 'equipment', 'approver', 'user'])
+            ->with(['resource', 'rooms', 'equipment', 'approver', 'user'])
             ->when($status !== 'all', fn ($query) => $query->where('status', $status))
             ->when(isset($validated['resource_id']), function ($query) use ($validated) {
                 $query->where(function ($query) use ($validated) {
                     $query->where('resource_id', $validated['resource_id'])
+                        ->orWhereHas('rooms', fn ($rooms) => $rooms->whereKey($validated['resource_id']))
                         ->orWhereHas('equipment', fn ($equipment) => $equipment->whereKey($validated['resource_id']));
                 });
             })
@@ -54,6 +55,7 @@ class FacilityReservationController extends Controller
                         ->orWhereRaw('LOWER(notes) LIKE ?', [$like])
                         ->orWhereRaw('LOWER(approval_note) LIKE ?', [$like])
                         ->orWhereHas('resource', fn ($resource) => $resource->whereRaw('LOWER(name) LIKE ?', [$like]))
+                        ->orWhereHas('rooms', fn ($rooms) => $rooms->whereRaw('LOWER(name) LIKE ?', [$like]))
                         ->orWhereHas('equipment', fn ($equipment) => $equipment->whereRaw('LOWER(name) LIKE ?', [$like]));
                 });
             })
@@ -93,7 +95,7 @@ class FacilityReservationController extends Controller
     public function show(ResourceReservation $reservation)
     {
         return response()->json([
-            'data' => $this->reservationPayload($reservation->load(['resource', 'equipment', 'approver', 'user'])),
+            'data' => $this->reservationPayload($reservation->load(['resource', 'rooms', 'equipment', 'approver', 'user'])),
         ]);
     }
 
@@ -106,7 +108,7 @@ class FacilityReservationController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'message' => $e->getMessage(),
-                'data' => $this->reservationPayload($reservation->fresh(['resource', 'equipment', 'approver', 'user'])),
+                'data' => $this->reservationPayload($reservation->fresh(['resource', 'rooms', 'equipment', 'approver', 'user'])),
             ], 409);
         }
 
@@ -117,13 +119,13 @@ class FacilityReservationController extends Controller
 
     public function destroy(ResourceReservation $reservation, ResourceReservationService $service)
     {
-        if ($reservation->status === 'approved' && $reservation->soa_path) {
-            return response()->json(['message' => 'Remove the SOA before deleting this approved reservation.'], 409);
+        if ($reservation->soa_path) {
+            return response()->json(['message' => 'Remove the SOA before deleting this reservation.'], 409);
         }
         if ($reservation->google_event_id && !$service->deleteGoogleCalendarEvent($reservation)) {
             return response()->json([
                 'message' => 'Unable to delete the Google Calendar event. Reservation was not deleted.',
-                'data' => $this->reservationPayload($reservation->fresh(['resource', 'equipment', 'approver', 'user'])),
+                'data' => $this->reservationPayload($reservation->fresh(['resource', 'rooms', 'equipment', 'approver', 'user'])),
             ], 409);
         }
 
@@ -172,7 +174,7 @@ class FacilityReservationController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'message' => $e->getMessage(),
-                'data' => $this->reservationPayload($reservation->fresh(['resource', 'equipment', 'approver', 'user'])),
+                'data' => $this->reservationPayload($reservation->fresh(['resource', 'rooms', 'equipment', 'approver', 'user'])),
             ], 409);
         }
 
@@ -189,7 +191,7 @@ class FacilityReservationController extends Controller
             return response()->json([
                 'cleaned' => false,
                 'message' => 'Reservation has no Google Calendar event ID.',
-                'data' => $this->reservationPayload($reservation->load(['resource', 'equipment', 'approver', 'user'])),
+                'data' => $this->reservationPayload($reservation->load(['resource', 'rooms', 'equipment', 'approver', 'user'])),
             ]);
         }
 
@@ -197,7 +199,7 @@ class FacilityReservationController extends Controller
             return response()->json([
                 'cleaned' => false,
                 'message' => 'Unable to delete the Google Calendar event.',
-                'data' => $this->reservationPayload($reservation->fresh(['resource', 'equipment', 'approver', 'user'])),
+                'data' => $this->reservationPayload($reservation->fresh(['resource', 'rooms', 'equipment', 'approver', 'user'])),
             ], 409);
         }
 
@@ -206,7 +208,7 @@ class FacilityReservationController extends Controller
         return response()->json([
             'cleaned' => true,
             'deleted_google_event_id' => $eventId,
-            'data' => $this->reservationPayload($reservation->fresh(['resource', 'equipment', 'approver', 'user'])),
+            'data' => $this->reservationPayload($reservation->fresh(['resource', 'rooms', 'equipment', 'approver', 'user'])),
         ]);
     }
 
@@ -220,7 +222,9 @@ class FacilityReservationController extends Controller
         $validated = $request->validate([
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'requester_email' => [$partial ? 'sometimes' : 'required_without:user_id', 'nullable', 'email', 'max:255'],
-            'resource_id' => [$partial ? 'sometimes' : 'required', 'integer', Rule::exists('resources', 'id')->where(fn ($query) => $query->where('type', 'room'))],
+            'resource_id' => [$partial ? 'sometimes' : 'required_without:room_ids', 'integer', Rule::exists('resources', 'id')->where(fn ($query) => $query->where('type', 'room'))],
+            'room_ids' => [$partial ? 'sometimes' : 'required_without:resource_id', 'array', 'min:1', 'max:50'],
+            'room_ids.*' => ['integer', 'distinct', Rule::exists('resources', 'id')->where(fn ($query) => $query->where('type', 'room'))],
             'equipment_ids' => [$partial ? 'sometimes' : 'nullable', 'array'],
             'equipment_quantities' => [$partial ? 'sometimes' : 'nullable', 'array'],
             'equipment_quantities.*' => ['integer', 'min:1'],
@@ -257,7 +261,7 @@ class FacilityReservationController extends Controller
 
     protected function reservationPayload(ResourceReservation $reservation): array
     {
-        $reservation->loadMissing(['resource', 'equipment', 'approver', 'user']);
+        $reservation->loadMissing(['resource', 'rooms', 'equipment', 'approver', 'user']);
 
         return [
             'id' => $reservation->id,
@@ -279,6 +283,10 @@ class FacilityReservationController extends Controller
                 'control_number' => $reservation->resource->control_number,
                 'total_quantity' => $reservation->resource->total_quantity,
             ] : null,
+            'rooms' => $reservation->rooms->map(fn ($room) => [
+                'id' => $room->id, 'name' => $room->name, 'floor' => $room->floor,
+                'location' => $room->location, 'capacity' => $room->capacity,
+            ])->values(),
             'equipment' => $reservation->equipment
                 ->map(fn ($resource) => [
                     'id' => $resource->id,

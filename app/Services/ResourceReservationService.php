@@ -32,7 +32,8 @@ class ResourceReservationService
             return false;
         }
 
-        $primaryConflict = ResourceReservation::where('resource_id', $resourceId)
+        $primaryConflict = ResourceReservation::where(fn ($query) => $query->where('resource_id', $resourceId)
+            ->orWhereHas('rooms', fn ($rooms) => $rooms->whereKey($resourceId)))
             ->where('status', 'approved')
             ->when($ignoreReservationId, fn ($query) => $query->whereKeyNot($ignoreReservationId))
             ->where(function ($query) use ($start, $end) {
@@ -102,12 +103,15 @@ class ResourceReservationService
      * Validate all resources (room + equipment)
      */
     public function validateAvailability(
-        ?int $primaryResourceId,
+        int|array|null $primaryResourceId,
         array $equipmentQuantities,
         $start,
         $end,
         ?int $ignoreReservationId = null
     ): void {
+        if (!(array) $primaryResourceId) {
+            throw new \InvalidArgumentException('Room selection is required.');
+        }
         $this->validateRequestResources($primaryResourceId, $equipmentQuantities);
         $conflicts = $this->approvedConflictNames($primaryResourceId, $equipmentQuantities, $start, $end, $ignoreReservationId);
         if ($conflicts) {
@@ -115,13 +119,17 @@ class ResourceReservationService
         }
     }
 
-    public function validateRequestResources(?int $primaryResourceId, array $equipmentQuantities): void
+    public function validateRequestResources(int|array|null $primaryResourceId, array $equipmentQuantities): void
     {
-        if ($primaryResourceId && !Resource::findOrFail($primaryResourceId)->isRoom()) {
-            throw new \InvalidArgumentException('Select a room for the reservation.');
-        }
-        if ($primaryResourceId && (int) Resource::findOrFail($primaryResourceId)->capacity < 1) {
-            throw new \InvalidArgumentException('The selected room has no capacity.');
+        $roomIds = (array) $primaryResourceId;
+        foreach ($roomIds as $roomId) {
+            $room = Resource::findOrFail($roomId);
+            if (!$room->isRoom()) {
+                throw new \InvalidArgumentException('Select a room for the reservation.');
+            }
+            if ((int) $room->capacity < 1) {
+                throw new \InvalidArgumentException($room->name . ' has no capacity.');
+            }
         }
         foreach ($equipmentQuantities as $id => $quantity) {
             $resource = Resource::findOrFail($id);
@@ -131,11 +139,13 @@ class ResourceReservationService
         }
     }
 
-    public function approvedConflictNames(?int $primaryResourceId, array $equipmentQuantities, $start, $end, ?int $ignoreReservationId = null): array
+    public function approvedConflictNames(int|array|null $primaryResourceId, array $equipmentQuantities, $start, $end, ?int $ignoreReservationId = null): array
     {
         $conflicts = [];
-        if ($primaryResourceId && !$this->isResourceAvailable($primaryResourceId, $start, $end, $ignoreReservationId)) {
-            $conflicts[] = Resource::findOrFail($primaryResourceId)->name;
+        foreach ((array) $primaryResourceId as $roomId) {
+            if (!$this->isResourceAvailable((int) $roomId, $start, $end, $ignoreReservationId)) {
+                $conflicts[] = Resource::findOrFail($roomId)->name;
+            }
         }
         foreach ($equipmentQuantities as $id => $quantity) {
             $resource = Resource::findOrFail($id);
@@ -153,7 +163,7 @@ class ResourceReservationService
         }
         $reservation->loadMissing('equipment');
         return $this->approvedConflictNames(
-            $reservation->resource_id,
+            $reservation->roomIds(),
             $reservation->equipment->mapWithKeys(fn ($item) => [$item->id => $item->pivot->quantity])->all(),
             $reservation->start_datetime,
             $reservation->end_datetime,
@@ -173,22 +183,23 @@ class ResourceReservationService
             ->filter(fn ($item) => $item->pivot->quantity > $this->availableEquipmentQuantity(
                 $item->id, $reservation->start_datetime, $reservation->end_datetime, $reservation->id
             ))->pluck('id')->all();
-        $roomConflicts = $reservation->resource_id && !$this->isResourceAvailable(
-            $reservation->resource_id, $reservation->start_datetime, $reservation->end_datetime, $reservation->id
-        );
+        $roomConflicts = array_values(array_filter($reservation->roomIds(), fn ($id) => !$this->isResourceAvailable(
+            $id, $reservation->start_datetime, $reservation->end_datetime, $reservation->id
+        )));
 
         if (!$roomConflicts && !$equipmentIds) {
             return collect();
         }
 
-        return ResourceReservation::with(['resource', 'equipment'])
+        return ResourceReservation::with(['resource', 'rooms', 'equipment'])
             ->where('status', 'approved')
             ->whereKeyNot($reservation->id)
             ->where('start_datetime', '<', $reservation->end_datetime)
             ->where('end_datetime', '>', $reservation->start_datetime)
             ->where(function ($query) use ($roomConflicts, $reservation, $equipmentIds) {
                 if ($roomConflicts) {
-                    $query->where('resource_id', $reservation->resource_id);
+                    $query->where(fn ($rooms) => $rooms->whereIn('resource_id', $roomConflicts)
+                        ->orWhereHas('rooms', fn ($items) => $items->whereIn('resources.id', $roomConflicts)));
                 }
                 if ($equipmentIds) {
                     $method = $roomConflicts ? 'orWhereHas' : 'whereHas';
@@ -203,10 +214,11 @@ class ResourceReservationService
      */
     public function create(array $data): ResourceReservation
     {
+        $data = $this->normalizeRooms($data);
         $reservation = DB::transaction(function () use ($data) {
             $equipment = $this->equipmentQuantities($data);
-            $this->lockResources($data['resource_id'] ?? null, $equipment);
-            $this->validateRequestResources($data['resource_id'] ?? null, $equipment);
+            $this->lockResources($data['room_ids'], $equipment);
+            $this->validateRequestResources($data['room_ids'], $equipment);
 
             $reservation = ResourceReservation::create([
                 'user_id' => $data['user_id'] ?? null,
@@ -228,13 +240,14 @@ class ResourceReservationService
                 'recurrence_series_id' => $data['recurrence_series_id'] ?? null,
             ]);
 
+            $reservation->rooms()->sync($data['room_ids']);
             $reservation->equipment()->sync($this->equipmentPivot($equipment));
 
             return $reservation;
         });
 
         // 🔥 IMPORTANT: load relations AFTER transaction
-        $reservation->load('resource', 'equipment');
+        $reservation->load('resource', 'rooms', 'equipment');
 
         // 🔥 Send admin email (DO NOT break flow if it fails)
         \Mail::to(config('mail.resource_admin'))
@@ -249,6 +262,7 @@ class ResourceReservationService
 
     public function createSeries(array $data, string $frequency, int $occurrences): array
     {
+        $data = $this->normalizeRooms($data);
         if (!in_array($frequency, ['daily', 'weekly', 'monthly'], true) || $occurrences < 2 || $occurrences > 52) {
             throw new \InvalidArgumentException('Choose 2 to 52 daily, weekly, or monthly occurrences.');
         }
@@ -259,7 +273,7 @@ class ResourceReservationService
 
         $reservations = DB::transaction(function () use ($data, $frequency, $occurrences, $start, $end, $seriesId) {
             $equipment = $this->equipmentQuantities($data);
-            $this->lockResources($data['resource_id'] ?? null, $equipment);
+            $this->lockResources($data['room_ids'], $equipment);
             $dates = [];
             for ($i = 0; $i < $occurrences; $i++) {
                 $offsetStart = match ($frequency) {
@@ -274,7 +288,7 @@ class ResourceReservationService
                     }
                 }
                 try {
-                    $this->validateRequestResources($data['resource_id'] ?? null, $equipment);
+                    $this->validateRequestResources($data['room_ids'], $equipment);
                 } catch (\Throwable $e) {
                     throw new \RuntimeException($offsetStart->format('M j, Y') . ': ' . $e->getMessage(), previous: $e);
                 }
@@ -301,8 +315,9 @@ class ResourceReservationService
                     'gate_pass_path' => $data['gate_pass_path'] ?? null,
                     'recurrence_series_id' => $seriesId,
                 ]);
+                $reservation->rooms()->sync($data['room_ids']);
                 $reservation->equipment()->sync($this->equipmentPivot($equipment));
-                return $reservation->load('resource', 'equipment');
+                return $reservation->load('resource', 'rooms', 'equipment');
             }, $dates);
         });
 
@@ -318,6 +333,7 @@ class ResourceReservationService
 
     public function createSeriesForDates(array $data, array $eventDates, string $recurrenceLabel): array
     {
+        $data = $this->normalizeRooms($data);
         if (count($eventDates) < 2 || count($eventDates) > 52) {
             throw new \InvalidArgumentException('Choose 2 to 52 event dates.');
         }
@@ -329,13 +345,13 @@ class ResourceReservationService
 
         $reservations = DB::transaction(function () use ($data, $eventDates, $recurrenceLabel, $start, $duration, $seriesId) {
             $equipment = $this->equipmentQuantities($data);
-            $this->lockResources($data['resource_id'] ?? null, $equipment);
+            $this->lockResources($data['room_ids'], $equipment);
             $dates = [];
             foreach ($eventDates as $eventDate) {
                 $occurrenceStart = CarbonImmutable::parse($eventDate . ' ' . $start->format('H:i:s'));
                 $occurrenceEnd = $occurrenceStart->addSeconds($duration);
                 try {
-                    $this->validateRequestResources($data['resource_id'] ?? null, $equipment);
+                    $this->validateRequestResources($data['room_ids'], $equipment);
                 } catch (\Throwable $e) {
                     throw new \RuntimeException($occurrenceStart->format('M j, Y') . ': ' . $e->getMessage(), previous: $e);
                 }
@@ -364,8 +380,9 @@ class ResourceReservationService
                     'recurrence_position' => $index + 1,
                     'recurrence_total' => count($eventDates),
                 ]);
+                $reservation->rooms()->sync($data['room_ids']);
                 $reservation->equipment()->sync($this->equipmentPivot($equipment));
-                return $reservation->load('resource', 'equipment');
+                return $reservation->load('resource', 'rooms', 'equipment');
             }, $dates, array_keys($dates));
         });
 
@@ -385,14 +402,32 @@ class ResourceReservationService
         return collect($quantities)->mapWithKeys(fn ($quantity, $id) => [(int) $id => (int) $quantity])->all();
     }
 
+    private function normalizeRooms(array $data): array
+    {
+        $ids = array_key_exists('room_ids', $data) ? $data['room_ids'] : (!empty($data['resource_id']) ? [$data['resource_id']] : []);
+        if (!is_array($ids) || !$ids || count($ids) > 50) {
+            throw new \InvalidArgumentException('Select between 1 and 50 rooms.');
+        }
+        foreach ($ids as $id) {
+            if (filter_var($id, FILTER_VALIDATE_INT) === false || (int) $id < 1) {
+                throw new \InvalidArgumentException('Select valid rooms.');
+            }
+        }
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        sort($ids);
+        $data['room_ids'] = $ids;
+        $data['resource_id'] = $ids[0]; // Legacy clients continue to receive a primary room.
+        return $data;
+    }
+
     private function equipmentPivot(array $quantities): array
     {
         return collect($quantities)->mapWithKeys(fn ($quantity, $id) => [$id => ['quantity' => $quantity]])->all();
     }
 
-    private function lockResources(?int $roomId, array $equipment): void
+    private function lockResources(int|array|null $roomId, array $equipment): void
     {
-        $ids = array_values(array_unique(array_merge($roomId ? [$roomId] : [], array_keys($equipment))));
+        $ids = array_values(array_unique(array_merge((array) $roomId, array_keys($equipment))));
         sort($ids);
         Resource::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
     }
@@ -401,12 +436,13 @@ class ResourceReservationService
     {
         return DB::transaction(function () use ($reservation) {
             $equipment = $reservation->equipment()->pluck('resource_reservation_items.quantity', 'resources.id')->all();
-            $this->lockResources($reservation->resource_id, $equipment);
-            $this->validateRequestResources($reservation->resource_id, $equipment);
+            $this->lockResources($reservation->roomIds(), $equipment);
+            $this->validateRequestResources($reservation->roomIds(), $equipment);
             $reservation->restore();
             $reservation->update([
                 'status' => 'pending', 'approved_by' => null, 'approved_at' => null,
                 'approval_note' => null, 'google_event_id' => null,
+                'finished_confirmed_at' => null, 'finished_confirmed_by' => null,
             ]);
             return $reservation;
         });
@@ -414,10 +450,14 @@ class ResourceReservationService
 
     public function update(ResourceReservation $reservation, array $data): ResourceReservation
     {
+        if (array_key_exists('room_ids', $data) || array_key_exists('resource_id', $data)) {
+            $data = $this->normalizeRooms($data);
+        }
         $payload = array_merge([
             'user_id' => $reservation->user_id,
             'requester_email' => $reservation->requester_email,
             'resource_id' => $reservation->resource_id,
+            'room_ids' => $reservation->roomIds(),
             'equipment_ids' => $reservation->equipment()->pluck('resources.id')->all(),
             'equipment_quantities' => $reservation->equipment()->pluck('resource_reservation_items.quantity', 'resources.id')->all(),
             'title' => $reservation->title,
@@ -442,11 +482,11 @@ class ResourceReservationService
 
         $equipment = $this->equipmentQuantities($payload);
         DB::transaction(function () use ($reservation, $payload, $equipment, $wasApproved) {
-            $this->lockResources($payload['resource_id'] ?? null, $equipment);
+            $this->lockResources($payload['room_ids'], $equipment);
             if ($wasApproved) {
-                $this->validateAvailability($payload['resource_id'] ?? null, $equipment, $payload['start_datetime'], $payload['end_datetime'], $reservation->id);
+                $this->validateAvailability($payload['room_ids'], $equipment, $payload['start_datetime'], $payload['end_datetime'], $reservation->id);
             } else {
-                $this->validateRequestResources($payload['resource_id'] ?? null, $equipment);
+                $this->validateRequestResources($payload['room_ids'], $equipment);
             }
         });
 
@@ -455,14 +495,15 @@ class ResourceReservationService
         }
 
         $reservation = DB::transaction(function () use ($reservation, $payload, $equipment, $wasApproved) {
-            $this->lockResources($payload['resource_id'] ?? null, $equipment);
+            $this->lockResources($payload['room_ids'], $equipment);
             if ($wasApproved) {
-                $this->validateAvailability($payload['resource_id'] ?? null, $equipment, $payload['start_datetime'], $payload['end_datetime'], $reservation->id);
+                $this->validateAvailability($payload['room_ids'], $equipment, $payload['start_datetime'], $payload['end_datetime'], $reservation->id);
             } else {
-                $this->validateRequestResources($payload['resource_id'] ?? null, $equipment);
+                $this->validateRequestResources($payload['room_ids'], $equipment);
             }
 
             $before = $reservation->only(['resource_id', 'title', 'start_datetime', 'end_datetime', 'notes', 'number_of_pax', 'setup_arrangement', 'contact_number', 'consumables', 'floor_plan_path', 'gate_pass_path']);
+            $before['room_ids'] = $reservation->roomIds();
             $before['equipment_quantities'] = $reservation->equipment()->pluck('resource_reservation_items.quantity', 'resources.id')->all();
             $reservation->update([
                 'user_id' => $payload['user_id'] ?? null,
@@ -482,9 +523,11 @@ class ResourceReservationService
                 'gate_pass_path' => $payload['gate_pass_path'] ?? null,
             ]);
 
+            $reservation->rooms()->sync($payload['room_ids']);
             $reservation->equipment()->sync($this->equipmentPivot($equipment));
 
-            $after = $reservation->fresh()->only(array_diff(array_keys($before), ['equipment_quantities']));
+            $after = $reservation->fresh()->only(array_diff(array_keys($before), ['equipment_quantities', 'room_ids']));
+            $after['room_ids'] = $payload['room_ids'];
             $after['equipment_quantities'] = $equipment;
 
             if (json_encode($before) !== json_encode($after)) DB::table('resource_reservation_edits')->insert([
@@ -497,14 +540,14 @@ class ResourceReservationService
                 'updated_at' => now(),
             ]);
 
-            return $reservation->fresh(['resource', 'equipment']);
+            return $reservation->fresh(['resource', 'rooms', 'equipment']);
         });
 
         if ($hadGoogleEvent) {
             $this->recreateGoogleCalendarEvent($reservation);
         }
 
-        return $reservation->fresh(['resource', 'equipment']);
+        return $reservation->fresh(['resource', 'rooms', 'equipment']);
     }
 
     public function approveReservation(
@@ -516,13 +559,13 @@ class ResourceReservationService
         $reservation = DB::transaction(function () use ($reservation, $approverId, $note) {
             $reservation->load('equipment');
             $equipment = $reservation->equipment->mapWithKeys(fn ($item) => [$item->id => $item->pivot->quantity])->all();
-            $this->lockResources($reservation->resource_id, $equipment);
+            $this->lockResources($reservation->roomIds(), $equipment);
             $reservation->refresh()->load('equipment');
             if ($reservation->status === 'approved') {
                 throw new \Exception('Reservation is already approved.');
             }
             $equipment = $reservation->equipment->mapWithKeys(fn ($item) => [$item->id => $item->pivot->quantity])->all();
-            $this->validateAvailability($reservation->resource_id, $equipment, $reservation->start_datetime, $reservation->end_datetime, $reservation->id);
+            $this->validateAvailability($reservation->roomIds(), $equipment, $reservation->start_datetime, $reservation->end_datetime, $reservation->id);
             $reservation->update([
                 'status' => 'approved',
                 'approved_by' => $approverId,
@@ -550,7 +593,7 @@ class ResourceReservationService
             $reservation->update(['google_event_id' => $googleEventId]);
         }
 
-        $reservation->load(['resource', 'equipment']);
+        $reservation->load(['resource', 'rooms', 'equipment']);
 
         if ($reservation->requester_email) {
             try {
@@ -593,7 +636,7 @@ class ResourceReservationService
             'google_event_id' => $reservation->google_event_id,
         ]);
 
-        $reservation->load(['resource', 'equipment']);
+        $reservation->load(['resource', 'rooms', 'equipment']);
 
         if ($reservation->requester_email) {
             \Mail::to($reservation->requester_email)

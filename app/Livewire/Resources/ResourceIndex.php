@@ -84,7 +84,8 @@ class ResourceIndex extends Component
         $roomUsage = ResourceReservation::query()
             ->where('status', 'approved')
             ->where('end_datetime', '>', $now)
-            ->get(['resource_id'])
+            ->with('rooms')->get(['id', 'resource_id'])
+            ->flatMap(fn ($reservation) => collect($reservation->roomIds())->map(fn ($id) => (object) ['resource_id' => $id]))
             ->groupBy('resource_id');
 
         $equipmentUsage = DB::table('resource_reservation_items')

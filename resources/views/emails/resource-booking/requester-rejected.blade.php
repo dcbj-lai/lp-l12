@@ -39,7 +39,7 @@
                             </p>
 
                             @if ($reservation->resource)
-                                <p><strong>Room:</strong><br>{{ $reservation->resource->name }}</p>
+                                <p><strong>Rooms:</strong><br>{{ $reservation->room_names }}</p>
                             @endif
 
                             @if ($reservation->equipment->count())

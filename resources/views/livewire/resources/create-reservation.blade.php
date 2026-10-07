@@ -92,7 +92,7 @@
 
     <div class="rounded-lg border border-zinc-200 bg-white p-4 space-y-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
         <div class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 border-b pb-2">Recurring Event <span class="font-normal text-zinc-500">(optional)</span></div>
-        <p class="text-xs text-zinc-500">The event date above is the first booking. Each repeat uses the same room, equipment, and time.</p>
+        <p class="text-xs text-zinc-500">The event date above is the first booking. Each repeat uses the same rooms, equipment, and time.</p>
         <div class="space-y-1">
                 <label for="recurrence" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Repeat</label>
                 <select id="recurrence" wire:model.live="recurrence" class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-[#9E1D20] focus:ring-2 focus:ring-[#9E1D20]/20 dark:border-zinc-600 dark:bg-zinc-800">
@@ -169,7 +169,7 @@
                     <span wire:loading wire:target="checkSchedule">Checking...</span>
                 </flux:button>
             </div>
-            @if ($scheduleCheckAttempted && ($errors->has('resource_id') || $errors->has('event_date') || $errors->has('start_time') || $errors->has('end_time') || $errors->has('recurrence')))
+            @if ($scheduleCheckAttempted && ($errors->has('room_ids') || $errors->has('resource_id') || $errors->has('event_date') || $errors->has('start_time') || $errors->has('end_time') || $errors->has('recurrence')))
                 <p role="alert" class="rounded-md bg-red-50 p-2 text-red-800 dark:bg-red-950 dark:text-red-100">Select a room and enter a valid event date and time to check the schedule. Review any field errors above.</p>
             @endif
             @if ($scheduleConflictWarnings)
@@ -196,12 +196,35 @@
         </div>
 
         <!-- Room -->
-        <div class="space-y-1">
-            <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Room *</label>
-            <select wire:model.change="resource_id"
+        <div class="space-y-2">
+            <label for="room-to-add" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Rooms *</label>
+            <div class="min-h-[40px] w-full rounded-md border border-dashed border-zinc-300 dark:border-zinc-600 px-2 py-2 bg-zinc-50 dark:bg-zinc-800 flex flex-wrap gap-2">
+                @forelse($room_ids as $roomId)
+                    @php $room = $rooms->firstWhere('id', $roomId); @endphp
+                    @if ($room)
+                        <div class="relative group bg-[#9E1D20]/10 text-[#9E1D20] px-2 py-1 flex items-center gap-2 rounded-md text-xs border border-[#9E1D20]/20">
+                            <div class="flex items-center gap-2">
+                                @if ($room->image_path)
+                                    <img src="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($room->image_path) }}" class="w-5 h-5 rounded object-cover border">
+                                @endif
+                                <span>{{ $room->name }}</span>
+                            </div>
+                            <div class="pointer-events-none absolute left-1/2 bottom-full z-[9999] mb-2 hidden w-max max-w-[260px] -translate-x-1/2 whitespace-normal rounded-md bg-zinc-900 px-3 py-2 text-xs leading-relaxed text-white shadow-lg group-hover:block">
+                                {{ $room->description ?: 'No description available' }}
+                                <div class="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div>
+                            </div>
+                            <button type="button" wire:click="removeRoom({{ $roomId }})" aria-label="Remove {{ $room->name }}" class="text-red-500 hover:text-red-700 font-bold leading-none">×</button>
+                        </div>
+                    @endif
+                @empty
+                    <span class="text-xs text-gray-400">No rooms selected</span>
+                @endforelse
+            </div>
+            <div class="flex gap-2">
+            <select id="room-to-add" wire:model.live="selected_room_to_add"
                 class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
-                <option value="">Select a room</option>
-                @foreach ($rooms->groupBy(fn ($room) => $room->floorLabel()) as $floor => $floorRooms)
+                <option value="">Select rooms...</option>
+                @foreach ($rooms->reject(fn ($room) => in_array($room->id, $room_ids))->groupBy(fn ($room) => $room->floorLabel()) as $floor => $floorRooms)
                     <optgroup label="{{ $floor }}">
                         @foreach ($floorRooms as $room)
                             <option value="{{ $room->id }}">{{ $room->name }}</option>
@@ -209,27 +232,12 @@
                     </optgroup>
                 @endforeach
             </select>
+                        <button type="button" wire:click="addRoom" aria-label="Add room" class="px-4 py-2 bg-[#9E1D20] text-white rounded-md text-sm hover:bg-[#690F0D] shadow-sm" @disabled(!$selected_room_to_add)>Add</button>
+            </div>
+            <p class="text-xs text-zinc-500">Add one or more rooms for this event. Equipment is requested once for the whole booking.</p>
         </div>
         @error('resource_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-        @if ($resource_id)
-            @php
-                $selectedRoom = $rooms->firstWhere('id', $resource_id);
-            @endphp
-
-            @if ($selectedRoom && $selectedRoom->image_path)
-                <div class="mt-2 flex items-center gap-3 p-2 border rounded-md bg-zinc-50 dark:bg-zinc-800">
-                    <img src="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($selectedRoom->image_path) }}"
-                        class="w-14 h-14 object-cover rounded-md border">
-
-                    <div class="text-sm text-zinc-700 dark:text-zinc-200">
-                        <div class="font-medium">{{ $selectedRoom->name }}</div>
-                        <div class="text-xs text-gray-500">
-                            {{ $selectedRoom->location ?? '' }}
-                        </div>
-                    </div>
-                </div>
-            @endif
-        @endif
+        @error('room_ids') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
 
         <!-- Equipment -->
         <div class="space-y-2">

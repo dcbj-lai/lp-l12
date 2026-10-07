@@ -16,7 +16,7 @@ class FacilityReservationApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_api_rejects_deleting_approved_reservation_with_soa(): void
+    public function test_api_rejects_deleting_reservation_with_soa_in_any_status(): void
     {
         $admin = $this->facilityUser('facility.admin');
         $reservation = ResourceReservation::create([
@@ -26,10 +26,13 @@ class FacilityReservationApiTest extends TestCase
             'soa_path' => 'reservations/soa/example.pdf',
         ]);
 
-        $this->actingAs($admin, 'sanctum')
-            ->deleteJson(route('facility-reservations.api.destroy', $reservation))
-            ->assertStatus(409);
-        $this->assertDatabaseHas('resource_reservations', ['id' => $reservation->id, 'deleted_at' => null]);
+        foreach (['approved', 'pending', 'rejected'] as $status) {
+            $reservation->update(['status' => $status]);
+            $this->actingAs($admin, 'sanctum')
+                ->deleteJson(route('facility-reservations.api.destroy', $reservation))
+                ->assertStatus(409);
+            $this->assertDatabaseHas('resource_reservations', ['id' => $reservation->id, 'deleted_at' => null]);
+        }
     }
 
     public function test_facility_admin_can_crud_reservations_and_cleanup_google_calendar_event(): void

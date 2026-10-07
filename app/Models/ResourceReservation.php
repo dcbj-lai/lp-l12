@@ -41,6 +41,9 @@ class ResourceReservation extends Model
         'payment_due_at',
         'paid_at',
         'payment_proof_path',
+        'soa_email_pending',
+        'finished_confirmed_at',
+        'finished_confirmed_by',
     ];
 
     protected $casts = [
@@ -51,9 +54,44 @@ class ResourceReservation extends Model
         'soa_sent_at' => 'date',
         'payment_due_at' => 'date',
         'paid_at' => 'datetime',
+        'soa_email_pending' => 'boolean',
+        'finished_confirmed_at' => 'datetime',
     ];
 
+    public function billingEmails()
+    {
+        return $this->hasMany(FacilityBillingEmail::class, 'reservation_id');
+    }
+
+    public function latestBillingEmail()
+    {
+        return $this->hasOne(FacilityBillingEmail::class, 'reservation_id')->latestOfMany();
+    }
+
+    public function latestPaymentReminder()
+    {
+        return $this->hasOne(FacilityBillingEmail::class, 'reservation_id')->ofMany(['id' => 'max'], fn ($query) => $query->whereIn('kind', ['upcoming', 'due_today', 'overdue'])->where('status', 'sent'));
+    }
+
     // 🔗 Owner
+    public function scopeArchived($query)
+    {
+        return $query->where('status', 'approved')->where('end_datetime', '<=', now())
+            ->where(fn ($q) => $q->where('billing_status', 'paid')->orWhere(fn ($free) => $free
+                ->whereNotNull('finished_confirmed_at')->where('billing_status', 'unbilled')->whereNull('soa_path')));
+    }
+
+    public function getIsArchivedAttribute(): bool
+    {
+        return $this->status === 'approved' && $this->end_datetime?->lte(now())
+            && ($this->billing_status === 'paid' || ($this->finished_confirmed_at !== null && $this->billing_status === 'unbilled' && !$this->soa_path));
+    }
+
+    public function getSoaLockedAttribute(): bool
+    {
+        return $this->billing_status === 'paid' || $this->paid_at !== null;
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -63,6 +101,23 @@ class ResourceReservation extends Model
     public function resource()
     {
         return $this->belongsTo(Resource::class);
+    }
+
+    public function rooms()
+    {
+        return $this->belongsToMany(Resource::class, 'resource_reservation_rooms', 'reservation_id', 'resource_id')->orderBy('resources.name');
+    }
+
+    public function roomIds(): array
+    {
+        $ids = array_values(array_unique(array_merge($this->rooms->pluck('id')->all(), $this->resource_id ? [(int) $this->resource_id] : [])));
+        sort($ids);
+        return $ids;
+    }
+
+    public function getRoomNamesAttribute(): string
+    {
+        return $this->rooms->isNotEmpty() ? $this->rooms->pluck('name')->join(', ') : ($this->resource?->name ?? 'No room');
     }
 
     // 🔗 Equipment pivot

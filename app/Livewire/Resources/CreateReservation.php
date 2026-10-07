@@ -28,8 +28,11 @@ class CreateReservation extends Component
     #[Validate('required|email')]
     public $requester_email = '';
 
-    #[Validate('required|exists:resources,id')]
+    #[Validate('nullable|exists:resources,id')]
     public $resource_id = null;
+    #[Validate('required_without:resource_id|array|max:50')]
+    public array $room_ids = [];
+    public $selected_room_to_add = null;
     public $equipment_quantities = [];
 
     #[Validate('required|string|max:255')]
@@ -79,7 +82,7 @@ class CreateReservation extends Component
 
     protected function messages(): array
     {
-        return ['resource_id.required' => 'Room selection is required.'];
+        return ['resource_id.required' => 'Room selection is required.', 'room_ids.required_without' => 'Room selection is required.'];
     }
 
     public function mount()
@@ -121,6 +124,7 @@ class CreateReservation extends Component
     public function updated($property): void
     {
         if (in_array($property, ['resource_id', 'event_date', 'start_time', 'end_time', 'recurrence', 'occurrences', 'recurrence_ends', 'recurrence_until', 'custom_interval', 'custom_unit', 'custom_weekdays'], true)
+            || $property === 'room_ids' || str_starts_with($property, 'room_ids.')
             || str_starts_with($property, 'equipment_quantities.')) {
             $this->scheduleConflictWarnings = [];
             $this->scheduleChecked = false;
@@ -140,7 +144,7 @@ class CreateReservation extends Component
         $recurrenceDates = [];
         try {
             $this->validate();
-            $this->validate(['equipment_quantities.*' => 'integer|min:1']);
+            $this->validate(['equipment_quantities.*' => 'integer|min:1', 'room_ids.*' => 'integer|distinct|exists:resources,id']);
             if ($this->end_time <= $this->start_time) {
                 throw ValidationException::withMessages(['end_time' => 'End time must be after start time.']);
             }
@@ -185,6 +189,7 @@ class CreateReservation extends Component
                 'user_id' => null, // 🔥 public booking
                 'requester_email' => $this->requester_email,
                 'resource_id' => $this->resource_id,
+                'room_ids' => $this->selectedRoomIds(),
                 'equipment_quantities' => $this->equipment_quantities,
                 'title' => $this->title,
                 'start_datetime' => $startDateTime,
@@ -213,6 +218,8 @@ class CreateReservation extends Component
             $this->reset([
                 'requester_email',
                 'resource_id',
+                'room_ids',
+                'selected_room_to_add',
                 'equipment_quantities',
                 'title',
                 'number_of_pax',
@@ -264,14 +271,16 @@ class CreateReservation extends Component
         $this->scheduleChecked = false;
         $this->scheduleCheckAttempted = true;
         $this->validate([
-            'resource_id' => 'required|exists:resources,id',
+            'room_ids' => 'required_without:resource_id|array|max:50',
+            'room_ids.*' => 'integer|distinct|exists:resources,id',
+            'resource_id' => 'nullable|exists:resources,id',
             'event_date' => 'required|date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
         try {
             $dates = $this->recurrence === 'none' ? [] : $this->recurrenceDates();
-            $service->validateRequestResources((int) $this->resource_id, $this->equipment_quantities);
+            $service->validateRequestResources($this->selectedRoomIds(), $this->equipment_quantities);
             $this->scheduleConflictWarnings = $this->approvedScheduleConflicts($service, $dates);
             $this->scheduleChecked = true;
         } catch (\InvalidArgumentException $e) {
@@ -284,7 +293,7 @@ class CreateReservation extends Component
         $warnings = [];
         foreach ($recurrenceDates ?: [$this->event_date] as $date) {
             $conflicts = $service->approvedConflictNames(
-                (int) $this->resource_id,
+                $this->selectedRoomIds(),
                 $this->equipment_quantities,
                 $date . ' ' . $this->start_time,
                 $date . ' ' . $this->end_time
@@ -318,6 +327,28 @@ class CreateReservation extends Component
             $this->recurrence_until,
             (int) $this->occurrences
         );
+    }
+
+    public function selectedRoomIds(): array
+    {
+        return $this->room_ids ?: ($this->resource_id ? [(int) $this->resource_id] : []);
+    }
+
+    public function addRoom(): void
+    {
+        if (!$this->selected_room_to_add) return;
+        $room = Resource::where('type', 'room')->where('capacity', '>', 0)->findOrFail($this->selected_room_to_add);
+        $this->room_ids = array_values(array_unique([...$this->room_ids, $room->id]));
+        $this->resource_id = $this->room_ids[0];
+        $this->selected_room_to_add = null;
+        $this->updated('resource_id');
+    }
+
+    public function removeRoom(int $id): void
+    {
+        $this->room_ids = array_values(array_filter($this->room_ids, fn ($roomId) => (int) $roomId !== $id));
+        $this->resource_id = $this->room_ids[0] ?? null;
+        $this->updated('resource_id');
     }
 
     public function recurrenceLabel(): string

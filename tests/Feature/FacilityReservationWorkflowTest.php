@@ -24,6 +24,33 @@ class FacilityReservationWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_bulk_deletion_protects_soa_and_only_deletes_confirmed_series_dates(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
+        $series = (string) Str::uuid();
+        $data = ['title' => 'Bulk deletion QA', 'start_datetime' => '2026-12-01 09:00', 'end_datetime' => '2026-12-01 10:00', 'status' => 'pending', 'recurrence_series_id' => $series];
+        $eligible = ResourceReservation::create($data);
+        $protected = ResourceReservation::create(array_merge($data, ['soa_path' => 'soa/test.pdf', 'status' => 'rejected']));
+        $unrelated = ResourceReservation::create(array_merge($data, ['recurrence_series_id' => (string) Str::uuid()]));
+        $component = Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->set('selectedSeriesId', $series)->call('selectSeriesForDelete')
+            ->assertSee('Protected: SOA uploaded')->call('cancelSeriesDelete')
+            ->assertSet('showDeleteSeriesModal', false);
+        $this->assertNotSoftDeleted($eligible);
+        $component->call('selectSeriesForDelete');
+        $lateSoa = ResourceReservation::create($data);
+        // A new occurrence after confirmation must not be silently included.
+        $component->call('confirmSeriesDelete')->assertSet('showDeleteSeriesModal', false)
+            ->assertSet('deleteSeriesIds', []);
+        $this->assertSoftDeleted($eligible);
+        $this->assertNotSoftDeleted($protected);
+        $this->assertNotSoftDeleted($unrelated);
+        $this->assertNotSoftDeleted($lateSoa);
+        $component->call('confirmSeriesDelete');
+        $this->assertNotSoftDeleted($lateSoa);
+    }
+
     public function test_resources_without_capacity_cannot_be_booked(): void
     {
         $admin = User::factory()->create();
@@ -556,8 +583,14 @@ class FacilityReservationWorkflowTest extends TestCase
             ->assertHasNoErrors();
 
         $reservation->refresh();
+        $this->assertSame('unbilled', $reservation->billing_status);
+        $this->assertSame(today()->addDays(15)->toDateString(), $reservation->payment_due_at->toDateString());
+        $this->assertTrue($reservation->soa_email_pending);
+        Mail::fake();
+        app(\App\Services\FacilityBillingEmailService::class)->queue($reservation->id, 'soa');
+        $reservation->refresh();
         $this->assertSame('billed', $reservation->billing_status);
-        $this->assertSame('2026-10-13', $reservation->payment_due_at->toDateString());
+        $this->assertSame(today()->addDays(15)->toDateString(), $reservation->payment_due_at->toDateString());
         Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->soa_path);
 
         Livewire::actingAs($admin)->test(ReservationIndex::class)
@@ -568,6 +601,11 @@ class FacilityReservationWorkflowTest extends TestCase
             ->call('recordPayment')->assertHasNoErrors();
         $this->assertSame('paid', $reservation->fresh()->billing_status);
         $this->assertSame('2026-10-01', $reservation->fresh()->paid_at->toDateString());
+        Mail::assertQueued(\App\Mail\FacilityPaymentReceived::class, fn ($mail) => $mail->hasTo('a@example.com')
+            && str_contains($mail->render(), 'Payment received') && str_contains($mail->render(), 'Oct 1, 2026'));
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('selectForPayment', $reservation->id)->set('paymentDate', '2026-10-01')->call('recordPayment')->assertHasNoErrors();
+        Mail::assertQueued(\App\Mail\FacilityPaymentReceived::class, 1);
         Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->fresh()->payment_proof_path);
     }
 
@@ -685,7 +723,7 @@ class FacilityReservationWorkflowTest extends TestCase
         $this->assertDatabaseHas('resource_reservations', ['id' => $reservation->id, 'soa_path' => null, 'billing_status' => 'unbilled']);
     }
 
-    public function test_replacing_paid_soa_keeps_payment_and_removes_old_file(): void
+    public function test_paid_soa_cannot_be_replaced_or_removed_even_from_stale_dialogs(): void
     {
         Storage::fake(config('filesystems.facility_upload_disk'));
         $admin = User::factory()->create();
@@ -701,16 +739,22 @@ class FacilityReservationWorkflowTest extends TestCase
         $paidAt = $reservation->paid_at;
 
         Livewire::actingAs($admin)->test(ReservationIndex::class)
-            ->call('selectForBilling', $reservation->id)
+            ->set('billingId', $reservation->id)
             ->set('soaFile', UploadedFile::fake()->create('replacement.pdf', 100, 'application/pdf'))
             ->call('markBilled')
-            ->assertHasNoErrors();
+            ->assertHasErrors(['soaFile']);
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->set('removeSoaId', $reservation->id)->call('confirmSoaRemoval');
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('selectForBilling', $reservation->id)->assertStatus(422);
+        Livewire::actingAs($admin)->test(ReservationIndex::class)
+            ->call('selectForSoaRemoval', $reservation->id)->assertStatus(422);
 
         $reservation->refresh();
         $this->assertSame('paid', $reservation->billing_status);
         $this->assertTrue($reservation->paid_at->equalTo($paidAt));
-        $this->assertNotSame($oldPath, $reservation->soa_path);
-        Storage::disk(config('filesystems.facility_upload_disk'))->assertMissing($oldPath);
+        $this->assertSame($oldPath, $reservation->soa_path);
+        Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($oldPath);
         Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->soa_path);
     }
 }

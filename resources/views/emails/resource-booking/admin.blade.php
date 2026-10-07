@@ -49,8 +49,8 @@
                             <!-- Room -->
                             @if ($reservation->resource)
                                 <p style="margin:0 0 12px 0;">
-                                    <strong>Room:</strong><br>
-                                    {{ $reservation->resource->name }}
+                                    <strong>Rooms:</strong><br>
+                                    {{ $reservation->room_names }}
                                 </p>
                             @endif
 

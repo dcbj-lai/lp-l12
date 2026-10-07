@@ -20,7 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
             EnsureUserIsActive::class,
+            \App\Http\Middleware\RestrictFacilitiesViewer::class,
         ]);
+        $middleware->api(append: [\App\Http\Middleware\RestrictFacilitiesViewer::class]);
+        $middleware->appendToPriorityList(\Illuminate\Auth\Middleware\Authenticate::class, \App\Http\Middleware\RestrictFacilitiesViewer::class);
 
         // ✅ Register Spatie middleware aliases
         $middleware->alias([

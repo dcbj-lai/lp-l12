@@ -587,8 +587,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('resources.')
         ->group(function () {
 
-            Route::view('/reservations', 'resources.reservations.index')
+            Route::get('/reservations', [\App\Http\Controllers\FacilityViewerController::class, 'index'])
                 ->name('reservations.index');
+            Route::get('/reservations/{reservation}/floor-plan', [\App\Http\Controllers\FacilityViewerController::class, 'floorPlan'])
+                ->name('reservations.floor-plan');
 
         });
 
@@ -603,6 +605,8 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/resources/book', function () {
     return view('public.resources.book');
 })->name('resources.book');
+
+Route::get('/dev/facilities/billing-email/{scenario?}', \App\Http\Controllers\FacilityBillingPreviewController::class);
 
 /**App Launcher */
 Route::get('/launcher', function () {

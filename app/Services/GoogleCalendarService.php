@@ -35,7 +35,7 @@ class GoogleCalendarService
         $event = new Event([
             'summary' => $this->buildTitle($reservation),
             'description' => $this->buildDescription($reservation),
-            'location' => $reservation->resource?->name,
+            'location' => $reservation->room_names,
 
             'start' => [
                 'dateTime' => Carbon::parse($reservation->start_datetime)->toIso8601String(),
@@ -73,7 +73,7 @@ class GoogleCalendarService
         $lines = [];
 
         if ($reservation->resource) {
-            $lines[] = 'Room: ' . $reservation->resource->name;
+            $lines[] = 'Room: ' . $reservation->room_names;
         }
 
         if ($reservation->equipment->count()) {
