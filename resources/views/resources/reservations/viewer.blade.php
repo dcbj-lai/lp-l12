@@ -12,7 +12,14 @@
             <a href="{{ route('resources.reservations.index', ['status' => $tabStatus, 'sort' => $direction]) }}" @if($status === $tabStatus) aria-current="page" @endif class="rounded-md px-4 py-2 font-medium {{ $status === $tabStatus ? 'bg-white shadow-sm' : '' }}">{{ $label }}</a>
         @endforeach
     </nav>
-    <form method="GET" class="flex items-center gap-2"><input type="hidden" name="status" value="{{ $status }}"><label for="sort">Sort by event date</label><select id="sort" name="sort" class="rounded-md border p-2"><option value="asc" @selected($direction === 'asc')>Earliest first</option><option value="desc" @selected($direction === 'desc')>Latest first</option></select><button class="rounded-md border bg-white px-3 py-2">Apply</button></form>
+    <form method="GET" class="flex items-center gap-2">
+        <input type="hidden" name="status" value="{{ $status }}">
+        <label for="sort">Sort by event date</label>
+        <select id="sort" name="sort" onchange="this.form.requestSubmit()" class="rounded-md border p-2">
+            <option value="asc" @selected($direction === 'asc')>Earliest first</option>
+            <option value="desc" @selected($direction === 'desc')>Latest first</option>
+        </select>
+    </form>
     @forelse($reservations as $reservation)
         <article class="rounded-lg border bg-white p-5 shadow-sm space-y-2">
             <h2 class="font-semibold text-lg">{{ $reservation->title }}</h2>
