@@ -72,12 +72,17 @@
                 @endif
 
                 <!-- Manage -->
-                <div class="mt-3">
+                <div class="mt-3 flex flex-wrap items-center gap-4">
 
                     <button wire:click="selectResource({{ $resource->id }})"
                         class="text-sm text-blue-600 hover:underline">
                         Manage
                     </button>
+
+                    @if ($resource->isEquipment())
+                        <button type="button" wire:click="viewEquipmentBookings({{ $resource->id }})"
+                            class="text-sm text-blue-600 hover:underline">View bookings</button>
+                    @endif
 
                 </div>
 
@@ -88,6 +93,59 @@
     @empty
         <div class="text-center text-gray-500">No {{ $activeTab === 'room' ? 'rooms' : 'equipment' }} available.</div>
     @endforelse
+    <flux:modal name="equipment-bookings" class="w-full md:max-w-3xl">
+        @if ($bookingsEquipmentId)
+            @php
+                $bookedEquipment = $resources->firstWhere('id', $bookingsEquipmentId);
+                $equipmentBookings = $this->equipmentBookings;
+            @endphp
+            <div class="space-y-5">
+                <div>
+                    <flux:heading size="lg">{{ $bookedEquipment?->name }} bookings</flux:heading>
+                    <p class="text-sm text-zinc-500">Total quantity: {{ $bookedEquipment?->total_quantity }} · All times Asia/Manila</p>
+                    <p class="mt-1 text-sm text-zinc-500">Approved quantities are reserved. For Approval quantities are requests awaiting approval.</p>
+                </div>
+                <div class="grid grid-cols-[1.2fr_1fr_1fr] items-end gap-2">
+                    <div class="min-w-0"><label for="equipment-bookings-period" class="mb-1 block text-xs">Show</label>
+                        <select id="equipment-bookings-period" wire:model.live="bookingsPeriod" class="h-9 w-full min-w-0 rounded-md border px-2 py-1 text-sm dark:bg-zinc-800">
+                            <option value="upcoming">Upcoming / ongoing</option><option value="past">Past</option>
+                        </select>
+                    </div>
+                    <div class="min-w-0"><label for="equipment-bookings-from" class="mb-1 block text-xs">From</label><input id="equipment-bookings-from" type="date" wire:model.live="bookingsFrom" class="h-9 w-full min-w-0 rounded-md border px-2 py-1 text-sm dark:bg-zinc-800"></div>
+                    <div class="min-w-0"><label for="equipment-bookings-to" class="mb-1 block text-xs">To</label><input id="equipment-bookings-to" type="date" wire:model.live="bookingsTo" min="{{ $bookingsFrom }}" class="h-9 w-full min-w-0 rounded-md border px-2 py-1 text-sm dark:bg-zinc-800"></div>
+                </div>
+                @if ($bookingsFrom && $bookingsTo && $bookingsFrom > $bookingsTo)
+                    <p role="alert" class="text-sm text-red-600">To date must be on or after From date.</p>
+                @else
+                    <div class="space-y-3" wire:loading.class="opacity-50">
+                        @forelse ($equipmentBookings->take($bookingsLimit) as $booking)
+                            <article wire:key="equipment-booking-{{ $booking->id }}" class="rounded-lg border p-4 space-y-2">
+                                <h3 class="font-semibold">{{ $booking->title }} <span class="text-xs font-normal text-zinc-500">#{{ $booking->id }}</span></h3>
+                                <p class="text-sm">{{ $booking->start_datetime->timezone('Asia/Manila')->format('M j, Y g:i A') }}–{{ $booking->end_datetime->timezone('Asia/Manila')->format('M j, Y g:i A') }}</p>
+                                <p class="text-sm">Rooms: {{ $booking->room_names }}</p>
+                                <div class="flex flex-wrap items-center gap-2 text-sm">
+                                    <span>Quantity: {{ $booking->equipment->first()?->pivot->quantity }}</span>
+                                    <span class="rounded-md px-2 py-1 {{ $booking->status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">{{ $booking->status === 'approved' ? 'Approved' : 'For Approval' }}</span>
+                                </div>
+                                @if ($booking->recurrence_series_id)<p class="text-xs text-zinc-500">Recurring event · {{ $booking->recurrence_position }} of {{ $booking->recurrence_total }} · {{ $booking->recurrence_label }}</p>@endif
+                                <details class="text-sm"><summary class="cursor-pointer text-blue-600">View reservation details</summary>
+                                    <div class="mt-2 space-y-1">
+                                        <p>Name: {{ $booking->requester_name ?: 'Not recorded' }}</p>
+                                        <p>{{ $booking->number_of_pax ?? 'Not recorded' }} pax · {{ $booking->setup_arrangement ?: 'Setup not recorded' }}</p>
+                                        @if ($booking->notes)<p class="whitespace-pre-line">Notes: {{ $booking->notes }}</p>@endif
+                                    </div>
+                                </details>
+                            </article>
+                        @empty
+                            <p class="py-6 text-center text-zinc-500">No {{ $bookingsPeriod === 'past' ? 'past' : 'upcoming or ongoing' }} bookings for this equipment in the selected dates.</p>
+                        @endforelse
+                    </div>
+                    @if ($equipmentBookings->count() > $bookingsLimit)<flux:button wire:click="loadMoreBookings">Load more bookings</flux:button>@endif
+                @endif
+                <div class="flex justify-end"><flux:modal.close><flux:button>Close</flux:button></flux:modal.close></div>
+            </div>
+        @endif
+    </flux:modal>
     <flux:modal name="manage-resource-modal" class="md:w-[500px]">
 
         <div class="space-y-6">

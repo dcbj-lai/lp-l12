@@ -9,6 +9,8 @@ use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Validate;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Validation\Rule;
@@ -22,6 +24,63 @@ class ResourceIndex extends Component
     public $image;
     public $resources = [];
     public string $activeTab = 'room';
+    #[Locked]
+    public ?int $bookingsEquipmentId = null;
+    public string $bookingsPeriod = 'upcoming';
+    public string $bookingsFrom = '';
+    public string $bookingsTo = '';
+    public int $bookingsLimit = 25;
+
+    public function viewEquipmentBookings(int $id): void
+    {
+        abort_unless(auth()->user()->hasRole('facility.admin'), 403);
+        $equipment = Resource::where('type', 'equipment')->findOrFail($id);
+        $this->reset('bookingsPeriod', 'bookingsFrom', 'bookingsTo', 'bookingsLimit');
+        $this->resetValidation();
+        $this->bookingsEquipmentId = $equipment->id;
+        $this->modal('equipment-bookings')->show();
+    }
+
+    public function updatedBookingsPeriod(): void
+    {
+        $this->bookingsLimit = 25;
+    }
+
+    public function updatedBookingsFrom(): void
+    {
+        $this->bookingsLimit = 25;
+    }
+
+    public function updatedBookingsTo(): void
+    {
+        $this->bookingsLimit = 25;
+    }
+
+    public function loadMoreBookings(): void
+    {
+        $this->bookingsLimit += 25;
+    }
+
+    #[Computed]
+    public function equipmentBookings()
+    {
+        abort_unless(auth()->user()->hasRole('facility.admin'), 403);
+        $query = ResourceReservation::query()->whereIn('status', ['pending', 'approved'])
+            ->whereHas('equipment', fn ($q) => $q->where('resources.id', $this->bookingsEquipmentId))
+            ->with(['rooms', 'resource', 'equipment' => fn ($q) => $q->where('resources.id', $this->bookingsEquipmentId)])
+            ->where('end_datetime', $this->bookingsPeriod === 'past' ? '<=' : '>', now());
+
+        // Date filters include any event overlapping the selected Manila calendar days.
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->bookingsFrom) && strtotime($this->bookingsFrom) !== false) {
+            $query->where('end_datetime', '>', $this->bookingsFrom . ' 00:00:00');
+        }
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->bookingsTo) && strtotime($this->bookingsTo) !== false) {
+            $query->where('start_datetime', '<', \Carbon\Carbon::parse($this->bookingsTo, 'Asia/Manila')->addDay()->startOfDay());
+        }
+
+        return $query->orderBy('start_datetime', $this->bookingsPeriod === 'past' ? 'desc' : 'asc')
+            ->orderBy('id')->limit($this->bookingsLimit + 1)->get();
+    }
 
     public $selectedResourceId = null;
 
