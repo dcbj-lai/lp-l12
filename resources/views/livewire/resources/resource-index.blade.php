@@ -59,6 +59,7 @@
                     <div class="text-xs text-gray-500 mt-1">Total quantity: {{ $resource->total_quantity }}</div>
                 @endif
 
+                @if ($resource->isRoom())
                 @php $availability = $availabilityNow[$resource->id]; @endphp
                 <div class="mt-2 text-sm font-medium {{ $availability['bookable'] > 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
                     @if ($resource->isRoom() && $availability['total'] === 0)
@@ -69,6 +70,7 @@
                 </div>
                 @if ($availability['approved'])
                     <p class="text-xs text-zinc-500">Reserved for approved bookings: {{ $availability['approved'] }}</p>
+                @endif
                 @endif
 
                 <!-- Manage -->
@@ -105,20 +107,15 @@
                     <p class="text-sm text-zinc-500">Total quantity: {{ $bookedEquipment?->total_quantity }} · All times Asia/Manila</p>
                     <p class="mt-1 text-sm text-zinc-500">Approved quantities are reserved. For Approval quantities are requests awaiting approval.</p>
                 </div>
-                <div class="grid grid-cols-[1.2fr_1fr_1fr] items-end gap-2">
-                    <div class="min-w-0"><label for="equipment-bookings-period" class="mb-1 block text-xs">Show</label>
-                        <select id="equipment-bookings-period" wire:model.live="bookingsPeriod" class="h-9 w-full min-w-0 rounded-md border px-2 py-1 text-sm dark:bg-zinc-800">
-                            <option value="upcoming">Upcoming / ongoing</option><option value="past">Past</option>
-                        </select>
-                    </div>
-                    <div class="min-w-0"><label for="equipment-bookings-from" class="mb-1 block text-xs">From</label><input id="equipment-bookings-from" type="date" wire:model.live="bookingsFrom" class="h-9 w-full min-w-0 rounded-md border px-2 py-1 text-sm dark:bg-zinc-800"></div>
-                    <div class="min-w-0"><label for="equipment-bookings-to" class="mb-1 block text-xs">To</label><input id="equipment-bookings-to" type="date" wire:model.live="bookingsTo" min="{{ $bookingsFrom }}" class="h-9 w-full min-w-0 rounded-md border px-2 py-1 text-sm dark:bg-zinc-800"></div>
-                </div>
-                @if ($bookingsFrom && $bookingsTo && $bookingsFrom > $bookingsTo)
-                    <p role="alert" class="text-sm text-red-600">To date must be on or after From date.</p>
-                @else
-                    <div class="space-y-3" wire:loading.class="opacity-50">
-                        @forelse ($equipmentBookings->take($bookingsLimit) as $booking)
+                <p class="text-sm text-zinc-500">Upcoming and ongoing bookings · Earliest event first</p>
+                <div class="space-y-5" wire:loading.class="opacity-50">
+                    @forelse ($equipmentBookings->take($bookingsLimit)->groupBy(fn ($booking) => $booking->start_datetime->copy()->timezone('Asia/Manila')->format('Y-m')) as $month => $monthlyBookings)
+                        <section class="space-y-3">
+                            <h2 class="text-lg font-semibold">{{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}</h2>
+                            @foreach ($monthlyBookings->groupBy(fn ($booking) => $booking->start_datetime->copy()->timezone('Asia/Manila')->format('Y-m-d')) as $date => $dailyBookings)
+                                <div class="space-y-2">
+                                    <h3 class="text-sm font-medium text-zinc-500">{{ \Carbon\Carbon::parse($date)->format('l, F j') }}</h3>
+                                    @foreach ($dailyBookings as $booking)
                             <article wire:key="equipment-booking-{{ $booking->id }}" class="rounded-lg border p-4 space-y-2">
                                 <h3 class="font-semibold">{{ $booking->title }} <span class="text-xs font-normal text-zinc-500">#{{ $booking->id }}</span></h3>
                                 <p class="text-sm">{{ $booking->start_datetime->timezone('Asia/Manila')->format('M j, Y g:i A') }}–{{ $booking->end_datetime->timezone('Asia/Manila')->format('M j, Y g:i A') }}</p>
@@ -136,12 +133,15 @@
                                     </div>
                                 </details>
                             </article>
-                        @empty
-                            <p class="py-6 text-center text-zinc-500">No {{ $bookingsPeriod === 'past' ? 'past' : 'upcoming or ongoing' }} bookings for this equipment in the selected dates.</p>
-                        @endforelse
-                    </div>
-                    @if ($equipmentBookings->count() > $bookingsLimit)<flux:button wire:click="loadMoreBookings">Load more bookings</flux:button>@endif
-                @endif
+                                    @endforeach
+                                </div>
+                            @endforeach
+                        </section>
+                    @empty
+                        <p class="py-6 text-center text-zinc-500">No upcoming or ongoing bookings for this equipment.</p>
+                    @endforelse
+                </div>
+                @if ($equipmentBookings->count() > $bookingsLimit)<flux:button wire:click="loadMoreBookings">Load more bookings</flux:button>@endif
                 <div class="flex justify-end"><flux:modal.close><flux:button>Close</flux:button></flux:modal.close></div>
             </div>
         @endif

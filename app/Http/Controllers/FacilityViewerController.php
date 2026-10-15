@@ -16,7 +16,9 @@ class FacilityViewerController extends Controller
 
         $direction = $request->query('sort') === 'desc' ? 'desc' : 'asc';
         $status = $request->query('status') === 'pending' ? 'pending' : 'approved';
+        $search = mb_substr(trim((string) $request->query('search', '')), 0, 200);
         $reservations = ResourceReservation::with(['resource', 'rooms', 'equipment'])
+            ->search($search)
             ->where('status', $status)->orderBy('start_datetime', $direction)
             ->orderBy('id', $direction)->paginate(30)->withQueryString();
         $seriesDates = ResourceReservation::with(['resource', 'rooms', 'equipment'])
@@ -24,7 +26,7 @@ class FacilityViewerController extends Controller
             ->whereIn('status', ['pending', 'approved'])->orderBy('start_datetime')->orderBy('id')
             ->get()->groupBy('recurrence_series_id');
 
-        return view('resources.reservations.viewer', compact('reservations', 'direction', 'status', 'seriesDates'));
+        return view('resources.reservations.viewer', compact('reservations', 'direction', 'status', 'seriesDates', 'search'));
     }
 
     public function floorPlan(Request $request, ResourceReservation $reservation)

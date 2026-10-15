@@ -59,6 +59,22 @@ class ResourceReservation extends Model
         'finished_confirmed_at' => 'datetime',
     ];
 
+    public function scopeSearch($query, ?string $search)
+    {
+        $term = mb_substr(trim((string) $search), 0, 200);
+        if ($term === '') return $query;
+        $pattern = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($term)) . '%';
+        return $query->where(function ($match) use ($term, $pattern) {
+            foreach (['title', 'requester_name', 'requester_email'] as $column) {
+                $match->orWhereRaw("LOWER({$column}) LIKE ? ESCAPE '!'", [$pattern]);
+            }
+            $roomMatch = fn ($rooms) => $rooms->whereRaw("LOWER(resources.name) LIKE ? ESCAPE '!'", [$pattern]);
+            $match->orWhereHas('rooms', $roomMatch)->orWhereHas('resource', $roomMatch);
+            $number = ltrim($term, '#');
+            if (ctype_digit($number) && strlen($number) < 10) $match->orWhere('resource_reservations.id', (int) $number);
+        });
+    }
+
     public function billingEmails()
     {
         return $this->hasMany(FacilityBillingEmail::class, 'reservation_id');

@@ -9,11 +9,15 @@
     </header>
     <nav aria-label="Reservation status" class="inline-flex rounded-lg border bg-zinc-100 p-1">
         @foreach(['pending' => 'For Approval', 'approved' => 'Approved'] as $tabStatus => $label)
-            <a href="{{ route('resources.reservations.index', ['status' => $tabStatus, 'sort' => $direction]) }}" @if($status === $tabStatus) aria-current="page" @endif class="rounded-md px-4 py-2 font-medium {{ $status === $tabStatus ? 'bg-white shadow-sm' : '' }}">{{ $label }}</a>
+            <a href="{{ route('resources.reservations.index', ['status' => $tabStatus, 'sort' => $direction, 'search' => $search]) }}" @if($status === $tabStatus) aria-current="page" @endif class="rounded-md px-4 py-2 font-medium {{ $status === $tabStatus ? 'bg-white shadow-sm' : '' }}">{{ $label }}</a>
         @endforeach
     </nav>
-    <form method="GET" class="flex items-center gap-2">
+    <form method="GET" class="flex flex-wrap items-center gap-2">
         <input type="hidden" name="status" value="{{ $status }}">
+        <label for="reservation-search" class="sr-only">Search reservations</label>
+        <input id="reservation-search" type="search" name="search" value="{{ $search }}" maxlength="200" placeholder="Event, name, email, room, or #number" class="min-w-0 rounded-md border p-2">
+        <button type="submit" class="rounded-md border bg-white px-3 py-2">Search</button>
+        @if ($search !== '')<a class="text-sm text-blue-700 underline" href="{{ route('resources.reservations.index', ['status' => $status, 'sort' => $direction]) }}">Clear search</a>@endif
         <label for="sort">Sort by event date</label>
         <select id="sort" name="sort" onchange="this.form.requestSubmit()" class="rounded-md border p-2">
             <option value="asc" @selected($direction === 'asc')>Earliest first</option>

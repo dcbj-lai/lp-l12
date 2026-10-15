@@ -17,6 +17,16 @@
         <div class="flex justify-end gap-2"><flux:button wire:click="cancelBulkReminders">Cancel</flux:button><flux:button variant="primary" wire:click="sendBulkReminders" wire:loading.attr="disabled" wire:target="sendBulkReminders" :disabled="count($bulkReminderIds) === 0">Send reminders</flux:button></div>
     </div></flux:modal>
 
+    <div class="flex flex-wrap items-end gap-2 text-sm">
+        <div class="w-full sm:mr-2 sm:w-80">
+            <label for="reservation-search" class="mb-1 block font-medium">Search reservations</label>
+            <input id="reservation-search" type="search" wire:model.live.debounce.400ms="search" maxlength="200"
+                placeholder="Event, name, email, room, or #number" class="w-full rounded-md border bg-white px-3 py-2 dark:bg-zinc-800">
+        </div>
+        @if (trim($search) !== '')
+            <button type="button" wire:click="$set('search', '')" class="rounded-md border px-3 py-2">Clear search</button>
+        @endif
+    </div>
     <div class="flex flex-wrap items-center gap-2 text-sm">
         @if ($statusFilter === 'pending')
             <label for="request-date-sort" class="font-medium">Sort by request date</label>

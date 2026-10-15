@@ -13,7 +13,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
-#[Title('Resource Reservations')]
+#[Title('Reservations')]
 class ReservationIndex extends Component
 {
     use WithFileUploads;
@@ -60,6 +60,7 @@ class ReservationIndex extends Component
     }
 
     public string $statusFilter = 'pending';
+    public string $search = '';
     public string $eventDateSort = 'asc';
     public string $requestDateSort = 'desc';
     public ?string $selectedSeriesId = null;
@@ -193,6 +194,7 @@ class ReservationIndex extends Component
         $dateColumn = $byRequestDate ? 'created_at' : 'start_datetime';
 
         return ResourceReservation::with(['resource', 'rooms', 'equipment', 'items.resource', 'latestBillingEmail', 'latestPaymentReminder', 'paymentProofs', 'soaRevisions'])
+            ->search($this->search)
             ->when($this->statusFilter === 'deleted', fn ($query) => $query->onlyTrashed())
             ->when($this->statusFilter === 'archive', fn ($query) => $query->archived())
             ->when(in_array($this->statusFilter, ['billed', 'paid']), fn ($query) => $query->where('status', 'approved')->where('billing_status', $this->statusFilter))

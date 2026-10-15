@@ -15,7 +15,7 @@ class EquipmentBookingsViewTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_equipment_view_filters_dates_status_and_deleted_records(): void
+    public function test_equipment_view_groups_upcoming_dates_and_excludes_finished_rejected_deleted(): void
     {
         $admin = User::factory()->create();
         $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
@@ -37,12 +37,11 @@ class EquipmentBookingsViewTest extends TestCase
         $past = $make('Past event', 'approved', '2026-10-12 10:00', '2026-10-12 11:00');
         $component = Livewire::actingAs($admin)->test(ResourceIndex::class)
             ->call('viewEquipmentBookings', $equipment->id)
-            ->assertSee('Room A, Room B')->assertSee('Quantity: 2');
+            ->assertSee('Room A, Room B')->assertSee('Quantity: 2')
+            ->assertSee('October 2026')->assertSee('Thursday, October 15')->assertSee('Saturday, October 17')
+            ->assertDontSee('Past event')->assertDontSee('Rejected event')->assertDontSee('Deleted event')
+            ->assertDontSeeHtml('equipment-bookings-from')->assertDontSeeHtml('equipment-bookings-period');
         $this->assertSame([$approved->id, $pending->id], $component->instance()->equipmentBookings->pluck('id')->all());
-        $component->set('bookingsFrom', '2026-10-16')->set('bookingsTo', '2026-10-16');
-        $this->assertSame([$approved->id], $component->instance()->equipmentBookings->pluck('id')->all());
-        $component->set('bookingsFrom', '')->set('bookingsTo', '')->set('bookingsPeriod', 'past');
-        $this->assertSame([$past->id], $component->instance()->equipmentBookings->pluck('id')->all());
     }
 
     public function test_non_admin_cannot_open_resources(): void
@@ -51,4 +50,3 @@ class EquipmentBookingsViewTest extends TestCase
         Livewire::actingAs(User::factory()->create())->test(ResourceIndex::class)->assertForbidden();
     }
 }
-
