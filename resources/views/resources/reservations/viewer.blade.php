@@ -30,6 +30,7 @@
             <p>{{ $reservation->start_datetime->format('M j, Y g:i A') }}–{{ $reservation->end_datetime->format('M j, Y g:i A') }} · {{ $reservation->room_names }}</p>
             <div><span class="rounded-md px-2 py-1 text-sm {{ $status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">{{ $status === 'approved' ? 'Approved' : 'For Approval' }}</span>@if($reservation->recurrence_series_id)<span class="ml-2 text-sm">Recurring event · {{ $reservation->recurrence_position }} of {{ $reservation->recurrence_total }} · {{ $reservation->recurrence_label }}</span>@endif</div>
             <p>{{ $reservation->number_of_pax }} pax · {{ $reservation->setup_arrangement }} setup</p>
+            @include('resources.reservations.upload-status', ['booking' => $reservation])
             @if($reservation->equipment->isNotEmpty())<p>Equipment: {{ $reservation->equipment->map(fn ($item) => $item->name . ' × ' . $item->pivot->quantity)->join(', ') }}</p>@endif
             @if($reservation->notes)<p class="whitespace-pre-line">Notes: {{ $reservation->notes }}</p>@endif
             @if($reservation->floor_plan_path)<a class="text-blue-700 underline" href="{{ route('resources.reservations.floor-plan', $reservation) }}" target="_blank" rel="noopener">Floor plan</a>@endif
@@ -42,6 +43,7 @@
                                 <p class="font-medium">{{ $date->start_datetime->format('M j, Y g:i A') }}–{{ $date->end_datetime->format('M j, Y g:i A') }}</p>
                                 <p>{{ $date->status === 'approved' ? 'Approved' : 'For Approval' }} · {{ $date->room_names }}</p>
                                 <p>{{ $date->number_of_pax }} pax · {{ $date->setup_arrangement }} setup</p>
+                                @include('resources.reservations.upload-status', ['booking' => $date])
                                 @if($date->equipment->isNotEmpty())<p>Equipment: {{ $date->equipment->map(fn ($item) => $item->name . ' × ' . $item->pivot->quantity)->join(', ') }}</p>@endif
                                 @if($date->notes)<p class="whitespace-pre-line">Notes: {{ $date->notes }}</p>@endif
                                 @if($date->floor_plan_path)<a class="text-blue-700 underline" href="{{ route('resources.reservations.floor-plan', $date) }}" target="_blank" rel="noopener">Floor plan</a>@endif
