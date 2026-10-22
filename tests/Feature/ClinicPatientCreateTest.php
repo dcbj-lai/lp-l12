@@ -212,4 +212,36 @@ class ClinicPatientCreateTest extends TestCase
             ->assertRedirect(route('clinic.patients.create', ['tab' => 'students']))
             ->assertSessionHasErrors('email');
     }
+
+    public function test_patient_health_history_can_be_created_updated_and_cleared(): void
+    {
+        $this->actingAs($this->clinicUser());
+        $data = ['first_name' => 'Demo', 'last_name' => 'History', 'type' => 'student',
+            'allergies' => ['Penicillin: rash', 'Peanuts', ''],
+            'medical_history' => "Past surgery in 2020.\nFollow-up notes."];
+        $this->post(route('clinic.patients.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
+        $patient = Patient::where('last_name', 'History')->firstOrFail();
+        $this->assertSame(['Penicillin: rash', 'Peanuts'], $patient->allergies);
+        $this->assertSame($data['medical_history'], $patient->medical_history);
+        $this->get(route('clinic.patients.show', $patient))->assertOk()->assertSee('Penicillin: rash')->assertSee('Past surgery in 2020.');
+        $this->get(route('clinic.patients.edit', $patient))->assertOk()->assertSee('Add allergy');
+        $data['allergies'] = ['Pollen'];
+        $this->put(route('clinic.patients.update', $patient), $data)->assertSessionHasNoErrors();
+        $this->assertSame(['Pollen'], $patient->fresh()->allergies);
+        unset($data['allergies']);
+        $data['allergies_present'] = '1';
+        $data['medical_history'] = '';
+        $this->put(route('clinic.patients.update', $patient), $data)->assertSessionHasNoErrors();
+        $this->assertSame([], $patient->fresh()->allergies);
+        $this->assertNull($patient->fresh()->medical_history);
+    }
+
+    public function test_health_history_rejects_invalid_entries(): void
+    {
+        $this->actingAs($this->clinicUser())->post(route('clinic.patients.store'), [
+            'first_name' => 'Demo', 'last_name' => 'Invalid', 'type' => 'student',
+            'allergies' => [['nested']], 'medical_history' => str_repeat('a', 10001),
+        ])->assertSessionHasErrors(['allergies.0', 'medical_history']);
+        $this->assertDatabaseMissing('patients', ['last_name' => 'Invalid']);
+    }
 }

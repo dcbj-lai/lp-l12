@@ -21,9 +21,12 @@ class Patient extends Model
         'emergency_contact_person',
         'emergency_contact_number',
         'blood_type',
+        'allergies',
+        'medical_history',
     ];
 
     protected $casts = [
+        'allergies' => 'array',
         'is_under_accessibility' => 'boolean',
     ];
 
