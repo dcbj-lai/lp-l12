@@ -74,6 +74,9 @@ class PatientController extends Controller
                 ? ['nullable', 'string', 'max:255', 'exists:departments,name']
                 : ['nullable', 'string', 'max:255'],
             'position' => ['nullable', 'string', 'max:255'],
+            'allergies' => ['nullable', 'array', 'max:50'],
+            'allergies.*' => ['nullable', 'string', 'max:255'],
+            'medical_history' => ['nullable', 'string', 'max:10000'],
             'blood_type' => ['nullable', 'string', 'max:10'],
             'emergency_contact_person' => ['nullable', 'string', 'max:255'],
             'emergency_contact_number' => ['nullable', 'string', 'max:50'],
@@ -90,6 +93,7 @@ class PatientController extends Controller
             $data['is_under_accessibility'] = $request->boolean('is_under_accessibility');
         }
 
+        $data['allergies'] = array_values(array_filter($data['allergies'] ?? [], fn ($value) => $value !== null && trim($value) !== ''));
         $patient = Patient::create($data);
 
         return redirect()
@@ -131,6 +135,9 @@ class PatientController extends Controller
             'department' => ['nullable', 'string', 'max:255'],
             'position'   => ['nullable', 'string', 'max:255'],
 
+            'allergies' => ['nullable', 'array', 'max:50'],
+            'allergies.*' => ['nullable', 'string', 'max:255'],
+            'medical_history' => ['nullable', 'string', 'max:10000'],
             'blood_type' => ['nullable', 'string', 'max:10'],
             'emergency_contact_person' => ['nullable', 'string', 'max:255'],
             'emergency_contact_number' => ['nullable', 'string', 'max:50'],
@@ -146,6 +153,9 @@ class PatientController extends Controller
             $data['is_under_accessibility'] = false;
         }
 
+        if ($request->has('allergies_present') || array_key_exists('allergies', $data)) {
+            $data['allergies'] = array_values(array_filter($data['allergies'] ?? [], fn ($value) => $value !== null && trim($value) !== ''));
+        }
         $patient->update($data);
 
         return redirect()

@@ -160,6 +160,8 @@
                     </div>
                 </div>
 
+                @include('clinic.patients.health-fields')
+
                 {{-- Actions --}}
                 <div class="flex items-center gap-3 pt-2">
                     <button type="submit"

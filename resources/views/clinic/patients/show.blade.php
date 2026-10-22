@@ -129,6 +129,22 @@
                     </dd>
                 </div>
 
+                <div class="md:col-span-3">
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Allergies</dt>
+                    <dd class="mt-1 text-sm">
+                        @if($patient->allergies)
+                            <ul class="flex flex-wrap gap-1.5" aria-label="Recorded allergies">
+                                @foreach($patient->allergies as $allergy)
+                                    <li class="max-w-full break-words rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">{{ $allergy }}</li>
+                                @endforeach
+                            </ul>
+                        @else No allergies recorded. @endif
+                    </dd>
+                </div>
+                <div class="md:col-span-3">
+                    <dt class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Medical History</dt>
+                    <dd class="mt-1 text-sm whitespace-pre-wrap break-words">{{ $patient->medical_history ?: 'No medical history recorded.' }}</dd>
+                </div>
             </dl>
         </div>
 

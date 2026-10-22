@@ -130,6 +130,8 @@
                     </div>
                 </div>
 
+                @include('clinic.patients.health-fields')
+
                 <div class="flex flex-col gap-2 pt-2 sm:flex-row">
                     <button type="submit"
                         class="inline-flex w-full items-center justify-center rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 sm:w-auto">
