@@ -2,7 +2,7 @@
 
 ## Prepared locally; not deployed
 
-SOAs and payment proofs use admin-authorized download routes. New uploads and queued billing-email copies use `FACILITY_BILLING_DISK`; local development defaults to Laravel's private local disk. Public floor plans, gate passes, and resource images keep their existing configuration.
+SOAs and payment proofs use admin-authorized download routes. New uploads and queued billing-email copies use `FACILITY_BILLING_DISK`; the default is the existing private_s3 disk when AWS_BUCKET is configured, otherwise Laravel's private local disk. FACILITY_BILLING_DISK remains an optional override. Public floor plans, gate passes, and resource images keep their existing configuration.
 
 Production requires a durable private disk, for example the existing `secure_s3` disk **after its bucket permissions have been verified**. Do not use the public disk or Cloud's ephemeral local disk for billing. Setting object visibility to private does not override a bucket policy granting public reads: verify anonymous denial on the actual bucket before rollout.
 
@@ -23,4 +23,3 @@ Original files remain available until the approved cleanup. Before that cleanup,
 ## Current browser verification
 
 Browser control is available. See docs/facilities-release-2026-10-30.md for current results and remaining production-access checks. Earlier plugin-install diagnostics are historical, not release blockers by themselves.
-

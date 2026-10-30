@@ -17,7 +17,7 @@ return [
 
     // Facility attachments use public local storage when no cloud bucket is configured.
     'facility_upload_disk' => env('FACILITY_UPLOAD_DISK', env('AWS_PUBLIC_BUCKET') ? 's3' : 'public'),
-    'facility_billing_disk' => env('FACILITY_BILLING_DISK', 'local'),
+    'facility_billing_disk' => env('FACILITY_BILLING_DISK', env('AWS_BUCKET') ? 'private_s3' : 'local'),
 
     /*
     |--------------------------------------------------------------------------
