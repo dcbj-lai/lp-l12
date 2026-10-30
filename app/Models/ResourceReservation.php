@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ResourceReservation extends Model
 {
     use HasFactory, SoftDeletes;
+    protected $attributes = ['payment_required' => true];
 
     protected $fillable = [
         'user_id',
@@ -45,6 +46,8 @@ class ResourceReservation extends Model
         'soa_email_pending',
         'finished_confirmed_at',
         'finished_confirmed_by',
+        'payment_required',
+        'completion_notes',
     ];
 
     protected $casts = [
@@ -57,6 +60,7 @@ class ResourceReservation extends Model
         'paid_at' => 'datetime',
         'soa_email_pending' => 'boolean',
         'finished_confirmed_at' => 'datetime',
+        'payment_required' => 'boolean',
     ];
 
     public function scopeSearch($query, ?string $search)
@@ -80,6 +84,11 @@ class ResourceReservation extends Model
         return $this->hasMany(FacilityBillingEmail::class, 'reservation_id');
     }
 
+    public function latestCancellationRequest()
+    {
+        return $this->hasOne(FacilityReservationCancellation::class, 'reservation_id')->latestOfMany();
+    }
+
     public function paymentProofs()
     {
         return $this->hasMany(FacilityPaymentProof::class, 'reservation_id')->orderBy('id');
@@ -88,6 +97,11 @@ class ResourceReservation extends Model
     public function soaRevisions()
     {
         return $this->hasMany(FacilitySoaRevision::class, 'reservation_id')->latest('id');
+    }
+
+    public function latestGeneratedSoa()
+    {
+        return $this->hasOne(FacilityGeneratedSoa::class, 'reservation_id')->latestOfMany();
     }
 
     public function latestBillingEmail()
@@ -103,15 +117,46 @@ class ResourceReservation extends Model
     // 🔗 Owner
     public function scopeArchived($query)
     {
-        return $query->where('status', 'approved')->where('end_datetime', '<=', now())
+        return $query->where('status', 'approved')->where('end_datetime', '<=', now())->where('soa_email_pending', false)
+            ->whereDoesntHave('latestCancellationRequest', fn ($q) => $q->where('status', 'review'))
             ->where(fn ($q) => $q->where('billing_status', 'paid')->orWhere(fn ($free) => $free
-                ->whereNotNull('finished_confirmed_at')->where('billing_status', 'unbilled')->whereNull('soa_path')));
+                ->whereNotNull('finished_confirmed_at')->where('payment_required', false)->where('billing_status', 'unbilled')->whereNull('soa_path')));
     }
 
     public function getIsArchivedAttribute(): bool
     {
-        return $this->status === 'approved' && $this->end_datetime?->lte(now())
-            && ($this->billing_status === 'paid' || ($this->finished_confirmed_at !== null && $this->billing_status === 'unbilled' && !$this->soa_path));
+        return $this->status === 'approved' && $this->end_datetime?->lte(now()) && !$this->soa_email_pending
+            && $this->latestCancellationRequest?->status !== 'review'
+            && ($this->billing_status === 'paid' || ($this->finished_confirmed_at !== null && !$this->payment_required && $this->billing_status === 'unbilled' && !$this->soa_path));
+    }
+
+    public function scopeAwaitingBilling($query)
+    {
+        return $query->where('status', 'approved')->where('payment_required', true)
+            ->where('billing_status', '!=', 'paid')->whereNull('paid_at')
+            ->where(fn ($q) => $q->where(fn ($soa) => $soa->whereNotNull('soa_path')
+                ->where(fn ($unsent) => $unsent->where('soa_email_pending', true)->orWhereNull('soa_sent_at')))
+                ->orWhere(fn ($finished) => $finished->whereNotNull('finished_confirmed_at')->where('billing_status', 'unbilled')->whereNull('soa_sent_at')));
+    }
+
+    public function getIsAwaitingBillingAttribute(): bool
+    {
+        return $this->status === 'approved' && $this->payment_required && !$this->soa_locked
+            && (($this->soa_path && ($this->soa_email_pending || !$this->soa_sent_at))
+                || ($this->finished_confirmed_at && $this->billing_status === 'unbilled' && !$this->soa_sent_at));
+    }
+
+    public function getBillingViewAttribute(): string
+    {
+        if ($this->is_archived) return 'archive';
+        return 'approved';
+    }
+
+    public function getBillingFilterAttribute(): string
+    {
+        if ($this->soa_locked) return 'paid';
+        if ($this->is_awaiting_billing) return 'unbilled';
+        return $this->billing_status === 'billed' ? 'billed' : 'unbilled';
     }
 
     public function getSoaLockedAttribute(): bool

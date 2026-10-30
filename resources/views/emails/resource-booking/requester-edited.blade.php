@@ -57,6 +57,7 @@
         </tbody>
     </table>
     <p>Current status: <strong>{{ ['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$reservation->status] ?? ucfirst($reservation->status) }}</strong></p>
+    @include('emails.resource-booking.manage-link')
     <p>Life Portal • Facilities Reservations</p>
 </body>
 </html>

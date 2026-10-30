@@ -27,9 +27,9 @@ class FacilityBillingEmailService
     {
         $copy = null;
         $message = null;
-        $disk = config('filesystems.facility_upload_disk');
+        $disk = null;
         try {
-            $message = DB::transaction(function () use ($id, $action, $disk, $requestedBy, $scheduled, &$copy) {
+            $message = DB::transaction(function () use ($id, $action, &$disk, $requestedBy, $scheduled, &$copy) {
                 $reservation = ResourceReservation::whereKey($id)->lockForUpdate()->firstOrFail();
                 if ($reservation->soa_locked) {
                     throw new \RuntimeException('Billing emails cannot be sent after payment is recorded.');
@@ -65,8 +65,13 @@ class FacilityBillingEmailService
                     }
                     $kind = $reservation->soa_sent_at ? 'updated_soa' : 'soa';
                 }
-                $copy = 'reservations/billing-mail/' . Str::uuid() . '.' . pathinfo($reservation->soa_path, PATHINFO_EXTENSION);
-                if (!Storage::disk($disk)->copy($reservation->soa_path, $copy)) {
+                $disk = \App\Support\FacilityBillingStorage::uploadDisk();
+                $copy = 'facility-billing/billing-mail/' . Str::uuid() . '.' . pathinfo($reservation->soa_path, PATHINFO_EXTENSION);
+                $source = \App\Support\FacilityBillingStorage::disk($reservation->soa_path);
+                $stream = $source->readStream($reservation->soa_path);
+                try { $copied = is_resource($stream) && Storage::disk($disk)->put($copy, $stream, ['visibility' => 'private']); }
+                finally { if (is_resource($stream)) fclose($stream); }
+                if (!$copied) {
                     throw new \RuntimeException('The SOA could not be attached. Please try again.');
                 }
                 $message = FacilityBillingEmail::create([
@@ -79,6 +84,7 @@ class FacilityBillingEmailService
                         'due_date' => $reservation->payment_due_at?->format('M j, Y'),
                         'paid' => $reservation->billing_status === 'paid',
                         'disk' => $disk, 'attachment' => $copy, 'soa_path' => $reservation->soa_path,
+                        'attachment_name' => \App\Support\FacilitySoaFilename::forAttachment($reservation),
                     ],
                 ]);
                 return $message;

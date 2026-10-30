@@ -69,6 +69,7 @@
                         </td>
                     </tr>
 
+                    <tr><td style="padding:0 24px 16px">@include('emails.resource-booking.manage-link')</td></tr>
                     <!-- Footer -->
                     <tr>
                         <td

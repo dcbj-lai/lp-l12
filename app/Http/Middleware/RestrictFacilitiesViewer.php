@@ -10,6 +10,8 @@ class RestrictFacilitiesViewer
     public function handle(Request $request, Closure $next)
     {
         if ($request->user()?->hasRole('facility.viewer')) {
+            // These pages authorize an individual booking with its private email token.
+            if ($request->routeIs('facilities.requester.show', 'facilities.requester.cancel')) return $next($request);
             if ($request->is('/') || $request->routeIs('dashboard')) {
                 return redirect()->route('resources.reservations.index');
             }

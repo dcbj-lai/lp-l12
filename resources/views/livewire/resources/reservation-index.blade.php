@@ -1,15 +1,56 @@
-<div class="space-y-5" wire:poll.60s x-data x-on:wheel.capture="if ($event.target.matches('input[type=number]')) $event.target.blur()">
+<div class="space-y-5" x-data x-on:wheel.capture="if ($event.target.matches('input[type=number]')) $event.target.blur()">
     @php
         $isFacilityAdmin = auth()->user()->hasRole('facility.admin');
         $unsentEditCounts = $isFacilityAdmin ? $this->unsentEditCounts : [];
     @endphp
+    @if ($isFacilityAdmin)<livewire:resources.create-soa />@endif
 
     <div class="inline-flex max-w-full flex-wrap rounded-lg border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-700 dark:bg-zinc-800" role="tablist" aria-label="Reservation status">
-        @foreach (['all' => 'All', 'pending' => 'For Approval', 'approved' => 'Approved', 'billed' => 'Billed', 'paid' => 'Paid', 'archive' => 'Done', 'rejected' => 'Rejected', 'deleted' => 'Deleted'] as $status => $label)
+        @foreach (['all' => 'All', 'pending' => 'For Approval', 'approved' => 'Approved', 'archive' => 'Done', 'rejected' => 'Rejected', 'deleted' => 'Deleted'] as $status => $label)
             <button type="button" role="tab" aria-selected="{{ $statusFilter === $status ? 'true' : 'false' }}" wire:click="$set('statusFilter', '{{ $status }}')"
                 class="rounded-md px-4 py-2 text-sm font-medium {{ $statusFilter === $status ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white' }}">{{ $label }}</button>
         @endforeach
     </div>
+
+    @if ($statusFilter === 'approved')
+        <div><div class="inline-flex max-w-full flex-wrap rounded-lg border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-700 dark:bg-zinc-800" role="tablist" aria-label="Approved billing status">
+            @foreach (['all' => 'All', 'unbilled' => 'Unbilled', 'billed' => 'Billed', 'paid' => 'Paid'] as $billing => $billingLabel)
+                <button type="button" role="tab" aria-selected="{{ $approvedFilter === $billing ? 'true' : 'false' }}" wire:click="$set('approvedFilter', '{{ $billing }}')" class="rounded-md px-4 py-2 text-sm font-medium {{ $approvedFilter === $billing ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white' }}">{{ $billingLabel }}</button>
+            @endforeach
+        </div></div>
+    @endif
+
+    @if ($statusFilter === 'archive')
+        <div>
+            <div class="inline-flex max-w-full flex-wrap rounded-lg border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-700 dark:bg-zinc-800" role="tablist" aria-label="Done payment status">
+                @foreach (['all' => 'All', 'paid' => 'Paid', 'no_payment' => 'Complimentary'] as $paymentStatus => $paymentLabel)
+                    <button type="button" role="tab" aria-selected="{{ $doneFilter === $paymentStatus ? 'true' : 'false' }}" wire:click="$set('doneFilter', '{{ $paymentStatus }}')"
+                        title="{{ $paymentStatus === 'no_payment' ? 'No payment required' : $paymentLabel }}"
+                        class="rounded-md px-4 py-2 text-sm font-medium {{ $doneFilter === $paymentStatus ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white' }}">{{ $paymentLabel }}</button>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    <flux:modal name="requester-cancellation-review" wire:model="showCancellationReview">
+        <div class="space-y-4 p-4">
+            <h2 class="text-lg font-semibold">Review requester cancellation</h2>
+            @if ($cancellationReviewId)
+                @php
+                    $review = \App\Models\FacilityReservationCancellation::find($cancellationReviewId);
+                    $reviewBooking = $review ? \App\Models\ResourceReservation::withTrashed()->find($review->reservation_id) : null;
+                @endphp
+                <p>{{ $reviewBooking?->title }} · {{ $reviewBooking?->start_datetime?->format('M j, Y g:i A') }}</p>
+                <p class="whitespace-pre-line">Reason: {{ $review?->reason ?: 'Not provided' }}</p>
+            @endif
+            <p>Confirm only after reviewing SOA, payment, and any refund arrangements with the organizer. Cancellation releases allocations and removes the calendar event. Billing files and payment evidence remain in the deleted reservation; no refund or billing adjustment is issued automatically.</p>
+            <div class="flex flex-wrap justify-end gap-2">
+                <flux:button wire:click="$set('showCancellationReview', false)">Close</flux:button>
+                <flux:button wire:click="resolveCancellationReview(false)" wire:loading.attr="disabled">Decline request</flux:button>
+                <flux:button variant="danger" wire:click="resolveCancellationReview(true)" wire:loading.attr="disabled">Confirm cancellation</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 
     <flux:modal name="bulk-payment-reminders" wire:model="showBulkReminderModal"><div class="space-y-4 p-4">
         <h2 class="font-semibold">Send payment reminders</h2>
@@ -41,7 +82,7 @@
                 <option value="desc">Latest first</option>
             </select>
         @endif
-        @if ($statusFilter === 'billed' && $isFacilityAdmin)
+        @if ($statusFilter === 'approved' && $approvedFilter === 'billed' && $isFacilityAdmin)
             <div class="ml-auto"><flux:button size="sm" wire:click="selectBulkReminders">Send payment reminders</flux:button></div>
         @endif
     </div>
@@ -93,9 +134,11 @@
                                 <div class="text-xs text-zinc-500">Event: {{ $res->start_datetime->format('M j, Y g:i A') }}–{{ $res->end_datetime->format('M j, Y g:i A') }} · {{ $res->room_names }} · @if($res->requester_name){{ $res->requester_name }} · @endif{{ $res->requester_email }}</div>
                                 <div class="mt-2 flex flex-wrap items-center gap-2">
                                     <flux:badge color="{{ $res->status === 'approved' ? 'green' : ($res->status === 'rejected' ? 'red' : 'yellow') }}">{{ ['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$res->status] ?? $res->status }}</flux:badge>
-                                    @if ($res->is_archived) <flux:badge color="zinc">Done{{ $res->finished_confirmed_at ? ' · No payment required' : '' }}</flux:badge> @endif
+                                    @if ($res->is_archived) <flux:badge color="zinc">Done · {{ $res->billing_status === 'paid' ? 'Paid' : 'No payment required' }}</flux:badge> @endif
                                     @if ($group['conflict_count']) <flux:badge color="red">Conflict with approved booking</flux:badge> @endif
-                                    <flux:badge color="{{ $res->billing_status === 'paid' ? 'green' : 'zinc' }}">{{ ucfirst($res->billing_status) }}</flux:badge>
+                                    @if (!$res->is_archived)<flux:badge color="{{ $res->billing_status === 'paid' ? 'green' : 'zinc' }}">{{ $res->is_awaiting_billing ? 'Unbilled' : ucfirst($res->billing_status) }}</flux:badge>@endif
+                                    @if ($res->status === 'approved' && !$res->is_archived && $res->soa_email_pending)<flux:badge color="amber">SOA pending</flux:badge>@endif
+                                    @if ($res->status === 'approved' && !$res->is_archived && $res->finished_confirmed_at && $res->end_datetime->lte(now()) && !$res->soa_locked)<flux:badge color="amber">Finished · {{ $res->billing_filter === 'billed' ? 'Awaiting payment' : 'Awaiting SOA' }}</flux:badge>@endif
                                     @if ($res->billing_status === 'billed' && $res->payment_due_at && $res->payment_due_at->isBefore(today())) <flux:badge color="red">Overdue</flux:badge> @endif
                                 </div>
                             </div>
@@ -118,12 +161,15 @@
                                 <div class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">Rejection reason: {{ $res->approval_note }}</div>
                             @endif
                             <div class="flex flex-wrap gap-3 text-sm">
-                                @foreach (['floor_plan_path' => 'Floor plan', 'gate_pass_path' => 'Gate pass', 'attachment_path' => 'Attachment', 'soa_path' => 'SOA'] as $field => $label)
+                                @foreach (['floor_plan_path' => 'Floor plan', 'gate_pass_path' => 'Gate pass', 'attachment_path' => 'Attachment'] as $field => $label)
                                     @if ($res->{$field}) <a class="text-blue-700 underline" href="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($res->{$field}) }}" target="_blank" rel="noopener">{{ $label }}</a> @endif
                                 @endforeach
+                                @include('livewire.resources.soa-file', ['reservation' => $res])
                                 @include('livewire.resources.payment-proofs', ['reservation' => $res])
                             </div>
-                            @if ($res->soa_sent_at) <div class="text-xs text-zinc-500">{{ $res->soa_email_pending ? 'Previous SOA sent' : 'SOA sent' }} {{ $res->soa_sent_at->format('M j, Y') }} · Due {{ $res->payment_due_at?->format('M j, Y') }}</div> @endif
+                            @include('livewire.resources.requester-cancellation', ['reservation' => $res])
+                            @if ($res->completion_notes)<p class="text-sm whitespace-pre-line">Completion notes: {{ $res->completion_notes }}</p>@endif
+                            @if ($res->soa_sent_at) <div class="text-xs text-zinc-500">{{ $res->soa_email_pending ? 'Previous SOA sent' : 'SOA sent' }} {{ $res->soa_sent_at->format('M j, Y') }}@if ($res->payment_due_at) · Due {{ $res->payment_due_at->format('M j, Y') }}@endif</div> @endif
                             @if ($res->paid_at) <div class="text-xs text-zinc-500">Paid {{ $res->paid_at->format('M j, Y') }}</div> @endif
                             <div class="flex flex-wrap gap-2">
                                 @if ($res->recurrence_series_id) <flux:button size="sm" wire:click="showRecurringSeries('{{ $res->recurrence_series_id }}')">View recurring events</flux:button> @endif
@@ -141,8 +187,8 @@
                                     <flux:modal.trigger name="reject-reservation"><flux:button size="sm" variant="danger" wire:click="selectForDecision({{ $res->id }})">Reject</flux:button></flux:modal.trigger>
                                 @endif
                                 @if ($isFacilityAdmin)
-                                    @if ($res->status === 'approved' && !$res->is_archived && $res->end_datetime->lte(now()) && !$res->soa_path && $res->billing_status === 'unbilled')
-                                        <flux:modal.trigger name="finish-reservation"><flux:button size="sm" wire:click="$set('finishId', {{ $res->id }})">Confirm finished</flux:button></flux:modal.trigger>
+                                    @if ($res->status === 'approved' && !$res->is_archived && !$res->finished_confirmed_at && $res->end_datetime->lte(now()))
+                                        <flux:button size="sm" wire:click="selectForFinish({{ $res->id }})">Confirm finished</flux:button>
                                     @endif
                                     <flux:button wire:key="edit-action-{{ $res->id }}" size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $res->id }})" wire:loading.attr="disabled">Edit</flux:button>
                                     @if (($unsentEditCounts[$res->id] ?? 0) > 0) <flux:button size="sm" wire:click="emailReservationChanges({{ $res->id }})" wire:loading.attr="disabled" wire:target="emailReservationChanges({{ $res->id }})">Email changes to requester</flux:button> @endif
@@ -208,11 +254,13 @@
                         @if ($occurrence->notes) <div class="text-xs whitespace-pre-line">Notes: {{ $occurrence->notes }}</div> @endif
                         @if ($occurrence->status === 'rejected' && $occurrence->approval_note) <div class="text-xs text-red-700">Rejection reason: {{ $occurrence->approval_note }}</div> @endif
                         <div class="flex flex-wrap items-center gap-3 text-xs">
-                            @foreach (['floor_plan_path' => 'Floor plan', 'gate_pass_path' => 'Gate pass', 'soa_path' => 'SOA'] as $field => $label)
+                            @foreach (['floor_plan_path' => 'Floor plan', 'gate_pass_path' => 'Gate pass'] as $field => $label)
                                 @if ($occurrence->{$field}) <a class="text-blue-700 underline" href="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($occurrence->{$field}) }}" target="_blank" rel="noopener">{{ $label }}</a> @endif
                             @endforeach
+                                @include('livewire.resources.soa-file', ['reservation' => $occurrence])
                                 @include('livewire.resources.payment-proofs', ['reservation' => $occurrence])
                         </div>
+                        @include('livewire.resources.requester-cancellation', ['reservation' => $occurrence])
                         <div class="flex flex-wrap gap-2">
                             @if ($occurrence->trashed())
                                 @if ($isFacilityAdmin) <flux:button size="sm" wire:click="restoreReservation({{ $occurrence->id }})">Restore for approval</flux:button> @endif
@@ -229,6 +277,9 @@
                                     <flux:button wire:key="edit-occurrence-action-{{ $occurrence->id }}" size="sm" variant="primary" color="yellow" wire:click="selectForEdit({{ $occurrence->id }})" wire:loading.attr="disabled">Edit</flux:button>
                                     @if (($unsentEditCounts[$occurrence->id] ?? 0) > 0) <flux:button size="sm" wire:click="emailReservationChanges({{ $occurrence->id }})">Email changes to requester</flux:button> @endif
                                     @if ($occurrence->status === 'approved')
+                                        @if (!$occurrence->is_archived && !$occurrence->finished_confirmed_at && $occurrence->end_datetime->lte(now()))
+                                            <flux:button size="sm" wire:click="selectForFinish({{ $occurrence->id }})">Confirm finished</flux:button>
+                                        @endif
                                         @include('livewire.resources.soa-actions', ['reservation' => $occurrence])
                                         @if ($occurrence->soa_path)
                                             <flux:modal.trigger name="payment-reservation"><flux:button size="sm" wire:click="selectForPayment({{ $occurrence->id }})">Record payment</flux:button></flux:modal.trigger>
@@ -246,7 +297,11 @@
 
     <flux:modal name="finish-reservation" size="sm"><div class="space-y-4 p-4">
         <h2 class="font-semibold">Confirm finished event #{{ $finishId }}</h2>
-        <p>This event has finished and does not require payment. Confirm to move it to Done.</p>
+        <p>Record completion. Events requiring payment remain under Approved → Unbilled or Billed until paid.</p>
+        <flux:textarea wire:model="finishNotes" label="Completion notes" maxlength="2000" />
+        @php $finishBooking = $this->finishReservation; $canWaive = $finishBooking && !$finishBooking->soa_path && !$finishBooking->soa_sent_at && !$finishBooking->soa_locked && !$finishBooking->payment_proof_path && $finishBooking->billing_status === 'unbilled' && !$finishBooking->paymentProofs()->exists(); @endphp
+        <label class="flex items-center gap-2"><input type="checkbox" wire:model="finishNoPayment" @disabled(!$canWaive)> No payment required?</label>
+        @if (!$canWaive)<p class="text-sm text-zinc-500">Existing billing/payment records must be reviewed before waiving payment.</p>@endif
         <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="confirmFinishedEvent" wire:loading.attr="disabled">Confirm finished event</flux:button></div>
     </div></flux:modal>
     <flux:modal name="delete-series" wire:key="delete-series-modal" wire:model="showDeleteSeriesModal" class="md:w-[600px]">
@@ -350,14 +405,18 @@
         <h2 class="font-semibold">{{ $billingEmailAction === 'reminder' ? 'Send payment reminder' : 'Send SOA to requester' }}</h2>
         <p>{{ $emailReservation?->title }} · #{{ $billingEmailId }}</p>
         <p>To: {{ $emailReservation?->requester_email ?: 'No requester email address' }}</p>
-        <p class="text-sm">The current SOA will be attached. Payment due: {{ $emailReservation?->payment_due_at?->format('M j, Y') }}. This date is based on the latest SOA upload.</p>
+        @if ($emailReservation && $billingEmailAction === 'soa' && \App\Support\FacilitySoaFilename::generatedDocument($emailReservation))
+            <p class="text-sm">The generated SOA will be attached. If sent today, payment is due {{ app(\App\Services\FacilitySoaGenerator::class)->dueDate(today())->format('M j, Y') }}. Issue and due dates are finalized when the email is sent; payment is due 15 business days after that send date.</p>
+        @else
+            <p class="text-sm">The current SOA will be attached. Payment due: {{ $emailReservation?->payment_due_at?->format('M j, Y') }}.@if ($billingEmailAction !== 'reminder') This date is based on the latest SOA upload.@endif</p>
+        @endif
         @if ($billingEmailAction === 'reminder') <p class="text-sm">{{ $emailReservation?->payment_due_at?->isBefore(today()) ? 'This email will indicate that payment is overdue.' : 'This email will state the payment due date.' }}</p> @endif
         <div class="flex justify-end gap-2"><flux:button wire:click="cancelBillingEmail">Cancel</flux:button><flux:button variant="primary" wire:click="sendBillingEmail" wire:loading.attr="disabled" wire:target="sendBillingEmail">Send email</flux:button></div>
     </div></flux:modal>
     <flux:modal name="billing-reservation" size="md"><div class="space-y-4 p-4">
         <h2 class="font-semibold">Statement of Account for #{{ $billingId }}</h2>
         @if ($billingFromDone && !$replacingPaidSoa)
-            <p class="text-sm text-amber-700">Uploading an SOA removes the “No payment required” designation. This booking will move from Done to Approved until payment is recorded.</p>
+            <p class="text-sm text-amber-700">Uploading an SOA removes the “No payment required” designation. This booking will move from Done to Approved → Unbilled until the SOA is emailed, then Approved → Billed until payment is recorded.</p>
         @endif
         <flux:input type="file" wire:model="soaFile" label="Upload SOA (PDF or Word)" accept=".pdf,.doc,.docx" />
         <div wire:loading wire:target="soaFile" class="text-xs text-zinc-500">Uploading SOA...</div>
@@ -372,7 +431,7 @@
         @if ($paymentReservation?->paymentProofs->isNotEmpty())
             <h3 class="text-sm font-semibold">Recorded payment proofs</h3>
             @foreach ($paymentReservation->paymentProofs as $proof)
-                <p class="text-sm"><a href="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($proof->path) }}" target="_blank" rel="noopener" class="text-blue-700 underline">{{ $proof->original_name }}</a> · {{ $proof->paid_on?->format('M j, Y') }}</p>
+                <p class="text-sm"><a href="{{ route('resources.reservations.billing-file', ['reservation' => $proof->reservation_id, 'kind' => 'payment', 'proof' => $proof->id]) }}" target="_blank" rel="noopener" class="text-blue-700 underline">{{ $proof->original_name }}</a> · {{ $proof->paid_on?->format('M j, Y') }}</p>
             @endforeach
         @endif
         <flux:input type="date" wire:model="paymentDate" label="Date paid" />

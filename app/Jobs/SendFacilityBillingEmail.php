@@ -42,6 +42,7 @@ class SendFacilityBillingEmail implements ShouldQueue
                 $details['due_date'] = $reservation->payment_due_at->format('M j, Y');
             }
             $details['paid'] = $reservation->billing_status === 'paid';
+            if ($isSoa) $details = app(\App\Services\FacilitySoaGenerator::class)->prepareEmail($reservation, $details);
             Mail::to($details['recipient'])->send(new FacilityBillingMail($details, $message->kind));
             $message->update(['status' => 'sent', 'sent_at' => now(), 'snapshot' => $details]);
             if ($isSoa) {

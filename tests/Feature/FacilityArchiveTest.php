@@ -57,9 +57,9 @@ class FacilityArchiveTest extends TestCase
         $this->assertSame([$paid->id], $ids);
         $component->set('statusFilter', 'approved');
         $this->assertNotContains($paid->id, $component->instance()->reservations->flatten(1)->pluck('id'));
-        $component->set('statusFilter', 'billed');
+        $component->set('statusFilter', 'approved')->set('approvedFilter', 'billed');
         $this->assertSame([$billed->id], $component->instance()->reservations->flatten(1)->pluck('id')->all());
-        $component->set('statusFilter', 'paid');
+        $component->set('statusFilter', 'approved')->set('approvedFilter', 'paid');
         $this->assertSame([$future->id], $component->instance()->reservations->flatten(1)->pluck('id')->all());
     }
 
@@ -70,12 +70,12 @@ class FacilityArchiveTest extends TestCase
         $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
         $data = ['title' => 'Free event', 'status' => 'approved', 'billing_status' => 'unbilled', 'start_datetime' => '2026-10-06 09:00', 'end_datetime' => '2026-10-06 10:00'];
         $free = ResourceReservation::create($data);
-        $component = Livewire::actingAs($admin)->test(ReservationIndex::class)->set('finishId', $free->id)->call('confirmFinishedEvent');
+        $component = Livewire::actingAs($admin)->test(ReservationIndex::class)->set('finishId', $free->id)->set('finishNoPayment', true)->call('confirmFinishedEvent');
         $this->assertTrue($free->fresh()->is_archived);
         $this->assertSame($admin->id, $free->fresh()->finished_confirmed_by);
         foreach ([['status' => 'pending'], ['end_datetime' => '2026-10-08 10:00'], ['soa_path' => 'soa/test.pdf'], ['billing_status' => 'billed']] as $override) {
             $blocked = ResourceReservation::create(array_merge($data, $override));
-            $component->set('finishId', $blocked->id)->call('confirmFinishedEvent');
+            $component->set('finishId', $blocked->id)->set('finishNoPayment', true)->call('confirmFinishedEvent');
             $this->assertNull($blocked->fresh()->finished_confirmed_at);
         }
     }

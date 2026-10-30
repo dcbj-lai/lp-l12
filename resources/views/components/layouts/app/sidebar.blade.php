@@ -171,7 +171,7 @@
 
                     @if ($isFacilityAdmin)
                         <flux:navlist.item href="{{ route('resources.index') }}" icon="building-office"
-                            :active="request()->routeIs('resources.*')">
+                            :active="request()->routeIs('resources.index')">
                             Resources
                         </flux:navlist.item>
                     @endif
@@ -181,6 +181,10 @@
                             :active="request()->routeIs('reservations.*')">
                             Reservations
                         </flux:navlist.item>
+                    @endif
+
+                    @if ($isFacilityAdmin)
+                        <flux:navlist.item href="{{ route('resources.billing-configuration') }}" icon="cog-6-tooth" :active="request()->routeIs('resources.billing-configuration')">Billing configuration</flux:navlist.item>
                     @endif
 
                 </flux:navlist.group>
