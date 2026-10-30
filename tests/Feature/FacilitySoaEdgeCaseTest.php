@@ -21,6 +21,8 @@ class FacilitySoaEdgeCaseTest extends TestCase
     {
         parent::setUp();
         Mail::fake();
+        config(['filesystems.facility_billing_disk' => 'local']);
+        Storage::fake('local');
         Storage::fake(config('filesystems.facility_upload_disk'));
         $admin = User::factory()->create();
         $admin->assignRole(Role::findOrCreate('facility.admin', 'web'));
@@ -38,17 +40,17 @@ class FacilitySoaEdgeCaseTest extends TestCase
 
     public function test_done_no_payment_booking_moves_to_approved_and_payment_returns_it_to_done(): void
     {
-        $reservation = $this->reservation(['finished_confirmed_at' => now(), 'finished_confirmed_by' => auth()->id()]);
+        $reservation = $this->reservation(['payment_required' => false, 'finished_confirmed_at' => now(), 'finished_confirmed_by' => auth()->id()]);
         $this->assertTrue($reservation->is_archived);
         $component = Livewire::test(ReservationIndex::class)->set('statusFilter', 'archive')
             ->call('selectForBilling', $reservation->id)->assertSet('billingFromDone', true)
-            ->assertSee('This booking will move from Done to Approved')
+            ->assertSee('This booking will move from Done to Approved → Unbilled')
             ->set('soaFile', UploadedFile::fake()->create('soa.pdf', 10, 'application/pdf'))
-            ->call('markBilled')->assertHasNoErrors()->assertSet('statusFilter', 'approved')
-            ->assertDispatched('flash', fn ($name, $parameters) => str_contains($parameters['message'], 'View: Approved'));
+            ->call('markBilled')->assertHasNoErrors()->assertSet('statusFilter', 'approved')->assertSet('approvedFilter', 'unbilled')
+            ->assertDispatched('flash', fn ($name, $parameters) => str_contains($parameters['message'], 'View: Approved → Unbilled'));
         $reservation->refresh();
-        $this->assertNull($reservation->finished_confirmed_at);
-        $this->assertNull($reservation->finished_confirmed_by);
+        $this->assertNotNull($reservation->finished_confirmed_at);
+        $this->assertNotNull($reservation->finished_confirmed_by);
         $this->assertFalse($reservation->is_archived);
         $this->assertSame('approved', $reservation->status);
         $this->assertSame('unbilled', $reservation->billing_status);
@@ -63,7 +65,7 @@ class FacilitySoaEdgeCaseTest extends TestCase
 
     public function test_upload_navigation_covers_unbilled_billed_paid_and_done_for_recurring_dates(): void
     {
-        foreach ([['unbilled', false, 'approved'], ['billed', false, 'billed'], ['paid', false, 'paid'], ['paid', true, 'archive']] as [$billing, $past, $tab]) {
+        foreach ([['unbilled', false, 'approved'], ['billed', false, 'approved'], ['paid', false, 'approved'], ['paid', true, 'archive']] as [$billing, $past, $tab]) {
             $oldPath = 'soa/'.uniqid().'.pdf';
             Storage::disk(config('filesystems.facility_upload_disk'))->put($oldPath, 'existing SOA');
             $reservation = $this->reservation([
@@ -92,7 +94,7 @@ class FacilitySoaEdgeCaseTest extends TestCase
     public function test_missing_unsupported_oversized_and_empty_reason_uploads_do_not_change_done_booking(): void
     {
         foreach ([null, UploadedFile::fake()->create('soa.txt', 10, 'text/plain'), UploadedFile::fake()->create('large.pdf', 10241, 'application/pdf')] as $file) {
-            $reservation = $this->reservation(['finished_confirmed_at' => now()]);
+            $reservation = $this->reservation(['payment_required' => false, 'finished_confirmed_at' => now()]);
             $component = Livewire::test(ReservationIndex::class)->set('statusFilter', 'archive')->call('selectForBilling', $reservation->id);
             if ($file) { $component->set('soaFile', $file); }
             $component->call('markBilled')->assertHasErrors(['soaFile'])->assertSet('statusFilter', 'archive');
@@ -116,7 +118,7 @@ class FacilitySoaEdgeCaseTest extends TestCase
                 ->set('soaFile', UploadedFile::fake()->create('soa.'.$extension, 10, $mime));
             $this->assertNull($reservation->fresh()->soa_path);
             $component->call('markBilled')->assertHasNoErrors();
-            Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->fresh()->soa_path);
+            \App\Support\FacilityBillingStorage::disk($reservation->fresh()->soa_path)->assertExists($reservation->fresh()->soa_path);
         }
         Mail::assertNothingSent();
         Mail::assertNothingQueued();
@@ -153,7 +155,7 @@ class FacilitySoaEdgeCaseTest extends TestCase
         $disk = Storage::disk(config('filesystems.facility_upload_disk'));
         $disk->put('soa/original.pdf', 'Original file');
         $reservation = $this->reservation(['soa_path' => 'soa/original.pdf', 'billing_status' => 'billed', 'payment_due_at' => today()->addDays(3)]);
-        $component = Livewire::test(ReservationIndex::class)->set('statusFilter', 'billed')
+        $component = Livewire::test(ReservationIndex::class)->set('statusFilter', 'approved')->set('approvedFilter', 'billed')
             ->call('selectForBilling', $reservation->id)
             ->set('soaReplacementReason', 'Corrected statement')
             ->set('soaFile', UploadedFile::fake()->create('replacement.pdf', 10, 'application/pdf'));
@@ -163,10 +165,10 @@ class FacilitySoaEdgeCaseTest extends TestCase
         $failedDisk->shouldReceive('delete')->once()->andReturn(true);
         $failedDisk->shouldReceive('url')->andReturn('/storage/soa/original.pdf');
         $manager = Storage::getFacadeRoot();
-        Storage::shouldReceive('disk')->with(config('filesystems.facility_upload_disk'))->andReturn($failedDisk);
-        Storage::shouldReceive('disk')->withArgs(fn ($name = null) => $name !== config('filesystems.facility_upload_disk'))
+        Storage::shouldReceive('disk')->with('local')->andReturn($failedDisk);
+        Storage::shouldReceive('disk')->withArgs(fn ($name = null) => $name !== 'local')
             ->andReturnUsing(fn ($name = null) => $manager->disk($name));
-        $component->call('markBilled')->assertHasErrors(['soaFile'])->assertSet('statusFilter', 'billed');
+        $component->call('markBilled')->assertHasErrors(['soaFile'])->assertSet('statusFilter', 'approved');
         $reservation->refresh();
         $this->assertSame('soa/original.pdf', $reservation->soa_path);
         $this->assertSame('billed', $reservation->billing_status);
@@ -180,12 +182,12 @@ class FacilitySoaEdgeCaseTest extends TestCase
         $disk = Storage::disk(config('filesystems.facility_upload_disk'));
         $disk->put('soa/original.pdf', 'Original file');
         $reservation = $this->reservation(['soa_path' => 'soa/original.pdf', 'finished_confirmed_at' => now(), 'billing_status' => 'billed']);
-        Livewire::test(ReservationIndex::class)->set('statusFilter', 'billed')
+        Livewire::test(ReservationIndex::class)->set('statusFilter', 'approved')->set('approvedFilter', 'billed')
             ->call('selectForSoaRemoval', $reservation->id)->call('confirmSoaRemoval')
-            ->assertSet('statusFilter', 'approved')->assertHasNoErrors();
+            ->assertSet('statusFilter', 'approved')->assertSet('approvedFilter', 'unbilled')->assertHasNoErrors();
         $reservation->refresh();
         $this->assertNull($reservation->soa_path);
-        $this->assertNull($reservation->finished_confirmed_at);
+        $this->assertNotNull($reservation->finished_confirmed_at);
         $this->assertFalse($reservation->is_archived);
     }
 }

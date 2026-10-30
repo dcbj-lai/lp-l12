@@ -14,7 +14,7 @@ class FacilityViewerController extends Controller
             return view('resources.reservations.index');
         }
 
-        $direction = $request->query('sort') === 'desc' ? 'desc' : 'asc';
+        $direction = $request->query('sort') === 'asc' ? 'asc' : 'desc';
         $status = $request->query('status') === 'pending' ? 'pending' : 'approved';
         $search = mb_substr(trim((string) $request->query('search', '')), 0, 200);
         $now = now();

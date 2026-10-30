@@ -22,6 +22,7 @@ class FacilityBillingMail extends Mailable
 
         return $this->subject($prefix . ': ' . $this->details['title'])
             ->view('emails.resource-booking.billing')
-            ->attachFromStorageDisk($this->details['disk'], $this->details['attachment'], 'Statement-of-Account.' . pathinfo($this->details['attachment'], PATHINFO_EXTENSION));
+            ->attachFromStorageDisk($this->details['disk'], $this->details['attachment'],
+                $this->details['attachment_name'] ?? 'Statement-of-Account.' . pathinfo($this->details['attachment'], PATHINFO_EXTENSION));
     }
 }

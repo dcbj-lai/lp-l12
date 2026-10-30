@@ -99,6 +99,6 @@ class FacilityViewerTest extends TestCase
         $viewer = $this->viewer();
         $this->post('/logout')->assertRedirect('/');
         $viewer->syncRoles(['facility.admin']);
-        $this->actingAs($viewer)->get('/resources/reservations')->assertOk()->assertSee('Approval dashboard');
+        $this->actingAs($viewer)->get('/resources/reservations')->assertOk()->assertSee('Reservations')->assertSee('Reservation status')->assertDontSee('Approval dashboard');
     }
 }

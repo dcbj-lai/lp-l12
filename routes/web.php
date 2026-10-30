@@ -591,6 +591,8 @@ Route::middleware(['auth'])->group(function () {
                 ->name('reservations.index');
             Route::get('/reservations/{reservation}/floor-plan', [\App\Http\Controllers\FacilityViewerController::class, 'floorPlan'])
                 ->name('reservations.floor-plan');
+            Route::get('/reservations/{reservation}/billing-file/{kind}/{proof?}', [\App\Http\Controllers\FacilityBillingAttachmentController::class, 'show'])
+                ->whereIn('kind', ['soa', 'payment'])->whereNumber('proof')->withTrashed()->name('reservations.billing-file');
 
         });
 
@@ -605,6 +607,14 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/resources/book', function () {
     return view('public.resources.book');
 })->name('resources.book');
+
+Route::view('/resources/billing-configuration', 'resources.billing-configuration')
+    ->middleware(['auth', 'role:facility.admin'])->name('resources.billing-configuration');
+
+Route::get('/resources/manage/{token}', [\App\Http\Controllers\FacilityRequesterCancellationController::class, 'show'])
+    ->middleware('throttle:30,1')->name('facilities.requester.show');
+Route::post('/resources/manage/{token}', [\App\Http\Controllers\FacilityRequesterCancellationController::class, 'cancel'])
+    ->middleware('throttle:10,1')->name('facilities.requester.cancel');
 
 Route::get('/dev/facilities/billing-email/{scenario?}', \App\Http\Controllers\FacilityBillingPreviewController::class);
 

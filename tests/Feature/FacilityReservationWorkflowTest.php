@@ -24,6 +24,13 @@ class FacilityReservationWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['filesystems.facility_billing_disk' => 'local']);
+        Storage::fake('local');
+    }
+
     public function test_orphaned_approval_dialog_cannot_expose_a_model_query_error(): void
     {
         $admin = User::factory()->create();
@@ -456,9 +463,10 @@ class FacilityReservationWorkflowTest extends TestCase
 
         Livewire::actingAs($admin)->test(ReservationIndex::class)
             ->set('statusFilter', 'approved')
-            ->assertSeeInOrder(['Earlier event submitted second', 'Later event submitted first'])
-            ->set('eventDateSort', 'desc')
-            ->assertSeeInOrder(['Later event submitted first', 'Earlier event submitted second']);
+            ->assertSet('eventDateSort', 'desc')
+            ->assertSeeInOrder(['Later event submitted first', 'Earlier event submitted second'])
+            ->set('eventDateSort', 'asc')
+            ->assertSeeInOrder(['Earlier event submitted second', 'Later event submitted first']);
     }
 
     public function test_recurring_series_uses_its_next_upcoming_event_for_sorting(): void
@@ -488,6 +496,7 @@ class FacilityReservationWorkflowTest extends TestCase
 
         Livewire::actingAs($admin)->test(ReservationIndex::class)
             ->set('statusFilter', 'all')
+            ->set('eventDateSort', 'asc')
             ->assertSeeInOrder(['Single booking', 'Recurring workshop'])
             ->assertSee('Next event: Oct 15, 2026')
             ->assertSee('For Approval: 1')
@@ -611,7 +620,7 @@ class FacilityReservationWorkflowTest extends TestCase
             'soa_sent_at' => today()->subDays(16), 'payment_due_at' => today()->subDay(),
         ]);
 
-        Livewire::actingAs($admin)->test(ReservationIndex::class)->set('statusFilter', 'approved')->assertSee('Overdue');
+        Livewire::actingAs($admin)->test(ReservationIndex::class)->set('statusFilter', 'approved')->set('approvedFilter', 'billed')->assertSee('Overdue');
 
         $reservation->update(['billing_status' => 'paid', 'paid_at' => now()]);
         Livewire::actingAs($admin)->test(ReservationIndex::class)->set('statusFilter', 'approved')->assertDontSee('Overdue');
@@ -647,7 +656,7 @@ class FacilityReservationWorkflowTest extends TestCase
         $reservation->refresh();
         $this->assertSame('billed', $reservation->billing_status);
         $this->assertSame(today()->addDays(15)->toDateString(), $reservation->payment_due_at->toDateString());
-        Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->soa_path);
+        \App\Support\FacilityBillingStorage::disk($reservation->soa_path)->assertExists($reservation->soa_path);
 
         Livewire::actingAs($admin)->test(ReservationIndex::class)
             ->call('selectForPayment', $reservation->id)
@@ -662,7 +671,7 @@ class FacilityReservationWorkflowTest extends TestCase
         Livewire::actingAs($admin)->test(ReservationIndex::class)
             ->call('selectForPayment', $reservation->id)->set('paymentDate', '2026-10-01')->call('recordPayment')->assertHasNoErrors();
         Mail::assertQueued(\App\Mail\FacilityPaymentReceived::class, 1);
-        Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->fresh()->payment_proof_path);
+        \App\Support\FacilityBillingStorage::disk($reservation->fresh()->payment_proof_path)->assertExists($reservation->fresh()->payment_proof_path);
     }
 
     public function test_billed_reservation_requires_payment_proof_and_keeps_approval(): void
@@ -836,7 +845,7 @@ class FacilityReservationWorkflowTest extends TestCase
         $this->assertSame($oldPath, $reservation->payment_proof_path);
         $this->assertSame('paid', $reservation->billing_status);
         foreach ($reservation->paymentProofs as $proof) {
-            Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($proof->path);
+            \App\Support\FacilityBillingStorage::disk($proof->path)->assertExists($proof->path);
         }
         $this->assertSame(today()->subDay()->toDateString(), $reservation->paymentProofs->first()->paid_on->toDateString());
         Mail::assertQueued(\App\Mail\FacilityPaymentReceived::class, 1);
@@ -885,6 +894,6 @@ class FacilityReservationWorkflowTest extends TestCase
         $this->assertFalse($reservation->soa_email_pending);
         $this->assertSame('Corrected organizer name', $reservation->soaRevisions()->first()->reason);
         Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($oldPath);
-        Storage::disk(config('filesystems.facility_upload_disk'))->assertExists($reservation->soa_path);
+        \App\Support\FacilityBillingStorage::disk($reservation->soa_path)->assertExists($reservation->soa_path);
     }
 }
