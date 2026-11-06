@@ -24,7 +24,7 @@
         $isFacilityAdmin = $user->hasRole('facility.admin');
         $isFacilityApprover = $user->hasRole('facility.approver');
         $canManageApprovals = $isManager || $user->canApproveAnyLeaveRequest();
-        $canAccessFacility = $isFacilityAdmin || $isFacilityApprover;
+        $canAccessFacility = $isFacilityAdmin || $isFacilityApprover || $user->hasRole('facility.payment-verifier');
         $canAccessAdmin = $user->hasRole('access.admin');
     @endphp
     <flux:sidebar sticky stashable class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
@@ -168,6 +168,10 @@
 
             @if ($canAccessFacility)
                 <flux:navlist.group heading="Facilities" expandable :expanded="false">
+
+                    @if ($isFacilityAdmin || $user->hasRole('facility.payment-verifier'))
+                        <flux:navlist.item href="{{ route('facilities.payments.index') }}" icon="banknotes" :active="request()->routeIs('facilities.payments.*')">Payment verification</flux:navlist.item>
+                    @endif
 
                     @if ($isFacilityAdmin)
                         <flux:navlist.item href="{{ route('resources.index') }}" icon="building-office"

@@ -263,6 +263,7 @@ class ReservationIndex extends Component
         $dateColumn = $byRequestDate ? 'created_at' : 'start_datetime';
 
         return ResourceReservation::with(['resource', 'rooms', 'equipment', 'items.resource', 'latestBillingEmail', 'latestPaymentReminder', 'paymentProofs', 'soaRevisions', 'latestCancellationRequest', 'latestGeneratedSoa'])
+            ->withCount(['paymentSubmissions as pending_payment_count' => fn ($q) => $q->where('status', 'pending')])
             ->search($this->search)
             ->when($this->statusFilter === 'deleted', fn ($query) => $query->onlyTrashed())
             ->when($this->statusFilter === 'archive', fn ($query) => $query->archived())
@@ -377,6 +378,7 @@ class ReservationIndex extends Component
         }
 
         return ResourceReservation::withTrashed()->with(['resource', 'rooms', 'equipment', 'latestBillingEmail', 'latestPaymentReminder', 'paymentProofs', 'soaRevisions', 'latestCancellationRequest', 'latestGeneratedSoa'])
+            ->withCount(['paymentSubmissions as pending_payment_count' => fn ($q) => $q->where('status', 'pending')])
             ->where('recurrence_series_id', $this->selectedSeriesId)
             ->orderBy('start_datetime')->get();
     }
@@ -938,6 +940,10 @@ class ReservationIndex extends Component
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
         $reservation = ResourceReservation::findOrFail($this->paymentId);
+        if ($reservation->paymentSubmissions()->where('status', 'pending')->exists()) {
+            $this->addError('paymentProof', 'Requester proof is pending finance verification. Use Payment review to confirm it.');
+            return;
+        }
         abort_unless($reservation->status === 'approved' && $reservation->soa_path, 422);
         $this->validate([
             'paymentDate' => 'required|date|before_or_equal:today',
@@ -968,6 +974,9 @@ class ReservationIndex extends Component
                     throw new \RuntimeException('An approved reservation with an SOA is required.');
                 }
                 $firstPayment = !$reservation->soa_locked;
+                if ($reservation->paymentSubmissions()->where('status', 'pending')->exists()) {
+                    throw new \RuntimeException('Payment proof is awaiting finance verification.');
+                }
                 if ($reservation->payment_proof_path && !$reservation->paymentProofs()->where('path', $reservation->payment_proof_path)->exists()) {
                     $reservation->paymentProofs()->create([
                         'path' => $reservation->payment_proof_path, 'original_name' => basename($reservation->payment_proof_path),

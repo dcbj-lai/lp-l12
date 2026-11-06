@@ -44,6 +44,9 @@ class FacilityBillingEmailService
                     throw new \RuntimeException('A billing email is already queued for this reservation.');
                 }
                 if ($action === 'reminder') {
+                    if ($reservation->paymentSubmissions()->where('status', 'pending')->exists()) {
+                        throw new \RuntimeException('Payment proof is awaiting finance verification. Review it before sending another reminder.');
+                    }
                     if ($reservation->billing_status !== 'billed' || !$reservation->payment_due_at || $reservation->soa_email_pending) {
                         throw new \RuntimeException('Reminders require an unpaid, billed reservation with the current SOA sent.');
                     }

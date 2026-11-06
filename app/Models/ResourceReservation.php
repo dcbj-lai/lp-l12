@@ -11,6 +11,17 @@ class ResourceReservation extends Model
     use HasFactory, SoftDeletes;
     protected $attributes = ['payment_required' => true];
 
+    protected static function booted(): void
+    {
+        static::updated(function (self $reservation) {
+            if ($reservation->wasChanged(['soa_path', 'requester_email'])) {
+                $reservation->paymentSubmissions()->where('status', 'pending')->update([
+                    'status' => 'superseded', 'review_note' => 'SOA or requester changed. Submit proof against the current SOA.',
+                ]);
+            }
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'requester_email',
@@ -48,6 +59,7 @@ class ResourceReservation extends Model
         'finished_confirmed_by',
         'payment_required',
         'completion_notes',
+        'payment_verifier_id',
     ];
 
     protected $casts = [
@@ -61,6 +73,7 @@ class ResourceReservation extends Model
         'soa_email_pending' => 'boolean',
         'finished_confirmed_at' => 'datetime',
         'payment_required' => 'boolean',
+        'payment_verifier_id' => 'integer',
     ];
 
     public function scopeSearch($query, ?string $search)
@@ -68,7 +81,8 @@ class ResourceReservation extends Model
         $term = mb_substr(trim((string) $search), 0, 200);
         if ($term === '') return $query;
         $pattern = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($term)) . '%';
-        return $query->where(function ($match) use ($term, $pattern) {
+        $dates = self::searchDateRange($term);
+        return $query->where(function ($match) use ($term, $pattern, $dates) {
             foreach (['title', 'requester_name', 'requester_email'] as $column) {
                 $match->orWhereRaw("LOWER({$column}) LIKE ? ESCAPE '!'", [$pattern]);
             }
@@ -76,7 +90,35 @@ class ResourceReservation extends Model
             $match->orWhereHas('rooms', $roomMatch)->orWhereHas('resource', $roomMatch);
             $number = ltrim($term, '#');
             if (ctype_digit($number) && strlen($number) < 10) $match->orWhere('resource_reservations.id', (int) $number);
+            if ($dates) {
+                $match->orWhere(fn ($event) => $event
+                    ->where('start_datetime', '<', $dates[1])
+                    ->where('end_datetime', '>', $dates[0]));
+            }
         });
+    }
+
+    private static function searchDateRange(string $term): ?array
+    {
+        // Strict formats avoid interpreting ordinary event names as relative dates.
+        $term = preg_replace('/\s+/', ' ', str_replace(',', '', trim($term)));
+        $formats = match (true) {
+            (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $term) => ['Y-m-d'],
+            (bool) preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $term) => ['m/d/Y'],
+            (bool) preg_match('/^\d{4}-\d{2}$/', $term) => ['Y-m'],
+            (bool) preg_match('/^[a-z]+ \d{4}$/i', $term) => ['M Y', 'F Y'],
+            (bool) preg_match('/^[a-z]+ \d{1,2} \d{4}$/i', $term) => ['M j Y', 'F j Y'],
+            (bool) preg_match('/^\d{1,2} [a-z]+ \d{4}$/i', $term) => ['j M Y', 'j F Y'],
+            default => [],
+        };
+        foreach ($formats as $format) {
+            $date = \DateTimeImmutable::createFromFormat('!'.$format, $term, new \DateTimeZone(config('app.timezone')));
+            $errors = \DateTimeImmutable::getLastErrors();
+            if (!$date || ($errors && ($errors['warning_count'] || $errors['error_count']))) continue;
+            $end = $date->modify(in_array($format, ['Y-m', 'M Y', 'F Y']) ? '+1 month' : '+1 day');
+            return [$date->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s')];
+        }
+        return null;
     }
 
     public function billingEmails()
@@ -92,6 +134,11 @@ class ResourceReservation extends Model
     public function paymentProofs()
     {
         return $this->hasMany(FacilityPaymentProof::class, 'reservation_id')->orderBy('id');
+    }
+
+    public function paymentSubmissions()
+    {
+        return $this->hasMany(FacilityPaymentSubmission::class, 'reservation_id');
     }
 
     public function soaRevisions()

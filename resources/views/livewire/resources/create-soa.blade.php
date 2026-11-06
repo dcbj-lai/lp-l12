@@ -5,6 +5,7 @@
         <flux:heading size="lg">{{ $editing ? 'Edit SOA' : 'Create SOA' }}</flux:heading>
         <flux:input wire:model="client_name" label="Client Name" required maxlength="255" />
         <flux:textarea wire:model="business_address" label="Business Address (optional)" maxlength="1000" />
+        <p class="text-xs text-zinc-500">The SOA email includes a private payment-proof upload link. Any active user with the payment-verifier role can confirm the full payment before the booking is marked Paid.</p>
         <div class="grid grid-cols-2 gap-3">
             <div class="text-sm"><strong>Issue Date</strong><p>{{ today()->format('M j, Y') }} (preview)</p></div>
             <div class="text-sm"><strong>Due Date</strong><p>{{ $dueDate->format('M j, Y') }} (preview)</p></div>

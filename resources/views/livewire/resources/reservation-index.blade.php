@@ -62,7 +62,7 @@
         <div class="w-full sm:mr-2 sm:w-80">
             <label for="reservation-search" class="mb-1 block font-medium">Search reservations</label>
             <input id="reservation-search" type="search" wire:model.live.debounce.400ms="search" maxlength="200"
-                placeholder="Event, name, email, room, or #number" class="w-full rounded-md border bg-white px-3 py-2 dark:bg-zinc-800">
+                placeholder="Event, date, name, email, room, or #number" class="w-full rounded-md border bg-white px-3 py-2 dark:bg-zinc-800">
         </div>
         @if (trim($search) !== '')
             <button type="button" wire:click="$set('search', '')" class="rounded-md border px-3 py-2">Clear search</button>

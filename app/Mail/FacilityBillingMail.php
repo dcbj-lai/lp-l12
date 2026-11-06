@@ -6,6 +6,7 @@ use Illuminate\Mail\Mailable;
 
 class FacilityBillingMail extends Mailable
 {
+    use \App\Mail\Concerns\HasFacilityRequesterActions;
     public function __construct(public array $details, public string $kind)
     {
     }
@@ -21,7 +22,7 @@ class FacilityBillingMail extends Mailable
         };
 
         return $this->subject($prefix . ': ' . $this->details['title'])
-            ->view('emails.resource-booking.billing')
+            ->view('emails.resource-booking.billing', ['requesterActions' => $this->requesterActionData($this->details['reservation_id'] ?? null)])
             ->attachFromStorageDisk($this->details['disk'], $this->details['attachment'],
                 $this->details['attachment_name'] ?? 'Statement-of-Account.' . pathinfo($this->details['attachment'], PATHINFO_EXTENSION));
     }

@@ -613,6 +613,19 @@ Route::view('/resources/billing-configuration', 'resources.billing-configuration
 
 Route::get('/resources/manage/{token}', [\App\Http\Controllers\FacilityRequesterCancellationController::class, 'show'])
     ->middleware('throttle:30,1')->name('facilities.requester.show');
+
+Route::controller(\App\Http\Controllers\FacilityPaymentVerificationController::class)->group(function () {
+    Route::get('/resources/payment/{token}', 'show')->middleware('throttle:30,1')->name('facilities.payment.show');
+    Route::post('/resources/payment/{token}', 'upload')->middleware('throttle:10,1')->name('facilities.payment.upload');
+    Route::get('/resources/payment/{token}/soa', 'soa')->middleware('throttle:30,1')->name('facilities.payment.soa');
+    Route::middleware(['auth', 'role:facility.payment-verifier|facility.admin'])->group(function () {
+        Route::get('/resources/payment-reviews', 'index')->name('facilities.payments.index');
+        Route::get('/resources/payment-reviews/{reservation}', 'detail')->withTrashed()->name('facilities.payments.review');
+        Route::get('/resources/payment-reviews/{reservation}/soa', 'financeSoa')->withTrashed()->name('facilities.payments.soa');
+        Route::post('/resources/payment-submissions/{submission}/review', 'review')->name('facilities.payments.decide');
+        Route::get('/resources/payment-submissions/{submission}/files/{file}', 'file')->whereNumber('file')->name('facilities.payments.file');
+    });
+});
 Route::post('/resources/manage/{token}', [\App\Http\Controllers\FacilityRequesterCancellationController::class, 'cancel'])
     ->middleware('throttle:10,1')->name('facilities.requester.cancel');
 

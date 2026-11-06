@@ -15,7 +15,7 @@
     <form method="GET" class="flex flex-wrap items-center gap-2">
         <input type="hidden" name="status" value="{{ $status }}">
         <label for="reservation-search" class="sr-only">Search reservations</label>
-        <input id="reservation-search" type="search" name="search" value="{{ $search }}" maxlength="200" placeholder="Event, name, email, room, or #number" class="min-w-0 rounded-md border p-2">
+        <input id="reservation-search" type="search" name="search" value="{{ $search }}" maxlength="200" placeholder="Event, date, name, email, room, or #number" class="min-w-0 rounded-md border p-2">
         <button type="submit" class="rounded-md border bg-white px-3 py-2">Search</button>
         @if ($search !== '')<a class="text-sm text-blue-700 underline" href="{{ route('resources.reservations.index', ['status' => $status, 'sort' => $direction]) }}">Clear search</a>@endif
         <label for="sort">Sort by event date</label>

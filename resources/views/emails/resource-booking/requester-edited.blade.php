@@ -41,7 +41,13 @@
             @foreach ($attachments as $label => $path)
                 <tr style="background:{{ $changedDetails->has($label) ? '#fef3c7' : '#ffffff' }};border-bottom:1px solid #e4e4e7">
                     <th align="left">{{ $label }} @if($changedDetails->has($label))<span style="color:#92400e">(Changed)</span>@endif</th>
-                    <td>@if($path)<a href="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($path) }}">View {{ strtolower($label) }}</a>@else None @endif</td>
+                    <td>@if($path)
+                        @if($label === 'SOA' && !empty($requesterActions['payment_url']))
+                            <a href="{{ $requesterActions['payment_url'] }}/soa">View SOA</a>
+                        @elseif(in_array($label, ['SOA', 'Payment proof']))
+                            Uploaded (private)
+                        @else<a href="{{ Storage::disk(config('filesystems.facility_upload_disk'))->url($path) }}">View {{ strtolower($label) }}</a>@endif
+                    @else None @endif</td>
                 </tr>
             @endforeach
         </tbody>

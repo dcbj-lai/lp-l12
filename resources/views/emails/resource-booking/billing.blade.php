@@ -22,7 +22,7 @@
             <tr style="border-bottom:1px solid #e4e4e7"><th align="left" style="width:40%">{{ $label }}</th><td>{{ $value }}</td></tr>
         @endforeach
     </table>
-    @if (!in_array($kind, ['soa', 'updated_soa'])) <p>If you have already paid, please contact the Facilities team with your proof of payment so we can update our records.</p> @endif
+    @include('emails.resource-booking.requester-actions')
     <p>Payment instructions are indicated in the attached Statement of Account (SOA).</p>
     <p>For any questions or concerns, please contact <a href="mailto:events.facilities@life.edu.ph">events.facilities@life.edu.ph</a>.</p>
     <p>Thank you,<br>LIFE Facilities Team</p>

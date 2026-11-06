@@ -29,6 +29,10 @@ class SendFacilityBillingEmail implements ShouldQueue
             $message = FacilityBillingEmail::whereKey($this->messageId)->lockForUpdate()->firstOrFail();
             if ($message->status !== 'queued') { return; }
             $details = $message->snapshot;
+            if (!in_array($message->kind, ['soa', 'updated_soa']) && $reservation?->paymentSubmissions()->where('status', 'pending')->exists()) {
+                $message->update(['status' => 'skipped']);
+                return;
+            }
             $isSoa = in_array($message->kind, ['soa', 'updated_soa']);
             if (!$reservation || $reservation->soa_locked || $reservation->status !== 'approved' || $reservation->soa_path !== $details['soa_path'] || $reservation->requester_email !== $details['recipient'] || (!$isSoa && ($reservation->billing_status !== 'billed' || !$reservation->payment_due_at || $reservation->soa_email_pending))) {
                 $message->update(['status' => 'skipped']);
