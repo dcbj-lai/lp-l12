@@ -44,3 +44,9 @@ After checks pass, commit/push the feature branch and merge its reviewed PR to m
 The migration registers the verifier role but does not assign it. Assign intended active Finance users through Admin → Access → Users; do not create production QA accounts or grant financial access by inference.
 
 Recovery should redeploy a compatible prior application revision while retaining additive schema and evidence. Do not run migration rollback: down methods remove payment/audit tables. If database recovery is required, restore a separate cluster/database and reconnect LP alone; retain S3 files and reconcile queue state before resuming reminder delivery.
+
+## Production verification
+
+PR #27 deployed merge `19efe96` successfully on November 7. Both migrations completed; counts and SHA-256 hashes of all original columns were unchanged for 185 reservations, 10 payment proofs, 5 SOA revisions and 46 edit records. Role cache was reset. The production queue processed booking/approval/SOA messages, and the authorized recipient received the approval note and generated SOA PDF.
+
+Production browser smoke uses only disposable booking #211, `[Production QA Nov7] Release verification`, addressed to the authorized test recipient. Booking, S3 floor-plan preview, note approval, edit-X without an approval prompt, SOA creation/manual issuance, private requester proof upload and pending-review display passed. No real reservation was edited. A misleading generic SOA-email sentence about 15 days from upload was found: it now refers to the displayed due date, supporting both uploaded and system-generated SOA rules. All 45 billing/SOA/requester-email regression tests passed (370 assertions) for this wording correction.
