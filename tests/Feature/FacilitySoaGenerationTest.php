@@ -148,7 +148,7 @@ class FacilitySoaGenerationTest extends TestCase
         $this->assertSame('2026-11-23', $this->booking->fresh()->payment_due_at->toDateString());
     }
 
-    public function test_replacement_requires_reason_preserves_prior_document_and_paid_generation_is_blocked(): void
+    public function test_replacement_requires_reason_and_paid_done_generation_preserves_payment_and_history(): void
     {
         $service = app(FacilitySoaGenerator::class);
         $first = $service->create($this->booking->id, $this->data());
@@ -158,8 +158,18 @@ class FacilitySoaGenerationTest extends TestCase
         $this->assertNotSame($first->path, $second->path);
         Storage::disk('local')->assertExists($first->path);
         $this->assertSame($first->path, $this->booking->soaRevisions()->first()->previous_path);
-        $this->booking->update(['billing_status' => 'paid', 'paid_at' => now()]);
-        Livewire::test(CreateSoa::class)->call('open', $this->booking->id)->assertStatus(422);
+        $this->booking->update(['billing_status' => 'paid', 'paid_at' => now(), 'soa_email_pending' => false,
+            'start_datetime' => now()->subDays(2), 'end_datetime' => now()->subDay(), 'payment_proof_path' => 'retained.pdf']);
+        $due = $this->booking->fresh()->payment_due_at;
+        Livewire::test(CreateSoa::class)->call('open', $this->booking->id)->assertHasNoErrors()->assertSet('editing', true);
+        $third = $service->create($this->booking->id, $this->data() + ['replacement_reason' => 'Corrected paid SOA']);
+        $this->assertNotSame($second->path, $third->path);
+        $this->assertTrue($this->booking->fresh()->is_archived);
+        $this->assertSame('paid', $this->booking->fresh()->billing_status);
+        $this->assertSame('retained.pdf', $this->booking->fresh()->payment_proof_path);
+        $this->assertTrue($this->booking->fresh()->payment_due_at->equalTo($due));
+        $this->assertCount(2, $this->booking->soaRevisions);
+        Mail::assertNothingQueued();
     }
 
     public function test_configuration_is_admin_only_and_rejects_negative_rates(): void
@@ -191,7 +201,7 @@ class FacilitySoaGenerationTest extends TestCase
         $rendered->assertSee($replacement->snapshot['filename'])->assertSee('Edit SOA for reservation #'.$this->booking->id)
             ->assertSee('Delete SOA for reservation #'.$this->booking->id);
         $this->booking->update(['billing_status' => 'paid', 'paid_at' => now()]);
-        $rendered->set('statusFilter', 'approved')->set('approvedFilter', 'paid')->assertSee('Replace SOA for reservation #'.$this->booking->id);
+        $rendered->set('statusFilter', 'approved')->set('approvedFilter', 'paid')->assertSee('Edit SOA for reservation #'.$this->booking->id);
         $html = $rendered->html();
         $this->assertMatchesRegularExpression('/<button[^>]*disabled[^>]*aria-label="Delete SOA for reservation #'.$this->booking->id.'"|<button[^>]*aria-label="Delete SOA for reservation #'.$this->booking->id.'"[^>]*disabled/', $html);
     }

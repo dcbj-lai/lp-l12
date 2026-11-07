@@ -590,7 +590,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/reservations', [\App\Http\Controllers\FacilityViewerController::class, 'index'])
                 ->name('reservations.index');
             Route::get('/reservations/{reservation}/floor-plan', [\App\Http\Controllers\FacilityViewerController::class, 'floorPlan'])
-                ->name('reservations.floor-plan');
+                ->withTrashed()->name('reservations.floor-plan');
             Route::get('/reservations/{reservation}/billing-file/{kind}/{proof?}', [\App\Http\Controllers\FacilityBillingAttachmentController::class, 'show'])
                 ->whereIn('kind', ['soa', 'payment'])->whereNumber('proof')->withTrashed()->name('reservations.billing-file');
 

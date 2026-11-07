@@ -25,15 +25,16 @@
         </select>
     </form>
     @forelse($reservations as $reservation)
-        <article class="rounded-lg border bg-white p-5 shadow-sm space-y-2">
-            <h2 class="font-semibold text-lg">{{ $reservation->title }}</h2>
-            <p>{{ $reservation->start_datetime->format('M j, Y g:i A') }}–{{ $reservation->end_datetime->format('M j, Y g:i A') }} · {{ $reservation->room_names }}</p>
+        <x-facilities.reservation-card :title="$reservation->title" :recurring="(bool) $reservation->recurrence_series_id"
+            :metadata="$reservation->start_datetime->format('M j'.(now()->year !== $reservation->start_datetime->year ? ', Y' : '').' · g:i A').'–'.($reservation->start_datetime->isSameDay($reservation->end_datetime) ? $reservation->end_datetime->format('g:i A') : $reservation->end_datetime->format('M j · g:i A')).' · '.$reservation->room_names">
+            <x-slot:badges><span class="rounded-md px-2 py-1 text-xs {{ $status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">{{ $status === 'approved' ? 'Approved' : 'For Approval' }}</span></x-slot:badges>
+            <p class="text-sm text-zinc-500">{{ $reservation->start_datetime->format('M j, Y g:i A') }}–{{ $reservation->end_datetime->format('M j, Y g:i A') }} · {{ $reservation->room_names }}</p>
             <div><span class="rounded-md px-2 py-1 text-sm {{ $status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">{{ $status === 'approved' ? 'Approved' : 'For Approval' }}</span>@if($reservation->recurrence_series_id)<span class="ml-2 text-sm">Recurring event · {{ $reservation->recurrence_position }} of {{ $reservation->recurrence_total }} · {{ $reservation->recurrence_label }}</span>@endif</div>
             <p>{{ $reservation->number_of_pax }} pax · {{ $reservation->setup_arrangement }} setup</p>
             @include('resources.reservations.upload-status', ['booking' => $reservation])
             @if($reservation->equipment->isNotEmpty())<p>Equipment: {{ $reservation->equipment->map(fn ($item) => $item->name . ' × ' . $item->pivot->quantity)->join(', ') }}</p>@endif
             @if($reservation->notes)<p class="whitespace-pre-line">Notes: {{ $reservation->notes }}</p>@endif
-            @if($reservation->floor_plan_path)<a class="text-blue-700 underline" href="{{ route('resources.reservations.floor-plan', $reservation) }}" target="_blank" rel="noopener">Floor plan</a>@endif
+            <x-facilities.floor-plan-button :reservation="$reservation" />
             @if($reservation->recurrence_series_id)
                 <details class="rounded-md border p-3">
                     <summary class="cursor-pointer font-medium">View recurring dates</summary>
@@ -46,14 +47,15 @@
                                 @include('resources.reservations.upload-status', ['booking' => $date])
                                 @if($date->equipment->isNotEmpty())<p>Equipment: {{ $date->equipment->map(fn ($item) => $item->name . ' × ' . $item->pivot->quantity)->join(', ') }}</p>@endif
                                 @if($date->notes)<p class="whitespace-pre-line">Notes: {{ $date->notes }}</p>@endif
-                                @if($date->floor_plan_path)<a class="text-blue-700 underline" href="{{ route('resources.reservations.floor-plan', $date) }}" target="_blank" rel="noopener">Floor plan</a>@endif
+                                <x-facilities.floor-plan-button :reservation="$date" />
                             </section>
                         @endforeach
                     </div>
                 </details>
             @endif
-        </article>
+        </x-facilities.reservation-card>
     @empty<p>No {{ $status === 'approved' ? 'approved reservations' : 'reservations for approval' }}.</p>@endforelse
     {{ $reservations->links() }}
+    <x-facilities.document-preview />
 </main>
 </body></html>

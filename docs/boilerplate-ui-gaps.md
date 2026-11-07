@@ -1,5 +1,17 @@
 # UI reuse observations
 
+## 2026-11-07 — Compact reservation disclosures and document previews
+
+LP now shares a native details/summary reservation card (`resources/views/components/facilities/reservation-card.blade.php`) between the Livewire admin list and the read-only viewer list. The two-row summary retains the event date, rooms, status and conflict indicators; details/actions start collapsed and remain keyboard accessible without requiring Livewire access for viewers. Badge rows wrap below metadata on narrow screens. Existing role checks and status classifications remain in the app.
+
+Floor-plan rows and the native dialog preview are shared LP components under `resources/views/components/facilities/`. PDFs/images use the authenticated floor-plan route; unsupported formats download. Close/Escape returns to the same reservation, with Download available. Viewer access remains restricted to pending/approved records and never includes billing documents. The guest cancellation form and series date checkboxes are now always visible, with existing server-side confirmation/eligibility checks unchanged.
+
+Coverage status: app-only implementation; separate tenant boilerplate/UI Lab coverage was not inspected and remains unverified. Reuse candidate: compact accessible disclosure summaries, right-aligned document actions/status/due-date rows, and an authorized document-preview adapter with keyboard/mobile/dark-mode behavior. These are presentation patterns, not a proposal to move facilities permissions or billing logic into a generic component.
+
+Local validation: complete isolated suite passed 307 tests / 1,780 assertions; Vite build passed. Chrome checked collapsed/expanded admin and viewer cards, keyboard expansion, PDF upload/preview, Escape/focus return, the always-visible recurring cancellation fields, and 390px viewer/cancellation layouts without horizontal overflow. A missing file on an older local QA record exposed a blank preview; the preview now validates the response and shows a clear unavailable-file message. Native disclosure open state is retained across Livewire modal updates with wire:ignore.self. No database migration is needed for this presentation change.
+
+Light/dark admin card rendering was checked using the existing Appearance settings; System appearance was restored. Edit-close retained the expanded card without opening an approval dialog. The newly created browser test booking #108 was soft-deleted through its own confirmation, with no second deletion prompt. Original admin session and default viewport were restored.
+
 ## 2026-11-03 — Standalone facilities task pages
 
 LP has a shared standalone task shell in resources/views/components/layouts/facilities.blade.php with scoped presentation in resources/css/facilities-portal.css. It is used for guest payment upload/cancellation. On November 4, the authenticated finance inbox/detail pages were moved to the existing x-layouts.app sidebar/account layout; their reusable card/form presentation is retained inside a facility-workspace scope with dark-mode styles. Existing LP auth-card layouts and ui/card were inspected; they provide authentication/card presentation but not the guest task shell. These patterns are shared within LP; coverage in the separate tenant boilerplate/UI Lab remains unverified.

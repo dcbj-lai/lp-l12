@@ -34,30 +34,27 @@
                 @endif
                 @if($booking->recurrence_series_id ? $canCancelSeries : $canCancelDate)
                     <section class="facility-card">
-                        <h2>Need to cancel?</h2><p class="facility-muted">{{ $booking->recurrence_series_id ? 'Choose one or more upcoming event dates below.' : 'You can request cancellation of this event date below.' }}</p>
+                        <h2>{{ $booking->recurrence_series_id ? 'Cancel event dates' : 'Cancel event' }}</h2><p class="facility-muted">{{ $booking->recurrence_series_id ? 'Choose one or more upcoming event dates below.' : 'You can request cancellation of this event date below.' }}</p>
                         <div class="facility-tip"><x-facilities.icon name="alert" /><p>Reservations with an SOA or payment require facilities review. A cancellation request does not automatically void billing or issue a refund.</p></div>
-                        <details @if($errors->any()) open @endif class="facility-disclosure">
-                            <summary>{{ $booking->recurrence_series_id ? 'Cancel reservation' : 'Cancel this date' }}</summary>
-                            <form method="post" action="{{ route('facilities.requester.cancel', $token) }}" class="facility-disclosure-form">@csrf
+                            <form method="post" action="{{ route('facilities.requester.cancel', $token) }}" class="mt-4">@csrf
                                 <input type="hidden" name="reservation_id" value="{{ $booking->id }}">
                                 @if($booking->recurrence_series_id)
                                     <input type="hidden" name="scope" value="selected">
                                     @if($canCancelSeries)
-                                        <details open class="facility-date-list"><summary>Select or review upcoming series dates</summary>
+                                        <fieldset class="facility-date-list"><legend>Select event dates</legend>
                                             <p class="facility-small facility-muted">Select one or more dates to cancel. Select every date to cancel all remaining events. Started, rejected, deleted and already requested dates are excluded.</p>
                                             <ul>@foreach($seriesBookings as $date)<li>
                                                 <label class="facility-date-choice"><input type="checkbox" name="selected_booking_ids[]" value="{{ $date->id }}" data-select-date @checked(in_array($date->id, old('selected_booking_ids', [])))>
                                                     <span>{{ $date->start_datetime->format('M j, Y g:i A') }}–{{ $date->end_datetime->format('g:i A') }}@if($date->soa_path || $date->paid_at || $date->payment_proof_path || $date->billing_status !== 'unbilled' || $date->payment_proofs_exists)<small>Requires facilities review</small>@endif</span>
                                                 </label>
                                             </li>@endforeach</ul>
-                                        </details>
+                                        </fieldset>
                                     @endif
                                 @else<input type="hidden" name="scope" value="date">@endif
                                 <div class="facility-field"><label for="reason-{{ $booking->id }}">Reason (optional)</label><textarea id="reason-{{ $booking->id }}" name="reason" maxlength="2000" placeholder="Let Life College know why you need to cancel">{{ old('reason') }}</textarea></div>
                                 <label class="facility-check"><input type="checkbox" name="confirm" value="1" required><span>I confirm cancellation of the selected event date(s).</span></label>
-                                <button type="submit" class="facility-button facility-button--danger">Confirm cancellation</button>
+                                <button type="submit" class="facility-button facility-button--danger">{{ $booking->recurrence_series_id ? 'Cancel selected dates' : (($booking->soa_path || $booking->paid_at || $booking->payment_proof_path || $booking->billing_status !== 'unbilled') ? 'Submit cancellation request' : 'Cancel event') }}</button>
                             </form>
-                        </details>
                     </section>
                 @elseif($booking->latestCancellationRequest?->status !== 'review')
                     <section class="facility-card facility-state"><div class="facility-icon-tile"><x-facilities.icon name="calendar" /></div><h2>Reservation details</h2><p>Cancellation is not available for this event date. For events that have started, cancelled dates, or billing questions, please contact Facilities.</p></section>

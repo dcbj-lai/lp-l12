@@ -26,7 +26,7 @@
             <div class="facility-stack">
     @else
         <nav class="facility-tabs" aria-label="Payment review status">
-            @foreach(['pending'=>'Pending', 'confirmed'=>'Confirmed', 'correction'=>'Correction requested', 'superseded'=>'SOA changed'] as $key=>$label)
+            @foreach(['pending'=>'Pending', 'confirmed'=>'Confirmed', 'correction'=>'Correction requested', 'superseded'=>'Superseded'] as $key=>$label)
                 <a class="facility-tab" href="{{ route('facilities.payments.index', ['status'=>$key]) }}" @if($status === $key) aria-current="page" @endif>{{ $label }}</a>
             @endforeach
         </nav>
@@ -36,7 +36,7 @@
         @php $tone = ['pending'=>'amber','confirmed'=>'green','correction'=>'red','superseded'=>'neutral'][$submission->status]; @endphp
         <article class="facility-card">
             <div class="facility-card-heading">
-                <span class="facility-badge facility-badge--{{ $tone }}">{{ ['pending'=>'Payment verification pending', 'confirmed'=>'Payment confirmed', 'correction'=>'Correction requested', 'superseded'=>'SOA changed · New proof required'][$submission->status] }}</span>
+                <span class="facility-badge facility-badge--{{ $tone }}">{{ ['pending'=>'Payment verification pending', 'confirmed'=>'Payment confirmed', 'correction'=>'Correction requested', 'superseded'=>'Superseded · See review note'][$submission->status] }}</span>
                 <span class="facility-small facility-muted">Submission #{{ $submission->id }}</span>
             </div>
             @empty($reservation)

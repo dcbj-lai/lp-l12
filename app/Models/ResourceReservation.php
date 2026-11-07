@@ -141,6 +141,11 @@ class ResourceReservation extends Model
         return $this->hasMany(FacilityPaymentSubmission::class, 'reservation_id');
     }
 
+    public function paymentOverrides()
+    {
+        return $this->hasMany(FacilityPaymentOverride::class, 'reservation_id')->latest('id');
+    }
+
     public function soaRevisions()
     {
         return $this->hasMany(FacilitySoaRevision::class, 'reservation_id')->latest('id');

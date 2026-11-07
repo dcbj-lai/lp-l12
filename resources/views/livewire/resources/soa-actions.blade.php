@@ -8,7 +8,7 @@
     <flux:button size="sm" icon:trailing="chevron-down">Billing</flux:button>
     <flux:menu>
         @if (!$systemSoa)
-            <flux:menu.item wire:click="$dispatch('create-soa', { reservationId: {{ $reservation->id }} })" :disabled="$reservation->soa_locked" title="{{ $reservation->soa_locked ? 'Payment recorded; use Replace SOA to retain payment records' : '' }}">Create SOA</flux:menu.item>
+            <flux:menu.item wire:click="$dispatch('create-soa', { reservationId: {{ $reservation->id }} })">Create SOA</flux:menu.item>
             <flux:menu.item wire:click="selectForBilling({{ $reservation->id }})">{{ $reservation->soa_path ? 'Replace SOA' : 'Upload SOA' }}</flux:menu.item>
         @endif
         @if ($reservation->soa_path)

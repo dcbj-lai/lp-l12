@@ -5,12 +5,12 @@
         <flux:heading size="lg">{{ $editing ? 'Edit SOA' : 'Create SOA' }}</flux:heading>
         <flux:input wire:model="client_name" label="Client Name" required maxlength="255" />
         <flux:textarea wire:model="business_address" label="Business Address (optional)" maxlength="1000" />
-        <p class="text-xs text-zinc-500">The SOA email includes a private payment-proof upload link. Any active user with the payment-verifier role can confirm the full payment before the booking is marked Paid.</p>
+        <p class="text-xs text-zinc-500">@if($this->booking->soa_locked) This reservation is already paid. Editing the SOA preserves payment records and does not send an email. @else The manually sent SOA email includes a private payment-proof upload link. Finance verifies payment after the requester submits proof. @endif</p>
         <div class="grid grid-cols-2 gap-3">
-            <div class="text-sm"><strong>Issue Date</strong><p>{{ today()->format('M j, Y') }} (preview)</p></div>
+            <div class="text-sm"><strong>Issue Date</strong><p>{{ $issueDate->format('M j, Y') }} (preview)</p></div>
             <div class="text-sm"><strong>Due Date</strong><p>{{ $dueDate->format('M j, Y') }} (preview)</p></div>
         </div>
-        <p class="text-xs text-zinc-500">Issue date is finalized on the actual SOA email send date. Due date is 15 business days later, excluding Saturdays and Sundays. Draft dates update if sent on a later day.</p>
+        <p class="text-xs text-zinc-500">@if($this->booking->soa_locked) Existing billing dates are retained. @else Issue date is finalized on the actual SOA email send date. Due date is 15 business days later, excluding Saturdays and Sundays. Draft dates update if sent on a later day. @endif</p>
         <div class="rounded-md border p-3 text-sm space-y-1">
             <p>Event Name: {{ $this->booking->title }}</p>
             <p>Event Date: {{ $this->booking->start_datetime->format('M j, Y') }}@if (!$this->booking->start_datetime->isSameDay($this->booking->end_datetime))–{{ $this->booking->end_datetime->format('M j, Y') }}@endif</p>
@@ -69,7 +69,7 @@
         @if ($this->booking->soa_path)<flux:textarea wire:model="replacement_reason" label="Reason for replacing existing SOA" required maxlength="2000" />@endif
         @if ($errors->any())<div role="alert" class="text-sm text-red-600">@foreach ($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
         <div class="flex flex-wrap justify-end gap-2"><flux:modal.close><flux:button type="button">Cancel</flux:button></flux:modal.close><flux:button type="button" wire:click="preview" wire:loading.attr="disabled">Preview PDF</flux:button><flux:button type="submit" variant="primary" wire:loading.attr="disabled">{{ $editing ? 'Save SOA' : 'Create SOA' }}</flux:button></div>
-        <p class="text-xs text-zinc-500">{{ $editing ? 'Saving keeps the previous file in the replacement history and saves a new draft SOA.' : 'Creating saves a draft SOA to the reservation.' }} Use Billing → Send SOA to requester to issue and email it.</p>
+        <p class="text-xs text-zinc-500">Saving does not send an email. {{ $editing ? 'The previous SOA and replacement reason are retained.' : 'The SOA is saved to the reservation.' }} @if($this->booking->soa_locked) Recorded payment and all proofs are retained. @else Use Billing → Send SOA to requester to issue and email it. @endif</p>
     </form>
 @endif
 </flux:modal>
