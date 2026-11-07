@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailable;
 class FacilityReservationCancellationMail extends Mailable
 {
     use Queueable;
+    use \App\Mail\Concerns\HasFacilityRequesterActions;
 
     public function __construct(public array $details) {}
 
@@ -18,6 +19,9 @@ class FacilityReservationCancellationMail extends Mailable
             'declined' => 'Cancellation request declined',
             default => 'Reservation cancelled',
         };
-        return $this->subject($label.': '.$this->details['title'])->view('emails.resource-booking.cancelled', ['label' => $label]);
+        return $this->subject($label.': '.$this->details['title'])->view('emails.resource-booking.cancelled', [
+            'label' => $label,
+            'requesterActions' => $this->details['status'] === 'cancelled' ? [] : $this->requesterActionData($this->details['id'] ?? null),
+        ]);
     }
 }

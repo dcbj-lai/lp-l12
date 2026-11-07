@@ -11,3 +11,4 @@
     <p>The reservation remains active. Please contact facilities to discuss your request.</p>
 @endif
 <p>For questions or concerns, contact events.facilities@life.edu.ph.</p>
+@include('emails.resource-booking.requester-actions')

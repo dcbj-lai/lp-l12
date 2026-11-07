@@ -9,6 +9,8 @@ class RestrictFacilitiesViewer
 {
     public function handle(Request $request, Closure $next)
     {
+        if ($request->routeIs('facilities.payment.*')) return $next($request);
+        if ($request->user()?->hasRole('facility.payment-verifier') && $request->routeIs('facilities.payments.*')) return $next($request);
         if ($request->user()?->hasRole('facility.viewer')) {
             // These pages authorize an individual booking with its private email token.
             if ($request->routeIs('facilities.requester.show', 'facilities.requester.cancel')) return $next($request);

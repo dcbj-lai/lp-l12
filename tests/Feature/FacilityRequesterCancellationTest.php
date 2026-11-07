@@ -102,7 +102,7 @@ class FacilityRequesterCancellationTest extends TestCase
         $unrelated = $this->booking(['recurrence_series_id' => 'other-series']);
         $token = $this->token($first);
         $this->get(route('facilities.requester.show', $token))->assertOk()
-            ->assertSee('Select or review upcoming series dates')->assertSee('Requires facilities review')
+            ->assertSee('Select event dates')->assertSee('Requires facilities review')
             ->assertSee('name="scope" value="selected"', false)->assertDontSee('What would you like to cancel?');
         $addedAfterPage = $this->booking(['recurrence_series_id' => 'test-series']);
         $url = route('facilities.requester.cancel', $token);
@@ -137,7 +137,7 @@ class FacilityRequesterCancellationTest extends TestCase
     {
         $first = $this->booking();
         $token = $this->token($first);
-        $this->get(route('facilities.requester.show', $token))->assertDontSee('Select or review upcoming series dates');
+        $this->get(route('facilities.requester.show', $token))->assertDontSee('Select event dates');
         $url = route('facilities.requester.cancel', $token);
         $this->post($url, ['scope' => 'series', 'reservation_id' => $first->id, 'confirm' => 1])->assertSessionHasErrors('booking_ids');
         $this->post($url, ['scope' => 'series', 'reservation_id' => $first->id, 'booking_ids' => [$first->id], 'confirm' => 1])->assertStatus(422);

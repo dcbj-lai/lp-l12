@@ -77,7 +77,8 @@ class ReservationIndex extends Component
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
         $booking = ResourceReservation::findOrFail($reservationId);
         $this->showBookingTab($booking);
-        $this->dispatch('flash', type: 'success', message: ($edited ? 'SOA updated.' : 'SOA created.').' View: Approved → Unbilled. Use Billing → Send SOA to requester to issue it.');
+        $view = $booking->is_archived ? 'Done' : 'Approved → '.ucfirst($booking->billing_filter);
+        $this->dispatch('flash', type: 'success', message: ($edited ? 'SOA updated.' : 'SOA created.').' View: '.$view.'. '.($booking->soa_locked ? 'Payment records retained. No email sent.' : 'Use Billing → Send SOA to requester to issue it.'));
     }
     public bool $showCancellationReview = false;
     #[\Livewire\Attributes\Locked]
@@ -200,6 +201,8 @@ class ReservationIndex extends Component
     public bool $showBillingEmailModal = false;
     public ?int $paymentId = null;
     public string $paymentDate = '';
+    public bool $paymentOverride = false;
+    public string $paymentOverrideReason = '';
     public $paymentProof;
     public array $paymentProofs = [];
     public ?int $finishId = null;
@@ -263,6 +266,7 @@ class ReservationIndex extends Component
         $dateColumn = $byRequestDate ? 'created_at' : 'start_datetime';
 
         return ResourceReservation::with(['resource', 'rooms', 'equipment', 'items.resource', 'latestBillingEmail', 'latestPaymentReminder', 'paymentProofs', 'soaRevisions', 'latestCancellationRequest', 'latestGeneratedSoa'])
+            ->withCount(['paymentSubmissions as pending_payment_count' => fn ($q) => $q->where('status', 'pending')])
             ->search($this->search)
             ->when($this->statusFilter === 'deleted', fn ($query) => $query->onlyTrashed())
             ->when($this->statusFilter === 'archive', fn ($query) => $query->archived())
@@ -377,6 +381,7 @@ class ReservationIndex extends Component
         }
 
         return ResourceReservation::withTrashed()->with(['resource', 'rooms', 'equipment', 'latestBillingEmail', 'latestPaymentReminder', 'paymentProofs', 'soaRevisions', 'latestCancellationRequest', 'latestGeneratedSoa'])
+            ->withCount(['paymentSubmissions as pending_payment_count' => fn ($q) => $q->where('status', 'pending')])
             ->where('recurrence_series_id', $this->selectedSeriesId)
             ->orderBy('start_datetime')->get();
     }
@@ -926,25 +931,43 @@ class ReservationIndex extends Component
         $this->paymentDate = $reservation->paid_at?->toDateString() ?? now()->toDateString();
         $this->paymentProof = null;
         $this->paymentProofs = [];
-        $this->resetValidation(['paymentDate', 'paymentProof', 'paymentProofs']);
+        $this->paymentOverride = false;
+        $this->paymentOverrideReason = '';
+        $this->resetValidation(['paymentDate', 'paymentProof', 'paymentProofs', 'paymentOverrideReason']);
+        $this->modal('payment-reservation')->show();
     }
 
     public function getPaymentReservationProperty()
     {
-        return $this->paymentId ? ResourceReservation::with('paymentProofs')->find($this->paymentId) : null;
+        return $this->paymentId ? ResourceReservation::with(['paymentProofs', 'paymentOverrides.actor'])->withCount(['paymentSubmissions as pending_payment_count' => fn ($q) => $q->where('status', 'pending')])->find($this->paymentId) : null;
+    }
+
+    public function updatedPaymentOverride(): void
+    {
+        $this->resetValidation(['paymentProof', 'paymentProofs', 'paymentOverrideReason']);
     }
 
     public function recordPayment(): void
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
         $reservation = ResourceReservation::findOrFail($this->paymentId);
+        if (!$this->paymentOverride && $reservation->paymentSubmissions()->where('status', 'pending')->exists()) {
+            $this->addError('paymentProof', 'Requester proof is pending finance verification. Use Payment review to confirm it.');
+            return;
+        }
         abort_unless($reservation->status === 'approved' && $reservation->soa_path, 422);
+        $this->paymentOverrideReason = trim($this->paymentOverrideReason);
         $this->validate([
             'paymentDate' => 'required|date|before_or_equal:today',
+            'paymentOverrideReason' => ($this->paymentOverride ? 'required' : 'nullable').'|string|max:2000',
             'paymentProof' => (!$reservation->payment_proof_path && !$reservation->paymentProofs()->exists() && !$this->paymentProofs ? 'required' : 'nullable') . '|file|max:10240|mimes:pdf,jpg,jpeg,png',
             'paymentProofs' => 'array|max:10',
             'paymentProofs.*' => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png',
-        ], ['paymentProof.required' => 'Upload at least one payment proof.']);
+        ], ['paymentProof.required' => 'Upload at least one payment proof.', 'paymentOverrideReason.required' => 'Enter a reason for overriding the payment record.']);
+        if ($this->paymentOverride && !$this->paymentProof && !$this->paymentProofs) {
+            $this->addError('paymentProofs', 'Upload replacement proof files for the override.');
+            return;
+        }
 
         $paths = [];
         $paymentReceipt = null;
@@ -968,23 +991,38 @@ class ReservationIndex extends Component
                     throw new \RuntimeException('An approved reservation with an SOA is required.');
                 }
                 $firstPayment = !$reservation->soa_locked;
+                if (!$this->paymentOverride && $reservation->paymentSubmissions()->where('status', 'pending')->exists()) {
+                    throw new \RuntimeException('Payment proof is awaiting finance verification.');
+                }
                 if ($reservation->payment_proof_path && !$reservation->paymentProofs()->where('path', $reservation->payment_proof_path)->exists()) {
                     $reservation->paymentProofs()->create([
                         'path' => $reservation->payment_proof_path, 'original_name' => basename($reservation->payment_proof_path),
                         'paid_on' => $reservation->paid_at?->toDateString(),
                     ]);
                 }
+                $oldProofIds = $reservation->paymentProofs()->whereNull('superseded_at')->pluck('id')->all();
+                $newProofIds = [];
                 foreach ($paths as $proof) {
-                    $reservation->paymentProofs()->create($proof + ['paid_on' => $this->paymentDate, 'recorded_by' => auth()->id()]);
+                    $newProofIds[] = $reservation->paymentProofs()->create($proof + ['paid_on' => $this->paymentDate, 'recorded_by' => auth()->id()])->id;
+                }
+                if ($this->paymentOverride) {
+                    if (!$paths || trim($this->paymentOverrideReason) === '') throw new \RuntimeException('Replacement proofs and a reason are required.');
+                    $pending = $reservation->paymentSubmissions()->where('status', 'pending')->lockForUpdate()->get();
+                    $reservation->paymentOverrides()->create(['overridden_by' => auth()->id(), 'reason' => $this->paymentOverrideReason,
+                        'previous_paid_on' => $reservation->paid_at?->toDateString(), 'paid_on' => $this->paymentDate,
+                        'previous_proof_ids' => $oldProofIds, 'replacement_proof_ids' => $newProofIds, 'submission_ids' => $pending->pluck('id')->all()]);
+                    $reservation->paymentProofs()->whereIn('id', $oldProofIds)->update(['superseded_at' => now(), 'superseded_by' => auth()->id(), 'superseded_reason' => $this->paymentOverrideReason]);
+                    $reservation->paymentSubmissions()->whereIn('id', $pending->pluck('id'))->update(['status' => 'superseded',
+                        'reviewed_by' => auth()->id(), 'reviewed_at' => now(), 'review_note' => 'Manager override: '.$this->paymentOverrideReason]);
                 }
                 $reservation->update([
                     'billing_status' => 'paid',
                     'paid_at' => \Carbon\Carbon::parse($this->paymentDate)->startOfDay(),
-                    'payment_proof_path' => $reservation->payment_proof_path ?: ($paths[0]['path'] ?? null),
+                    'payment_proof_path' => $this->paymentOverride ? $paths[0]['path'] : ($reservation->payment_proof_path ?: ($paths[0]['path'] ?? null)),
                     'soa_email_pending' => false,
                 ]);
                 $savedReservation = $reservation;
-                if ($firstPayment || $paths) {
+                if ($firstPayment || ($paths && !$this->paymentOverride)) {
                     $paymentReceipt = [
                         'recipient' => $reservation->requester_email,
                         'title' => $reservation->title, 'reservation_id' => $reservation->id,

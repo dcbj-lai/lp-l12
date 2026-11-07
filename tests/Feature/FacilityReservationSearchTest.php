@@ -15,6 +15,18 @@ class FacilityReservationSearchTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_date_search_matches_event_overlap_and_rejects_invalid_dates(): void
+    {
+        $event = ResourceReservation::create(['title' => 'Date search fixture', 'status' => 'pending',
+            'start_datetime' => '2026-11-09 22:00:00', 'end_datetime' => '2026-11-11 00:00:00']);
+        foreach (['2026-11-10', '11/10/2026', 'Nov 10, 2026', 'November 10 2026', '10 November 2026', 'November 2026', '2026-11'] as $term) {
+            $this->assertSame([$event->id], ResourceReservation::search($term)->pluck('id')->all(), $term);
+        }
+        foreach (['2026-11-11', '2026-11-08', '2026-02-30', '11/31/2026', 'December 2026'] as $term) {
+            $this->assertSame([], ResourceReservation::search($term)->pluck('id')->all(), $term);
+        }
+    }
+
     public function test_search_matches_fields_rooms_and_literal_text_without_leaking_other_statuses(): void
     {
         $admin = User::factory()->create();

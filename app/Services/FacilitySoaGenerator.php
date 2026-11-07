@@ -85,7 +85,15 @@ class FacilitySoaGenerator
             'venue' => $reservation->room_names, 'event_time' => $reservation->start_datetime->format('g:i A').'–'.$reservation->end_datetime->format('g:i A')];
     }
 
-    public function pdf(array $snapshot, $issueDate, bool $draft = true): string
+    public function draftDates(ResourceReservation $reservation): array
+    {
+        $document = \App\Support\FacilitySoaFilename::generatedDocument($reservation);
+        $issue = CarbonImmutable::parse($reservation->soa_locked ? ($document?->issue_date ?? $reservation->soa_sent_at ?? today()) : today())->startOfDay();
+        $due = $reservation->soa_locked && $reservation->payment_due_at ? CarbonImmutable::parse($reservation->payment_due_at) : $this->dueDate($issue);
+        return [$issue, $due];
+    }
+
+    public function pdf(array $snapshot, $issueDate, bool $draft = true, $dueDate = null): string
     {
         $fontCache = storage_path('framework/cache/dompdf-fonts');
         File::ensureDirectoryExists($fontCache);
@@ -97,7 +105,7 @@ class FacilitySoaGenerator
             )) throw new \RuntimeException('Could not load the SOA font.');
         }
         return $pdf->loadView('pdf.facility-soa', ['soa' => $snapshot, 'issueDate' => CarbonImmutable::parse($issueDate),
-            'dueDate' => $this->dueDate($issueDate), 'draft' => $draft])->setPaper('letter')->output();
+            'dueDate' => $dueDate ? CarbonImmutable::parse($dueDate) : $this->dueDate($issueDate), 'draft' => $draft])->setPaper('letter')->output();
     }
 
     public function create(int $id, array $data): FacilityGeneratedSoa
@@ -110,19 +118,20 @@ class FacilitySoaGenerator
             return DB::transaction(function () use ($id, $data, &$path) {
                 $reservation = ResourceReservation::whereKey($id)->lockForUpdate()->firstOrFail();
                 abort_unless($reservation->status === 'approved', 422);
-                if ($reservation->soa_locked) throw ValidationException::withMessages(['client_name' => 'Payment is already recorded. Use the existing Replace SOA workflow to retain the payment audit trail.']);
                 if ($reservation->soa_path && trim($data['replacement_reason'] ?? '') === '') throw ValidationException::withMessages(['replacement_reason' => 'Enter a reason for replacing the existing SOA.']);
                 if ($reservation->billingEmails()->where('status', 'queued')->exists()) throw ValidationException::withMessages(['client_name' => 'Wait for the queued billing email to finish before generating a replacement.']);
                 $snapshot = $this->snapshot($reservation, $data);
+                [$issue, $due] = $this->draftDates($reservation);
                 $disk = FacilityBillingStorage::uploadDisk();
                 $path = 'facility-billing/generated/'.Str::uuid().'/'.$snapshot['filename'];
-                if (!Storage::disk($disk)->put($path, $this->pdf($snapshot, today()), ['visibility' => 'private'])) throw new \RuntimeException('SOA could not be saved.');
+                if (!Storage::disk($disk)->put($path, $this->pdf($snapshot, $issue, !$reservation->soa_locked, $due), ['visibility' => 'private'])) throw new \RuntimeException('SOA could not be saved.');
                 $document = FacilityGeneratedSoa::create(['reservation_id' => $id, 'path' => $path, 'snapshot' => $snapshot,
-                    'issue_date' => today(), 'due_date' => $this->dueDate(today()), 'created_by' => auth()->id()]);
+                    'issue_date' => $issue, 'due_date' => $due, 'created_by' => auth()->id()]);
                 if ($reservation->soa_path) $reservation->soaRevisions()->create(['previous_path' => $reservation->soa_path, 'replacement_path' => $path,
                     'reason' => trim($data['replacement_reason']), 'replaced_by' => auth()->id()]);
-                $reservation->update(['soa_path' => $path, 'soa_email_pending' => true, 'payment_required' => true,
-                    'payment_due_at' => $document->due_date]);
+                $updates = ['soa_path' => $path];
+                if (!$reservation->soa_locked) $updates += ['soa_email_pending' => true, 'payment_required' => true, 'payment_due_at' => $document->due_date];
+                $reservation->update($updates);
                 return $document;
             });
         } catch (\Throwable $e) {

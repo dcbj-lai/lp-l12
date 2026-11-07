@@ -75,6 +75,30 @@ class FacilityViewerTest extends TestCase
         $this->get($url)->assertNotFound();
     }
 
+    public function test_floor_plan_preview_is_private_and_only_expected_types_render_inline(): void
+    {
+        $viewer = $this->viewer();
+        Storage::fake(config('filesystems.facility_upload_disk'));
+        $disk = Storage::disk(config('filesystems.facility_upload_disk'));
+        $disk->put('preview.pdf', '%PDF-1.4 dummy');
+        $booking = $this->reservation('approved', 'Private preview');
+        $booking->update(['floor_plan_path' => 'preview.pdf']);
+        $url = route('resources.reservations.floor-plan', $booking);
+        $this->get($url)->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertHeader('X-Content-Type-Options', 'nosniff');
+        $this->get($url.'?download=1')->assertDownload('preview.pdf');
+        $viewer->syncRoles(['facility.admin']);
+        $booking->delete();
+        $this->get($url)->assertOk();
+        $viewer->syncRoles([]);
+        $this->get($url)->assertForbidden();
+        $viewer->syncRoles(['facility.admin']);
+        $disk->put('untrusted.html', '<script>alert(1)</script>');
+        $booking->update(['floor_plan_path' => 'untrusted.html']);
+        $this->get($url)->assertDownload('untrusted.html');
+        $booking->update(['floor_plan_path' => 'missing.pdf']);
+        $this->get($url)->assertNotFound();
+    }
+
     public function test_recurring_dates_show_pending_and_approved_but_hide_deleted_rejected_and_other_series(): void
     {
         $this->viewer();

@@ -12,7 +12,7 @@
             <h2 class="font-semibold">Holiday and overtime rates</h2>
             <p class="text-sm text-zinc-500">PHP per person per hour, grouped using the OT rate list. Enter the actual charge for each period, not a percentage. Blank means not configured.</p>
             <p class="text-sm text-zinc-500">Housekeeping and Logistics follow the PHP 755/day reference schedule. Special-holiday and legal-holiday first-eight-hour entries retain the amounts shown in the list, including premium-only charges. Security OT rates are awaiting confirmation.</p>
-            <p class="text-sm text-zinc-500">Holiday, OT and Security night-shift rates are saved separately; selecting these rates in Create SOA is not yet enabled. Current SOAs use the regular staff fees above.</p>
+            <p class="text-sm text-zinc-500">Select the applicable holiday, OT or Security night-shift rate in Create SOA and enter its hours. Rates are applied manually.</p>
             @foreach (\App\Services\FacilitySoaGenerator::STAFF as $staff)
                 <details class="rounded-lg border p-3" wire:key="holiday-rates-{{ $staff }}">
                     <summary class="cursor-pointer font-medium">{{ $labels[$staff] }}</summary>

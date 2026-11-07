@@ -11,6 +11,7 @@ use Illuminate\Queue\SerializesModels;
 class ResourceBookingRequesterConfirmation extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
+    use \App\Mail\Concerns\HasFacilityRequesterActions;
 
     public ResourceReservation $reservation;
 
@@ -22,6 +23,6 @@ class ResourceBookingRequesterConfirmation extends Mailable implements ShouldQue
     public function build()
     {
         return $this->subject('Your Booking Request Has Been Received')
-            ->view('emails.resource-booking.requester');
+            ->view('emails.resource-booking.requester', ['requesterActions' => $this->requesterActionData($this->reservation->id)]);
     }
 }

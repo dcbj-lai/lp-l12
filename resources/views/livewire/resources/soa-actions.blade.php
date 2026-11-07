@@ -8,7 +8,7 @@
     <flux:button size="sm" icon:trailing="chevron-down">Billing</flux:button>
     <flux:menu>
         @if (!$systemSoa)
-            <flux:menu.item wire:click="$dispatch('create-soa', { reservationId: {{ $reservation->id }} })" :disabled="$reservation->soa_locked" title="{{ $reservation->soa_locked ? 'Payment recorded; use Replace SOA to retain payment records' : '' }}">Create SOA</flux:menu.item>
+            <flux:menu.item wire:click="$dispatch('create-soa', { reservationId: {{ $reservation->id }} })">Create SOA</flux:menu.item>
             <flux:menu.item wire:click="selectForBilling({{ $reservation->id }})">{{ $reservation->soa_path ? 'Replace SOA' : 'Upload SOA' }}</flux:menu.item>
         @endif
         @if ($reservation->soa_path)
@@ -25,3 +25,9 @@
 </flux:dropdown>
 @endif
 @include('livewire.resources.billing-email-actions', ['reservation' => $reservation])
+@if ($reservation->soa_path)
+    <a class="inline-flex items-center rounded-lg border px-3 py-2 text-sm" href="{{ route('facilities.payments.review', $reservation->id) }}">Payment review</a>
+    @if ($reservation->pending_payment_count)
+        <span class="rounded bg-amber-100 px-2 py-1 text-sm text-amber-800">Payment verification pending</span>
+    @endif
+@endif

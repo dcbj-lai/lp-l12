@@ -36,7 +36,18 @@ class FacilityViewerController extends Controller
 
     public function floorPlan(Request $request, ResourceReservation $reservation)
     {
-        abort_unless($request->user()->hasRole('facility.viewer') && in_array($reservation->status, ['pending', 'approved'], true) && $reservation->floor_plan_path, 403);
-        return Storage::disk(config('filesystems.facility_upload_disk'))->response($reservation->floor_plan_path);
+        $viewer = $request->user()->hasRole('facility.viewer');
+        abort_if($viewer && $reservation->trashed(), 404);
+        abort_unless($reservation->floor_plan_path && ($viewer
+            ? (!$reservation->trashed() && in_array($reservation->status, ['pending', 'approved'], true))
+            : $request->user()->hasAnyRole(['facility.admin', 'facility.approver'])), 403);
+        $disk = Storage::disk(config('filesystems.facility_upload_disk'));
+        abort_unless($disk->exists($reservation->floor_plan_path), 404);
+        $mime = match (strtolower(pathinfo($reservation->floor_plan_path, PATHINFO_EXTENSION))) {
+            'pdf' => 'application/pdf', 'png' => 'image/png', 'jpg', 'jpeg' => 'image/jpeg', 'gif' => 'image/gif', 'webp' => 'image/webp', default => null,
+        };
+        $headers = ['Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff'];
+        if ($request->boolean('download') || !$mime) return $disk->download($reservation->floor_plan_path, null, $headers);
+        return $disk->response($reservation->floor_plan_path, null, $headers + ['Content-Type' => $mime]);
     }
 }

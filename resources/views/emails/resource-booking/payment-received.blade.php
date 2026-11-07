@@ -11,6 +11,7 @@
             <tr style="border-bottom:1px solid #e4e4e7"><th align="left" style="width:40%">{{ $label }}</th><td>{{ $value }}</td></tr>
         @endforeach
     </table>
+    @include('emails.resource-booking.requester-actions')
     <p>For any questions or concerns, please contact <a href="mailto:events.facilities@life.edu.ph">events.facilities@life.edu.ph</a>.</p>
     <p>Thank you,<br>LIFE Facilities Team</p>
 </div></body></html>

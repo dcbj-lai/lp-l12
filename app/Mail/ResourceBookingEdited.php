@@ -11,6 +11,7 @@ use Illuminate\Queue\SerializesModels;
 class ResourceBookingEdited extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
+    use \App\Mail\Concerns\HasFacilityRequesterActions;
 
     public function __construct(public ResourceReservation $reservation, public array $changes)
     {
@@ -19,6 +20,6 @@ class ResourceBookingEdited extends Mailable implements ShouldQueue
     public function build(): self
     {
         return $this->subject('Your reservation details were updated: ' . $this->reservation->title)
-            ->view('emails.resource-booking.requester-edited');
+            ->view('emails.resource-booking.requester-edited', ['requesterActions' => $this->requesterActionData($this->reservation->id)]);
     }
 }

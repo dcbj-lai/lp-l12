@@ -29,7 +29,7 @@ class CreateSoa extends Component
     {
         abort_unless(auth()->user()->hasRole('facility.admin'), 403);
         $booking = ResourceReservation::findOrFail($reservationId);
-        abort_unless($booking->status === 'approved' && !$booking->soa_locked, 422);
+        abort_unless($booking->status === 'approved', 422);
         $this->resetValidation();
         $this->reset('event_type', 'business_address', 'replacement_reason');
         $this->reservationId = $reservationId;
@@ -108,9 +108,10 @@ class CreateSoa extends Component
     public function preview()
     {
         $this->validateForm();
-        abort_unless($this->booking?->status === 'approved' && !$this->booking?->soa_locked, 422);
+        abort_unless($this->booking?->status === 'approved', 422);
         $service = app(FacilitySoaGenerator::class);
-        $bytes = $service->pdf($service->snapshot($this->booking, $this->data()), today());
+        [$issue, $due] = $service->draftDates($this->booking);
+        $bytes = $service->pdf($service->snapshot($this->booking, $this->data()), $issue, !$this->booking->soa_locked, $due);
         return response()->streamDownload(fn () => print($bytes), \App\Support\FacilitySoaFilename::forReservation($this->booking), ['Content-Type' => 'application/pdf']);
     }
 
@@ -126,9 +127,10 @@ class CreateSoa extends Component
 
     public function render()
     {
+        [$issue, $due] = $this->booking ? app(FacilitySoaGenerator::class)->draftDates($this->booking) : [today(), app(FacilitySoaGenerator::class)->dueDate(today())];
         return view('livewire.resources.create-soa', ['labels' => FacilitySoaGenerator::LABELS,
             'referenceRates' => $this->reservationId ? DB::table('facility_charge_rates')->pluck('amount_cents', 'code') : collect(),
             'ratePeriods' => FacilityStaffRates::PERIODS,
-            'dueDate' => app(FacilitySoaGenerator::class)->dueDate(today())]);
+            'issueDate' => $issue, 'dueDate' => $due]);
     }
 }
