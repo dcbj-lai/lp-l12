@@ -6,10 +6,10 @@
     <h2>{{ match($kind) {'soa' => 'Your Statement of Account', 'updated_soa' => 'Your updated Statement of Account', 'overdue' => 'Payment overdue', 'due_today' => 'Payment due today', default => 'Payment reminder'} }}</h2>
     <p>Hello,</p>
     @if ($kind === 'soa')
-        <p>Please find the Statement of Account attached for your reservation. Payment is due on the date shown below, 15 days after the SOA was uploaded.</p>
+        <p>Please find the Statement of Account attached for your reservation. Payment is due on the date shown below.</p>
     @elseif ($kind === 'updated_soa')
         <p>Please use the updated Statement of Account attached to this email. It replaces the previously issued SOA.</p>
-        <p>The payment due date has been updated based on the latest SOA upload. Please refer to the date below.</p>
+        <p>Please refer to the payment due date shown below for this updated Statement of Account.</p>
     @elseif ($kind === 'overdue')
         <p>Our records show that payment for this reservation is overdue. Please arrange payment using the instructions in the attached Statement of Account.</p>
     @elseif ($kind === 'due_today')
