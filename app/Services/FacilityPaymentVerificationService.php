@@ -75,8 +75,10 @@ class FacilityPaymentVerificationService
                     if (!$path) throw new \RuntimeException('Proof could not be uploaded. Please try again.');
                     $paths[] = ['path' => $path, 'original_name' => $upload->getClientOriginalName()];
                 }
-                return $reservation->paymentSubmissions()->create(['access_link_id' => $link->id, 'soa_path' => $reservation->soa_path,
-                    'paid_on' => $data['paid_on'], 'reference' => $data['reference'], 'files' => $paths]);
+                $correction = $reservation->paymentSubmissions()->where('status', 'correction')->where('soa_path', $reservation->soa_path)->latest('id')->first();
+                return $reservation->paymentSubmissions()->create(['status' => 'pending', 'access_link_id' => $link->id, 'soa_path' => $reservation->soa_path,
+                    'paid_on' => $data['paid_on'], 'reference' => $data['reference'], 'files' => $paths,
+                    'previous_paid_on' => $correction?->previous_paid_on, 'previous_proof_ids' => $correction?->previous_proof_ids]);
             });
         } catch (\Throwable $e) {
             foreach ($paths as $file) FacilityBillingStorage::disk($file['path'])->delete($file['path']);
@@ -92,9 +94,59 @@ class FacilityPaymentVerificationService
         $recipients = User::role(self::ROLE)->where('is_active', true)->get();
         foreach ($recipients as $user) {
             $this->queueMail($user->email, new FacilityPaymentReviewMail('Payment verification: '.$reservation->title,
-                'A requester submitted proof of full payment for '.$reservation->title.'. Review the SOA and proof before confirming payment.',
+                ($submission->submitted_by ? 'A facilities manager submitted proof on behalf of the requester for ' : 'A requester submitted proof of full payment for ').$reservation->title.'. Review the SOA and proof before confirming payment.',
                 route('facilities.payments.review', $reservation->id), 'Review payment'));
         }
+    }
+
+    public function submitManager(int $reservationId, User $manager, array $data): FacilityPaymentSubmission
+    {
+        abort_unless($manager->is_active && $manager->hasRole('facility.admin') && !$manager->hasRole('facility.viewer'), 403);
+        $data = validator($data, [
+            'paid_on' => 'required|date|before_or_equal:today', 'reference' => 'required|string|max:255',
+            'submission_note' => 'required|string|max:2000', 'proofs' => 'required|array|min:1|max:10',
+            'proofs.*' => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png',
+        ])->validate();
+        if (trim($data['submission_note']) === '' || trim($data['reference']) === '') {
+            throw ValidationException::withMessages(['submission_note' => 'A submission note and payment reference are required.']);
+        }
+        $paths = [];
+        try {
+            $submission = DB::transaction(function () use ($reservationId, $manager, $data, &$paths) {
+                $reservation = ResourceReservation::whereKey($reservationId)->lockForUpdate()->firstOrFail();
+                if ($reservation->status !== 'approved' || !$reservation->soa_path || !$reservation->payment_required
+                    || $reservation->latestCancellationRequest?->status === 'review') {
+                    throw ValidationException::withMessages(['proofs' => 'An approved reservation with an SOA and no pending cancellation is required.']);
+                }
+                if ($reservation->paymentSubmissions()->where('status', 'pending')->exists()) {
+                    throw ValidationException::withMessages(['proofs' => 'Payment verification is already pending. Finance must review it or request a correction first.']);
+                }
+                $previouslyPaid = $reservation->soa_locked;
+                if ($previouslyPaid && $reservation->payment_proof_path && !$reservation->paymentProofs()->where('path', $reservation->payment_proof_path)->exists()) {
+                    $reservation->paymentProofs()->create(['path' => $reservation->payment_proof_path,
+                        'original_name' => basename($reservation->payment_proof_path), 'paid_on' => $reservation->paid_at?->toDateString()]);
+                }
+                foreach ($data['proofs'] as $upload) {
+                    $path = $upload->storeAs('facility-billing/payment-submissions', Str::uuid().'.'.$upload->getClientOriginalExtension(), FacilityBillingStorage::uploadDisk());
+                    if (!$path) throw new \RuntimeException('Proof could not be uploaded. Please try again.');
+                    $paths[] = ['path' => $path, 'original_name' => $upload->getClientOriginalName()];
+                    if (!FacilityBillingStorage::disk($path)->exists($path)) throw new \RuntimeException('Proof could not be uploaded. Please try again.');
+                }
+                $correction = $reservation->paymentSubmissions()->where('status', 'correction')->where('soa_path', $reservation->soa_path)->latest('id')->first();
+                $submission = $reservation->paymentSubmissions()->create(['status' => 'pending', 'access_link_id' => null, 'submitted_by' => $manager->id,
+                    'submission_note' => trim($data['submission_note']), 'soa_path' => $reservation->soa_path,
+                    'paid_on' => $data['paid_on'], 'reference' => trim($data['reference']), 'files' => $paths,
+                    'previous_paid_on' => $previouslyPaid ? $reservation->paid_at?->toDateString() : $correction?->previous_paid_on,
+                    'previous_proof_ids' => $previouslyPaid ? $reservation->paymentProofs()->whereNull('superseded_at')->pluck('id')->all() : $correction?->previous_proof_ids]);
+                $reservation->update(['billing_status' => 'billed', 'paid_at' => null]);
+                return $submission;
+            });
+        } catch (\Throwable $e) {
+            foreach ($paths as $file) FacilityBillingStorage::disk($file['path'])->delete($file['path']);
+            throw $e;
+        }
+        $this->notifyFinance($submission);
+        return $submission;
     }
 
     public function review(int $submissionId, User $reviewer, string $decision, ?string $note): void
@@ -111,6 +163,11 @@ class FacilityPaymentVerificationService
             }
             $submission->update(['status' => $decision, 'review_note' => $note, 'reviewed_by' => $reviewer->id, 'reviewed_at' => now()]);
             if ($decision === 'confirmed') {
+                if ($submission->previous_proof_ids !== null) {
+                    $reservation->paymentProofs()->whereIn('id', $submission->previous_proof_ids)->update([
+                        'superseded_at' => now(), 'superseded_by' => $reviewer->id,
+                        'superseded_reason' => 'Finance confirmed corrected proof: '.$submission->submission_note]);
+                }
                 foreach ($submission->files as $file) {
                     if (!FacilityBillingStorage::disk($file['path'])->exists($file['path'])) {
                         throw ValidationException::withMessages(['decision' => 'A proof file is missing. Payment was not confirmed.']);
@@ -118,7 +175,9 @@ class FacilityPaymentVerificationService
                     $reservation->paymentProofs()->create($file + ['paid_on' => $submission->paid_on->toDateString(), 'recorded_by' => $reviewer->id]);
                 }
                 $reservation->update(['billing_status' => 'paid', 'paid_at' => $submission->paid_on->startOfDay(),
-                    'payment_proof_path' => $reservation->payment_proof_path ?: $submission->files[0]['path'], 'soa_email_pending' => false]);
+                    'payment_proof_path' => $submission->previous_proof_ids !== null ? $submission->files[0]['path'] : ($reservation->payment_proof_path ?: $submission->files[0]['path']), 'soa_email_pending' => false]);
+                // A correction to a previously paid record must be verified again, but is not a new receipt.
+                if ($submission->previous_proof_ids !== null) return null;
                 return [$reservation->requester_email, new FacilityPaymentReceived(['title' => $reservation->title, 'reservation_id' => $reservation->id,
                     'event_date' => $reservation->start_datetime->format('M j, Y g:i A').'–'.$reservation->end_datetime->format('M j, Y g:i A'),
                     'room' => $reservation->room_names, 'paid_date' => $reservation->paid_at->format('M j, Y')])];
@@ -127,7 +186,7 @@ class FacilityPaymentVerificationService
                 'Finance requested a correction for '.$reservation->title.":\n".$note,
                 '', '', $reservation->id)];
         });
-        $this->queueMail(...$mail);
+        if ($mail) $this->queueMail(...$mail);
     }
 
     private function queueMail(string $recipient, $mail): void

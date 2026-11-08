@@ -217,7 +217,7 @@
                                     @if ($res->status === 'approved')
                                         @include('livewire.resources.soa-actions', ['reservation' => $res])
                                     @endif
-                                    @if ($res->status === 'approved' && $res->soa_path) <flux:button size="sm" wire:click="selectForPayment({{ $res->id }})" wire:loading.attr="disabled">Record payment</flux:button> @endif
+                                    @if ($res->status === 'approved' && $res->soa_path) <flux:button size="sm" wire:click="selectForPayment({{ $res->id }})" wire:loading.attr="disabled">Submit proof for verification</flux:button> @endif
                                 @endif
                                 @endif
                             </div>
@@ -306,7 +306,7 @@
                                         @endif
                                         @include('livewire.resources.soa-actions', ['reservation' => $occurrence])
                                         @if ($occurrence->soa_path)
-                                            <flux:button size="sm" wire:click="selectForPayment({{ $occurrence->id }})" wire:loading.attr="disabled">Record payment</flux:button>
+                                            <flux:button size="sm" wire:click="selectForPayment({{ $occurrence->id }})" wire:loading.attr="disabled">Submit proof for verification</flux:button>
                                         @endif
                                     @endif
                                 @endif
@@ -450,15 +450,16 @@
         <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="markBilled" wire:loading.attr="disabled" wire:target="soaFile,markBilled">Save SOA</flux:button></div>
     </div></flux:modal>
     <flux:modal name="payment-reservation" size="md"><div class="space-y-4 p-4">
-        <h2 class="font-semibold">Record payment for #{{ $paymentId }}</h2>
+        <h2 class="font-semibold">Submit proof for verification · #{{ $paymentId }}</h2>
         @php $paymentReservation = $this->paymentReservation; @endphp
-        <label class="flex items-center gap-2"><input type="checkbox" wire:model.live="paymentOverride"> Override payment record</label>
-        @if($paymentOverride)
-            <p class="text-sm text-amber-700">Upload replacement proofs and explain the correction. Previous proofs and pending Finance submissions will remain in history. This records full payment directly.</p>
-            <flux:textarea wire:model="paymentOverrideReason" label="Reason for payment override" required maxlength="2000" />
-        @elseif($paymentReservation?->pending_payment_count)
-            <p class="text-sm text-amber-700">Requester proof is awaiting Finance review. Use Payment review, or select Override payment record with a reason and replacement files.</p>
+        <p class="text-sm text-zinc-600 dark:text-zinc-300">Upload proof received from the requester. Finance must verify payment before this booking is marked Paid.</p>
+        @if($paymentReservation?->pending_payment_count)
+            <p class="text-sm text-amber-700 dark:text-amber-300">A submission is already awaiting Finance review. Use Payment review; Finance must review it or request a correction before another upload.</p>
+        @elseif($paymentReservation?->soa_locked)
+            <p class="text-sm text-amber-700 dark:text-amber-300">Submitting corrected proof reopens this payment as Billed and awaiting Finance verification. Previous payment records and files are retained.</p>
         @endif
+        <flux:input wire:model="paymentReference" label="Payment reference" required maxlength="255" />
+        <flux:textarea wire:model="paymentSubmissionNote" label="Submission note" required maxlength="2000" description="Explain how the proof was received or why it is being corrected." />
         @if ($paymentReservation?->paymentProofs->isNotEmpty())
             <h3 class="text-sm font-semibold">Recorded payment proofs</h3>
             @foreach ($paymentReservation->paymentProofs as $proof)
@@ -474,8 +475,8 @@
         @error('paymentProofs') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
         @foreach ($errors->get('paymentProofs.*') as $messages) @foreach ($messages as $message) <p class="text-sm text-red-600">{{ $message }}</p> @endforeach @endforeach
         @foreach($paymentReservation?->paymentOverrides ?? [] as $override)
-            <div class="rounded-md border p-3 text-sm"><strong>Payment override</strong> · {{ $override->created_at->format('M j, Y g:i A') }} · {{ $override->actor?->name ?? 'Former user' }}<p>{{ $override->reason }}</p></div>
+            <div class="rounded-md border p-3 text-sm"><strong>Historical payment override</strong> · {{ $override->created_at->format('M j, Y g:i A') }} · {{ $override->actor?->name ?? 'Former user' }}<p>{{ $override->reason }}</p></div>
         @endforeach
-        <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button :variant="$paymentOverride ? 'danger' : 'primary'" wire:click="recordPayment" wire:loading.attr="disabled" wire:target="paymentProofs,recordPayment">{{ $paymentOverride ? 'Confirm override' : 'Save payment' }}</flux:button></div>
+        <div class="flex justify-end gap-2"><flux:modal.close><flux:button>Cancel</flux:button></flux:modal.close><flux:button variant="primary" wire:click="submitPaymentProof" wire:loading.attr="disabled" wire:target="paymentProofs,submitPaymentProof" :disabled="(bool) $paymentReservation?->pending_payment_count">Submit proof for verification</flux:button></div>
     </div></flux:modal>
 </div>
