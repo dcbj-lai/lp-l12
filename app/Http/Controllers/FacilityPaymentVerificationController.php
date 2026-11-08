@@ -40,7 +40,7 @@ class FacilityPaymentVerificationController extends Controller
         abort_unless($user->hasAnyRole([Payments::ROLE, 'facility.admin']), 403);
         $status = $request->query('status', 'pending');
         abort_unless(in_array($status, ['pending', 'confirmed', 'correction', 'superseded'], true), 422);
-        $submissions = FacilityPaymentSubmission::with('reservation')->where('status', $status)
+        $submissions = FacilityPaymentSubmission::with(['reservation', 'submitter'])->where('status', $status)
             ->latest('id')->paginate(20)->withQueryString();
         return response()->view('resources.payment-review', compact('submissions', 'status'))->header('Cache-Control', 'private, no-store');
     }
@@ -48,7 +48,7 @@ class FacilityPaymentVerificationController extends Controller
     public function detail(Request $request, ResourceReservation $reservation, Payments $payments)
     {
         abort_unless($payments->canView($request->user(), $reservation), 403);
-        $submissions = $reservation->paymentSubmissions()->latest('id')->get();
+        $submissions = $reservation->paymentSubmissions()->with('submitter')->latest('id')->get();
         $canReview = $payments->canReview($request->user(), $reservation);
         return response()->view('resources.payment-review', compact('reservation', 'submissions', 'canReview'))
             ->header('Cache-Control', 'private, no-store');

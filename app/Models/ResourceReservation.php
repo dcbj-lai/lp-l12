@@ -185,6 +185,7 @@ class ResourceReservation extends Model
     public function scopeAwaitingBilling($query)
     {
         return $query->where('status', 'approved')->where('payment_required', true)
+            ->whereDoesntHave('paymentSubmissions', fn ($q) => $q->where('status', 'pending'))
             ->where('billing_status', '!=', 'paid')->whereNull('paid_at')
             ->where(fn ($q) => $q->where(fn ($soa) => $soa->whereNotNull('soa_path')
                 ->where(fn ($unsent) => $unsent->where('soa_email_pending', true)->orWhereNull('soa_sent_at')))
@@ -193,6 +194,7 @@ class ResourceReservation extends Model
 
     public function getIsAwaitingBillingAttribute(): bool
     {
+        if (($this->pending_payment_count ?? $this->paymentSubmissions()->where('status', 'pending')->count()) > 0) return false;
         return $this->status === 'approved' && $this->payment_required && !$this->soa_locked
             && (($this->soa_path && ($this->soa_email_pending || !$this->soa_sent_at))
                 || ($this->finished_confirmed_at && $this->billing_status === 'unbilled' && !$this->soa_sent_at));

@@ -56,10 +56,15 @@ class FacilitySoaEdgeCaseTest extends TestCase
         $this->assertSame('unbilled', $reservation->billing_status);
         $this->assertContains($reservation->id, $component->instance()->reservations->flatten(1)->pluck('id'));
         $component->call('selectForPayment', $reservation->id)
+            ->set('paymentReference', 'REF')->set('paymentSubmissionNote', 'Received proof')
             ->set('paymentDate', today()->toDateString())
             ->set('paymentProofs', [UploadedFile::fake()->create('proof.pdf', 10, 'application/pdf')])
-            ->call('recordPayment')->assertHasNoErrors()->assertSet('statusFilter', 'archive')
-            ->assertDispatched('flash', fn ($name, $parameters) => str_contains($parameters['message'], 'View: Done'));
+            ->call('recordPayment')->assertHasNoErrors()->assertSet('statusFilter', 'approved')
+            ->assertDispatched('flash', fn ($name, $parameters) => str_contains($parameters['message'], 'Billed'));
+        $this->assertFalse($reservation->fresh()->is_archived);
+        $verifier = User::factory()->create();
+        $verifier->assignRole(Role::findOrCreate('facility.payment-verifier', 'web'));
+        app(\App\Services\FacilityPaymentVerificationService::class)->review($reservation->paymentSubmissions()->latest('id')->firstOrFail()->id, $verifier, 'confirmed', null);
         $this->assertTrue($reservation->fresh()->is_archived);
     }
 

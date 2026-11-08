@@ -44,6 +44,10 @@
                 <div class="facility-fact-row"><x-facilities.icon name="calendar" /><span>{{ $submission->reservation->start_datetime->format('M j, Y g:i A') }} · {{ $submission->reservation->room_names }}</span></div>
             @else<h3>Payment submission</h3>@endempty
             <p class="facility-small facility-muted">Submitted {{ $submission->created_at->format('M j, Y g:i A') }}</p>
+            @if($submission->submission_note)
+                <div class="facility-tip"><x-facilities.icon name="document" /><div><strong>Submitted by manager · {{ $submission->submitter?->name ?? 'Former user' }}</strong><p class="whitespace-pre-line">{{ $submission->submission_note }}</p></div></div>
+                @if($submission->previous_proof_ids !== null)<p class="facility-small facility-muted">Correction to a previously paid record. Previous confirmed proof remains retained until Finance verifies this submission.</p>@endif
+            @endif
             <dl class="facility-facts">
                 <div><dt>Paid on</dt><dd>{{ $submission->paid_on->format('M j, Y') }}</dd></div>
                 <div><dt>Payment reference</dt><dd><span class="facility-reference">{{ $submission->reference }}</span></dd></div>
