@@ -40,8 +40,16 @@ class FacilityPaymentVerificationController extends Controller
         abort_unless($user->hasAnyRole([Payments::ROLE, 'facility.admin']), 403);
         $status = $request->query('status', 'pending');
         abort_unless(in_array($status, ['pending', 'confirmed', 'correction', 'superseded'], true), 422);
-        $submissions = FacilityPaymentSubmission::with(['reservation', 'submitter'])->where('status', $status)
-            ->latest('id')->paginate(20)->withQueryString();
+        $submissions = FacilityPaymentSubmission::with(['reservation', 'submitter'])->where('status', $status);
+        if ($status === 'correction') {
+            // Select one row per reservation before pagination, retaining every submission in its detail view.
+            $submissions->whereIn('id', FacilityPaymentSubmission::selectRaw('MAX(id)')
+                ->where('status', 'correction')->groupBy('reservation_id'))
+                ->with(['reservation' => fn ($query) => $query->withCount([
+                    'paymentSubmissions as correction_count' => fn ($items) => $items->where('status', 'correction'),
+                ])]);
+        }
+        $submissions = $submissions->latest('id')->paginate(20)->withQueryString();
         return response()->view('resources.payment-review', compact('submissions', 'status'))->header('Cache-Control', 'private, no-store');
     }
 

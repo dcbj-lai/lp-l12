@@ -20,6 +20,9 @@
 .facility-card h3 { margin:0; font-size:15px; font-weight:650; }
 .facility-card p { margin:8px 0 0; }
 .facility-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:20px; }
+.facility-history-summary { cursor:pointer; }
+.facility-history-heading { display:inline-flex; width:calc(100% - 20px); align-items:center; flex-wrap:wrap; gap:12px; vertical-align:middle; }
+.facility-history-date { margin-left:auto; text-align:right; white-space:nowrap; }
 .facility-icon { width:18px; height:18px; flex-shrink:0; }
 .facility-icon-tile { display:flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:12px; background:#f4f5f7; color:#52525b; margin-bottom:18px; }
 .facility-icon-tile--green { color:#15803d; background:#ecfdf3; }

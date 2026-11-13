@@ -33,14 +33,30 @@
         <div class="facility-stack">
     @endisset
     @forelse($submissions as $submission)
-        @php $tone = ['pending'=>'amber','confirmed'=>'green','correction'=>'red','superseded'=>'neutral'][$submission->status]; @endphp
-        <article class="facility-card">
+        @php
+            $tone = ['pending'=>'amber','confirmed'=>'green','correction'=>'red','superseded'=>'neutral'][$submission->status];
+            $previousSubmission = isset($reservation) && !$loop->first && $submission->status !== 'pending';
+        @endphp
+        @if($previousSubmission)
+            <details class="facility-card">
+                <summary class="facility-history-summary">
+                    <span class="facility-history-heading">
+                        <strong>Submission #{{ $submission->id }}</strong>
+                        <span class="facility-badge facility-badge--{{ $tone }}">{{ ['confirmed'=>'Payment confirmed', 'correction'=>'Correction requested', 'superseded'=>'Superseded'][$submission->status] }}</span>
+                        <time class="facility-small facility-muted facility-history-date" datetime="{{ $submission->created_at->toIso8601String() }}">{{ $submission->created_at->format('M j, Y g:i A') }}</time>
+                    </span>
+                </summary>
+        @endif
+        <article class="{{ $previousSubmission ? 'facility-divider' : 'facility-card' }}">
             <div class="facility-card-heading">
                 <span class="facility-badge facility-badge--{{ $tone }}">{{ ['pending'=>'Payment verification pending', 'confirmed'=>'Payment confirmed', 'correction'=>'Correction requested', 'superseded'=>'Superseded · See review note'][$submission->status] }}</span>
-                <span class="facility-small facility-muted">Submission #{{ $submission->id }}</span>
+                <span class="facility-small facility-muted">{{ isset($status) && $status === 'correction' ? 'Latest submission' : 'Submission' }} #{{ $submission->id }}</span>
             </div>
             @empty($reservation)
                 <h2><a href="{{ route('facilities.payments.review', $submission->reservation_id) }}">{{ $submission->reservation->title }}</a></h2>
+                @if(($status ?? null) === 'correction')
+                    <span class="facility-badge facility-badge--neutral">{{ $submission->reservation->correction_count }} {{ $submission->reservation->correction_count === 1 ? 'correction' : 'corrections' }}</span>
+                @endif
                 <div class="facility-fact-row"><x-facilities.icon name="calendar" /><span>{{ $submission->reservation->start_datetime->format('M j, Y g:i A') }} · {{ $submission->reservation->room_names }}</span></div>
             @else<h3>Payment submission</h3>@endempty
             <p class="facility-small facility-muted">Submitted {{ $submission->created_at->format('M j, Y g:i A') }}</p>
@@ -69,6 +85,7 @@
                 <div class="facility-actions"><a class="facility-button facility-button--outline" href="{{ route('facilities.payments.review', $submission->reservation_id) }}">{{ $submission->status === 'pending' ? 'Review payment' : 'View details' }} <x-facilities.icon name="arrow-right" /></a></div>
             @endif
         </article>
+        @if($previousSubmission)</details>@endif
     @empty
         <section class="facility-card facility-empty"><div class="facility-icon-tile"><x-facilities.icon name="document" /></div><h2>Nothing to review here</h2><p class="facility-muted">No payment submissions to display.</p></section>
     @endforelse
