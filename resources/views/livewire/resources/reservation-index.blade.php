@@ -4,6 +4,7 @@
         $unsentEditCounts = $isFacilityAdmin ? $this->unsentEditCounts : [];
     @endphp
     @if ($isFacilityAdmin)<livewire:resources.create-soa />@endif
+    @error('archiveAction')<p role="alert" class="rounded-md bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>@enderror
 
     <div class="inline-flex max-w-full flex-wrap rounded-lg border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-700 dark:bg-zinc-800" role="tablist" aria-label="Reservation status">
         @foreach (['all' => 'All', 'pending' => 'For Approval', 'approved' => 'Approved', 'archive' => 'Done', 'rejected' => 'Rejected', 'deleted' => 'Deleted'] as $status => $label)
@@ -69,6 +70,12 @@
         @endif
     </div>
     <div class="flex flex-wrap items-center gap-2 text-sm">
+        <label for="reservation-records" class="font-medium">Records</label>
+        <select id="reservation-records" wire:model.live="archiveFilter" class="rounded-md border bg-white px-3 py-2 dark:bg-zinc-800">
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+            <option value="all">All</option>
+        </select>
         @if ($statusFilter === 'pending')
             <label for="request-date-sort" class="font-medium">Sort by request date</label>
             <select id="request-date-sort" wire:model.live="requestDateSort" class="rounded-md border bg-white px-3 py-2 dark:bg-zinc-800">
@@ -133,22 +140,19 @@
                         <x-facilities.reservation-card id="res-{{ $res->id }}" wire:key="reservation-{{ $res->id }}" :title="$res->title" :recurring="(bool) $res->recurrence_series_id"
                             :metadata="$res->start_datetime->format('M j'.(now()->year !== $res->start_datetime->year ? ', Y' : '').' · g:i A').'–'.($res->start_datetime->isSameDay($res->end_datetime) ? $res->end_datetime->format('g:i A') : $res->end_datetime->format('M j · g:i A')).' · '.$res->room_names">
                             <x-slot:badges>
-                                <flux:badge color="{{ $statusFilter === 'deleted' ? 'zinc' : ($res->status === 'approved' ? 'green' : ($res->status === 'rejected' ? 'red' : 'yellow')) }}">{{ $statusFilter === 'deleted' ? 'Deleted' : ($res->is_archived ? 'Done' : (['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$res->status] ?? $res->status)) }}</flux:badge>
+                                @if($res->manually_archived_at)<flux:badge color="zinc">Archived</flux:badge>@endif
+                                <flux:badge color="{{ $statusFilter === 'deleted' ? 'zinc' : ($res->status === 'approved' ? 'green' : ($res->status === 'rejected' ? 'red' : 'yellow')) }}">{{ $res->trashed() ? 'Deleted' : ($res->is_archived ? 'Done' : (['pending' => 'For Approval', 'approved' => 'Approved', 'rejected' => 'Rejected'][$res->status] ?? $res->status)) }}</flux:badge>
                                 @if($res->status === 'approved')<flux:badge color="{{ $res->billing_status === 'paid' ? 'green' : 'zinc' }}">{{ $res->is_archived && !$res->payment_required ? 'Complimentary' : ($res->is_awaiting_billing ? 'Unbilled' : ucfirst($res->billing_status)) }}</flux:badge>@endif
                                 @if($group['conflict_count'])<flux:badge color="red">Conflict</flux:badge>@endif
                                 @if($res->pending_payment_count)<flux:badge color="amber" title="Payment verification pending">Review</flux:badge>@endif
                                 @if($res->billing_status === 'billed' && $res->payment_due_at?->isBefore(today()))<flux:badge color="red">Overdue</flux:badge>@endif
                             </x-slot:badges>
-                            @if ($statusFilter !== 'deleted' && $isFacilityAdmin)
-                                <div class="absolute right-4 top-4" @if($res->soa_path) title="SOA is uploaded" @endif>
-                                    @if ($res->soa_path)
-                                        <flux:button size="sm" variant="danger" icon="trash" disabled aria-label="Delete reservation #{{ $res->id }}" title="SOA is uploaded"></flux:button>
-                                    @else
+                            @if (!$res->trashed() && $isFacilityAdmin && !$res->manually_archived_at && !$res->soa_path)
+                                <div class="absolute right-4 top-4">
                                         <flux:button size="sm" variant="danger" icon="trash" wire:click="selectForDelete({{ $res->id }})" aria-label="Delete reservation #{{ $res->id }}" title="Delete reservation #{{ $res->id }}"></flux:button>
-                                    @endif
                                 </div>
                             @endif
-                            <div @if ($statusFilter !== 'deleted' && $isFacilityAdmin) style="padding-right: 3rem;" @endif>
+                            <div @if (!$res->trashed() && $isFacilityAdmin && !$res->manually_archived_at && !$res->soa_path) style="padding-right: 3rem;" @endif>
                                 <p class="text-xs text-zinc-500">Reservation #{{ $res->id }} · Asia/Manila</p>
                                 <dl class="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                                     <div><dt class="text-xs text-zinc-500">Event schedule</dt><dd>{{ $res->start_datetime->format('M j, Y g:i A') }}–{{ $res->end_datetime->format('M j, Y g:i A') }}</dd></div>
@@ -195,7 +199,16 @@
                             @if ($res->paid_at) <div class="text-xs text-zinc-500">Paid {{ $res->paid_at->format('M j, Y') }}</div> @endif
                             <div class="flex flex-wrap gap-2">
                                 @if ($res->recurrence_series_id) <flux:button size="sm" wire:click="showRecurringSeries('{{ $res->recurrence_series_id }}')">View recurring events</flux:button> @endif
-                                @if ($statusFilter === 'deleted')
+                                @if ($isFacilityAdmin)
+                                    @if($res->manually_archived_at)
+                                        <flux:button size="sm" wire:click="unarchiveReservation({{ $res->id }})">Restore from archive</flux:button>
+                                        <flux:button size="sm" variant="danger" wire:click="selectForPermanentDelete({{ $res->id }})">Permanently delete</flux:button>
+                                    @elseif($res->trashed() || $res->status !== 'approved' || $res->is_archived)
+                                        <flux:button size="sm" wire:click="archiveReservation({{ $res->id }})" wire:loading.attr="disabled">Archive</flux:button>
+                                    @endif
+                                @endif
+                                @if ($res->manually_archived_at)
+                                @elseif ($res->trashed())
                                     @if ($isFacilityAdmin) <flux:button size="sm" wire:click="restoreReservation({{ $res->id }})">Restore for approval</flux:button> @endif
                                 @else
                                 @if ($res->status !== 'approved')
@@ -231,6 +244,21 @@
         <p class="text-sm text-zinc-500">No reservations found.</p>
     @endforelse
 
+    <flux:modal name="permanently-delete-reservation" wire:model="showArchiveDeleteModal">
+        <div class="space-y-4 p-4">
+            <h2 class="text-lg font-semibold">Permanently delete {{ $archiveDeleteTitle }}?</h2>
+            <p>Reservation #{{ $archiveDeleteId }} and its payment, billing, and edit history will be permanently removed. Unshared attachments will also be removed. This cannot be undone. Other dates in a recurring series will remain.</p>
+            <label class="block">Type DELETE to confirm
+                <input wire:model="archiveDeleteConfirmation" class="mt-2 w-full rounded-md border px-3 py-2" autocomplete="off">
+            </label>
+            @error('archiveDeleteConfirmation')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+            @error('archiveAction')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+            <div class="flex justify-end gap-2">
+                <flux:button wire:click="cancelPermanentDelete">Cancel</flux:button>
+                <flux:button variant="danger" wire:click="confirmPermanentDelete" wire:loading.attr="disabled">Permanently delete this reservation</flux:button>
+            </div>
+        </div>
+    </flux:modal>
     <x-facilities.document-preview />
     <flux:modal name="recurring-series" class="md:w-[760px]">
         <div class="space-y-4 p-4">
@@ -254,16 +282,12 @@
                 @foreach ($seriesReservations as $occurrence)
                     @php $occurrenceConflicts = $this->conflictsFor($occurrence); @endphp
                     <div wire:key="series-occurrence-{{ $occurrence->id }}" class="relative rounded-md border border-zinc-200 p-3 space-y-2 dark:border-zinc-700">
-                        @if (!$occurrence->trashed() && $isFacilityAdmin)
-                            <div class="absolute right-4 top-4" @if($occurrence->soa_path) title="SOA is uploaded" @endif>
-                                @if ($occurrence->soa_path)
-                                    <flux:button size="sm" variant="danger" icon="trash" disabled aria-label="Delete reservation #{{ $occurrence->id }}" title="SOA is uploaded"></flux:button>
-                                @else
+                        @if (!$occurrence->trashed() && $isFacilityAdmin && !$occurrence->manually_archived_at && !$occurrence->soa_path)
+                            <div class="absolute right-4 top-4">
                                     <flux:button size="sm" variant="danger" icon="trash" wire:click="selectForDelete({{ $occurrence->id }})" aria-label="Delete reservation #{{ $occurrence->id }}" title="Delete reservation #{{ $occurrence->id }}"></flux:button>
-                                @endif
                             </div>
                         @endif
-                        <div @if (!$occurrence->trashed() && $isFacilityAdmin) style="padding-right: 3rem;" @endif>
+                        <div @if (!$occurrence->trashed() && $isFacilityAdmin && !$occurrence->manually_archived_at && !$occurrence->soa_path) style="padding-right: 3rem;" @endif>
                             <div class="font-medium">{{ $occurrence->start_datetime->format('D, M j, Y') }} · {{ $occurrence->start_datetime->format('g:i A') }}–{{ $occurrence->end_datetime->format('g:i A') }}</div>
                             <div class="text-xs text-zinc-500">#{{ $occurrence->id }} · {{ $occurrence->recurrence_position }} of {{ $occurrence->recurrence_total }} · {{ $occurrence->room_names }}</div>
                             @if($occurrence->requester_name)<div class="text-xs text-zinc-500">Requester: {{ $occurrence->requester_name }}</div>@endif
@@ -286,7 +310,12 @@
                         </div>
                         @include('livewire.resources.requester-cancellation', ['reservation' => $occurrence])
                         <div class="flex flex-wrap gap-2">
-                            @if ($occurrence->trashed())
+                            @if($isFacilityAdmin && !$occurrence->manually_archived_at && ($occurrence->trashed() || $occurrence->status !== 'approved' || $occurrence->is_archived))
+                                <flux:button size="sm" wire:click="archiveReservation({{ $occurrence->id }})">Archive</flux:button>
+                            @endif
+                            @if($occurrence->manually_archived_at)
+                                <flux:badge color="zinc">Archived</flux:badge>
+                            @elseif ($occurrence->trashed())
                                 @if ($isFacilityAdmin) <flux:button size="sm" wire:click="restoreReservation({{ $occurrence->id }})">Restore for approval</flux:button> @endif
                             @else
                                 @if ($occurrence->status !== 'approved')

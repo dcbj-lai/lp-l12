@@ -60,6 +60,52 @@ class ReservationIndex extends Component
     }
 
     public string $statusFilter = 'pending';
+    public string $archiveFilter = 'active';
+    #[\Livewire\Attributes\Locked]
+    public ?int $archiveDeleteId = null;
+    #[\Livewire\Attributes\Locked]
+    public string $archiveDeleteTitle = '';
+    public string $archiveDeleteConfirmation = '';
+    public bool $showArchiveDeleteModal = false;
+
+    public function archiveReservation(int $id): void
+    {
+        app(\App\Services\FacilityReservationArchiveService::class)->archive($id, auth()->user());
+        $this->dispatch('flash', type: 'success', message: 'Reservation archived. Find it using Records → Archived.');
+    }
+
+    public function unarchiveReservation(int $id): void
+    {
+        app(\App\Services\FacilityReservationArchiveService::class)->archive($id, auth()->user(), true);
+        $this->dispatch('flash', type: 'success', message: 'Reservation restored from archive. Its original status is retained.');
+    }
+
+    public function selectForPermanentDelete(int $id): void
+    {
+        abort_unless(auth()->user()->hasRole('facility.admin') && !auth()->user()->hasRole('facility.viewer'), 403);
+        $booking = ResourceReservation::withTrashed()->whereNotNull('manually_archived_at')->findOrFail($id);
+        $this->archiveDeleteId = $booking->id;
+        $this->archiveDeleteTitle = $booking->title;
+        $this->archiveDeleteConfirmation = '';
+        $this->resetValidation('archiveDeleteConfirmation');
+        $this->showArchiveDeleteModal = true;
+    }
+
+    public function cancelPermanentDelete(): void
+    {
+        $this->reset('archiveDeleteId', 'archiveDeleteTitle', 'archiveDeleteConfirmation', 'showArchiveDeleteModal');
+    }
+
+    public function confirmPermanentDelete(): void
+    {
+        if (!$this->showArchiveDeleteModal || !$this->archiveDeleteId) return;
+        $this->validate(['archiveDeleteConfirmation' => 'required|in:DELETE']);
+        $failedFiles = app(\App\Services\FacilityReservationArchiveService::class)->permanentlyDelete($this->archiveDeleteId, auth()->user());
+        $this->cancelPermanentDelete();
+        $this->dispatch('flash', type: $failedFiles ? 'warning' : 'success', message: $failedFiles
+            ? 'Reservation permanently deleted. Some unused files could not be removed; cleanup is needed.'
+            : 'Reservation permanently deleted.');
+    }
     public string $search = '';
     public string $doneFilter = 'all';
     public string $approvedFilter = 'all';
@@ -268,6 +314,9 @@ class ReservationIndex extends Component
         return ResourceReservation::with(['resource', 'rooms', 'equipment', 'items.resource', 'latestBillingEmail', 'latestPaymentReminder', 'paymentProofs', 'soaRevisions', 'latestCancellationRequest', 'latestGeneratedSoa'])
             ->withCount(['paymentSubmissions as pending_payment_count' => fn ($q) => $q->where('status', 'pending')])
             ->search($this->search)
+            ->when($this->archiveFilter !== 'active' && in_array($this->statusFilter, ['all', 'deleted'], true), fn ($q) => $q->withTrashed())
+            ->when($this->archiveFilter === 'active', fn ($q) => $q->whereNull('manually_archived_at'))
+            ->when($this->archiveFilter === 'archived', fn ($q) => $q->whereNotNull('manually_archived_at'))
             ->when($this->statusFilter === 'deleted', fn ($query) => $query->onlyTrashed())
             ->when($this->statusFilter === 'archive', fn ($query) => $query->archived())
             ->when($this->statusFilter === 'archive' && $this->doneFilter === 'paid', fn ($query) => $query->where('billing_status', 'paid'))
@@ -284,7 +333,7 @@ class ReservationIndex extends Component
     public function getBookingGroupsProperty()
     {
         $byRequestDate = $this->statusFilter === 'pending';
-        $showIndividualOccurrences = in_array($this->statusFilter, ['approved', 'rejected', 'unbilled', 'billed', 'archive'], true);
+        $showIndividualOccurrences = $this->archiveFilter !== 'active' || in_array($this->statusFilter, ['approved', 'rejected', 'unbilled', 'billed', 'archive'], true);
         $reservations = $this->reservations->flatten(1);
 
         $groups = $reservations

@@ -13,7 +13,7 @@
 
         <div class="space-y-1">
             <label for="requester_name" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Name</label>
-            <input id="requester_name" type="text" wire:model="requester_name" autocomplete="name" maxlength="255" aria-required="true"
+            <input id="requester_name" type="text" wire:model.live.blur="requester_name" autocomplete="name" maxlength="255" aria-required="true"
                 class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
             @error('requester_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
         </div>
@@ -21,7 +21,7 @@
         <!-- Email -->
         <div class="space-y-1">
             <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Your Email</label>
-            <input type="email" wire:model="requester_email" placeholder="you@life.edu.ph"
+            <input type="email" wire:model.live.blur="requester_email" placeholder="you@life.edu.ph"
                 class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
             @error('requester_email')
                 <span class="text-red-500 text-xs">{{ $message }}</span>
@@ -31,7 +31,7 @@
         <!-- Title -->
         <div class="space-y-1">
             <label class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Event Name *</label>
-            <input type="text" wire:model="title"
+            <input type="text" wire:model.live.blur="title"
                 class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
             @error('title')
                 <span class="text-red-500 text-xs">{{ $message }}</span>
@@ -39,12 +39,12 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label class="text-xs font-medium">Number of pax *</label><input type="number" min="1" wire:model="number_of_pax" class="w-full rounded-md border px-3 py-2 text-sm">@error('number_of_pax') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror</div>
-            <div><label class="text-xs font-medium">Contact number *</label><input type="tel" wire:model="contact_number" class="w-full rounded-md border px-3 py-2 text-sm">@error('contact_number') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror</div>
+            <div><label class="text-xs font-medium">Number of pax *</label><input type="number" min="1" wire:model.live.blur="number_of_pax" class="w-full rounded-md border px-3 py-2 text-sm">@error('number_of_pax') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror</div>
+            <div><label class="text-xs font-medium">Contact number *</label><input type="tel" wire:model.live.blur="contact_number" class="w-full rounded-md border px-3 py-2 text-sm">@error('contact_number') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror</div>
         </div>
         <div>
             <label class="text-xs font-medium">Setup arrangement *</label>
-            <select wire:model.change="setup_arrangement"
+            <select wire:model.live.change="setup_arrangement"
                 class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
                 <option value="">Select an arrangement</option>
                 <option value="Workshop">Workshop</option>
@@ -77,7 +77,7 @@
 
             <div class="space-y-1">
                 <label for="start_time" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">Start Time *</label>
-                <input id="start_time" type="time" wire:model.change="start_time"
+                <input id="start_time" type="time" wire:model.live.change="start_time"
                     class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
                 @error('start_time')
                     <span class="text-red-500 text-xs">{{ $message }}</span>
@@ -86,7 +86,7 @@
 
             <div class="space-y-1">
                 <label for="end_time" class="text-xs font-medium text-zinc-600 dark:text-zinc-400">End Time *</label>
-                <input id="end_time" type="time" wire:model.change="end_time"
+                <input id="end_time" type="time" wire:model.live.change="end_time"
                     class="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2 py-2 text-sm focus:ring-2 focus:ring-[#9E1D20]/20 focus:border-[#9E1D20]">
                 @error('end_time')
                     <span class="text-red-500 text-xs">{{ $message }}</span>

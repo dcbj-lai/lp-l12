@@ -63,6 +63,7 @@ class ResourceReservation extends Model
     ];
 
     protected $casts = [
+        'manually_archived_at' => 'datetime',
         'start_datetime' => 'datetime',
         'end_datetime' => 'datetime',
         'approved_at' => 'datetime',
