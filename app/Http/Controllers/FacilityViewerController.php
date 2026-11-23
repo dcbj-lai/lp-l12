@@ -21,12 +21,14 @@ class FacilityViewerController extends Controller
         $reservations = ResourceReservation::with(['resource', 'rooms', 'equipment'])
             ->withExists('paymentProofs')
             ->search($search)
+            ->whereNull('manually_archived_at')
             ->where('end_datetime', '>', $now)
             ->where('status', $status)->orderBy('start_datetime', $direction)
             ->orderBy('id', $direction)->paginate(30)->withQueryString();
         $seriesDates = ResourceReservation::with(['resource', 'rooms', 'equipment'])
             ->withExists('paymentProofs')
             ->whereIn('recurrence_series_id', $reservations->pluck('recurrence_series_id')->filter()->unique())
+            ->whereNull('manually_archived_at')
             ->where('end_datetime', '>', $now)
             ->whereIn('status', ['pending', 'approved'])->orderBy('start_datetime')->orderBy('id')
             ->get()->groupBy('recurrence_series_id');

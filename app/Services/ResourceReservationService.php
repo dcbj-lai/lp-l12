@@ -565,9 +565,12 @@ class ResourceReservationService
             $reservation->load('equipment');
             $equipment = $reservation->equipment->mapWithKeys(fn ($item) => [$item->id => $item->pivot->quantity])->all();
             $this->lockResources($reservation->roomIds(), $equipment);
-            $reservation->refresh()->load('equipment');
+            $reservation = ResourceReservation::whereKey($reservation->id)->lockForUpdate()->firstOrFail()->load('equipment');
             if ($reservation->status === 'approved') {
                 throw new \Exception('Reservation is already approved.');
+            }
+            if ($reservation->manually_archived_at) {
+                throw new \Exception('Restore this reservation from archive before approving it.');
             }
             $equipment = $reservation->equipment->mapWithKeys(fn ($item) => [$item->id => $item->pivot->quantity])->all();
             $this->validateAvailability($reservation->roomIds(), $equipment, $reservation->start_datetime, $reservation->end_datetime, $reservation->id);
